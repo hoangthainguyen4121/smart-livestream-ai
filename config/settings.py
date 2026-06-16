@@ -19,6 +19,7 @@ class FaceSettings:
     providers: tuple[str, ...] = ("CPUExecutionProvider",)
     detection_size: tuple[int, int] = (640, 640)
     recognition_threshold: float = 0.45
+    recognition_interval_frames: int = 5
     registration_samples: int = 12
     registration_sample_interval: int = 5
     min_face_size: int = 60

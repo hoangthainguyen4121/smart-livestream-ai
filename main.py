@@ -34,8 +34,9 @@ def run_livestream() -> None:
     logger.info("Importing runtime dependencies")
     import cv2
 
+    from config.settings import FACE
     from face_recognition.embedding_store import EmbeddingStore
-    from face_recognition.recognizer import InsightFaceRecognizer
+    from face_recognition.recognizer import InsightFaceRecognizer, RecognitionResult
     from gesture_detection.gesture_detector import GestureDetector
     from gesture_detection.gesture_state import GestureEffectState
     from overlay_engine.overlay_renderer import OverlayRenderer
@@ -44,6 +45,7 @@ def run_livestream() -> None:
 
     gesture_detector: GestureDetector | None = None
     last_logged_gesture_frames: dict[str, int] = {}
+    cached_recognition_results: list[RecognitionResult] = []
 
     try:
         logger.info("Loading embedding store")
@@ -69,6 +71,10 @@ def run_livestream() -> None:
         fps_monitor = FPSMonitor()
 
         logger.info("Starting livestream PoC")
+        logger.info(
+            "Face recognition interval: every %s frame(s)",
+            FACE.recognition_interval_frames,
+        )
         with Camera() as camera:
             logger.info("Starting recognition loop")
             frame_count = 0
@@ -80,7 +86,9 @@ def run_livestream() -> None:
                 frame_count += 1
                 fps = fps_monitor.update()
 
-                recognition_results = recognizer.recognize(frame)
+                if should_run_recognition(frame_count, FACE.recognition_interval_frames):
+                    cached_recognition_results = recognizer.recognize(frame)
+
                 gesture_events = gesture_detector.detect(frame) if gesture_detector else []
                 log_gesture_events(
                     gesture_events=gesture_events,
@@ -91,9 +99,14 @@ def run_livestream() -> None:
 
                 output = renderer.draw_runtime_view(
                     frame=frame,
-                    recognition_results=recognition_results,
+                    recognition_results=cached_recognition_results,
                     active_gesture_effects=active_effects,
                     fps=fps,
+                )
+
+                log_average_fps(
+                    frame_count=frame_count,
+                    average_fps=fps_monitor.average_fps,
                 )
 
                 cv2.imshow("Smart Livestream PoC", output)
@@ -109,6 +122,20 @@ def run_livestream() -> None:
             gesture_detector.close()
         cv2.destroyAllWindows()
         logger.info("Stopped livestream PoC")
+
+
+def should_run_recognition(frame_count: int, recognition_interval_frames: int) -> bool:
+    interval = max(1, recognition_interval_frames)
+    return frame_count == 1 or frame_count % interval == 0
+
+
+def log_average_fps(
+    frame_count: int,
+    average_fps: float,
+    logging_interval_frames: int = 120,
+) -> None:
+    if frame_count > 0 and frame_count % logging_interval_frames == 0:
+        logger.info("Average FPS: %.2f frame=%s", average_fps, frame_count)
 
 
 def log_gesture_events(

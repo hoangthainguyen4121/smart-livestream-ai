@@ -9,7 +9,10 @@ class FPSMonitor:
     def update(self) -> float:
         now = time.perf_counter()
         self.timestamps.append(now)
+        return self.average_fps
 
+    @property
+    def average_fps(self) -> float:
         if len(self.timestamps) < 2:
             return 0.0
 
