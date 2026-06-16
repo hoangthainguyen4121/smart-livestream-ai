@@ -1,0 +1,5 @@
+insightface
+mediapipe==0.10.14
+numpy
+onnxruntime
+opencv-python

@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+logs/
+*.log
+
+.env
+.idea/
+.vscode/
+
+storage/captured_faces/
+storage/embeddings/*.npy
+!storage/embeddings/.gitkeep
+!storage/embeddings/users.json
+!storage/users.json
