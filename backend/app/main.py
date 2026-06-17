@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import face_profiles, health, realtime
+from app.api import face_profiles, health, realtime, video_feed
 
 
 app = FastAPI(title="Smart Livestream AI Backend", version="0.1.0")
@@ -17,3 +17,4 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api")
 app.include_router(face_profiles.router, prefix="/api")
 app.include_router(realtime.router)
+app.include_router(video_feed.router)

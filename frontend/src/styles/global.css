@@ -19,11 +19,6 @@ body {
   padding: 32px;
 }
 
-.hero {
-  max-width: 920px;
-  margin: 0 auto 24px;
-}
-
 .eyebrow {
   margin: 0 0 8px;
   color: #2f6fed;
@@ -44,20 +39,94 @@ h1 {
   font-size: 2.2rem;
 }
 
-.layout {
+.livestreamShell {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-  gap: 20px;
-  max-width: 1200px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  max-width: 1380px;
   margin: 0 auto;
 }
 
-.card {
+.streamMain {
+  min-width: 0;
+}
+
+.streamHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.streamMeta {
+  color: #46556a;
+}
+
+.streamStats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.streamStats span {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #46556a;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 24px rgba(23, 32, 51, 0.08);
+}
+
+.streamStats .liveBadge {
+  background: #ef4444;
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.streamStats .offlineBadge {
+  background: #64748b;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.modeToggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.modeToggle button {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.modeToggle button.active {
+  border-color: #2f6fed;
+  background: #2f6fed;
+  color: #ffffff;
+}
+
+.videoCard,
+.debugCard,
+.chatPanel {
   padding: 20px;
   border: 1px solid #d9e2ef;
   border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 12px 40px rgba(23, 32, 51, 0.08);
+}
+
+.videoCard {
+  margin-bottom: 16px;
 }
 
 .cardHeader {
@@ -85,6 +154,12 @@ h1 {
   color: #b42318;
 }
 
+.videoFrame {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
 .video {
   display: block;
   width: 100%;
@@ -93,12 +168,41 @@ h1 {
   background: #0f172a;
 }
 
+.streamImage {
+  object-fit: contain;
+}
+
+.overlayCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.metricsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  color: #46556a;
+  font-size: 0.9rem;
+}
+
+.metricsRow span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2f7;
+}
+
 .hiddenCanvas {
   display: none;
 }
 
 .debugPanel {
-  min-height: 360px;
+  max-height: 320px;
+  min-height: 220px;
   margin: 0;
   padding: 16px;
   overflow: auto;
@@ -106,6 +210,87 @@ h1 {
   background: #0f172a;
   color: #d8e4ff;
   font-size: 0.9rem;
+}
+
+.controlBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid #d9e2ef;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 12px 40px rgba(23, 32, 51, 0.08);
+}
+
+.controlBar button,
+.chatInputRow button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #172033;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.chatPanel {
+  display: flex;
+  position: sticky;
+  top: 24px;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  min-height: 560px;
+}
+
+.chatHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.chatHeader span {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.chatMessages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.chatMessage {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f4f7fb;
+}
+
+.chatMessage strong {
+  color: #2f6fed;
+}
+
+.chatInputRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.chatInputRow input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font: inherit;
 }
 
 .error {
@@ -116,7 +301,20 @@ h1 {
 }
 
 @media (max-width: 900px) {
-  .layout {
+  .livestreamShell {
     grid-template-columns: 1fr;
+  }
+
+  .streamHeader {
+    flex-direction: column;
+  }
+
+  .streamStats {
+    justify-content: flex-start;
+  }
+
+  .chatPanel {
+    position: static;
+    height: auto;
   }
 }

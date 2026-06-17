@@ -1,4 +1,6 @@
 fastapi
 httpx
+numpy
+opencv-python
 pytest
 uvicorn[standard]
