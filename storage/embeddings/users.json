@@ -3,7 +3,7 @@
     "hoang": {
       "display_name": "hoang",
       "embedding_file": "hoang.npy",
-      "samples": 12
+      "samples": 5
     }
   }
 }

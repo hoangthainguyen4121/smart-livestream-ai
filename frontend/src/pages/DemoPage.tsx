@@ -53,7 +53,7 @@ export function DemoPage() {
   const [latestResult, setLatestResult] = useState<unknown>(null);
   const [lastResponseTimeMs, setLastResponseTimeMs] = useState<number | null>(null);
   const [demoMode, setDemoMode] = useState<DemoMode>("backend-stream");
-  const [isStreamLive, setIsStreamLive] = useState(true);
+  const [isStreamLive, setIsStreamLive] = useState(false);
   const [showAiOverlay, setShowAiOverlay] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [streamDurationSeconds, setStreamDurationSeconds] = useState(0);
@@ -185,6 +185,14 @@ export function DemoPage() {
     return () => window.clearInterval(timer);
   }, [isStreamLive]);
 
+  function handleRegisterFaceClick(event: { preventDefault: () => void }) {
+    event.preventDefault();
+    setIsStreamLive(false);
+    window.setTimeout(() => {
+      window.location.href = "/register-face";
+    }, 500);
+  }
+
   return (
     <main className="page">
       <section className="livestreamShell">
@@ -221,6 +229,9 @@ export function DemoPage() {
             >
               Backend Annotated Stream
             </button>
+            <a className="modeLink" href="/register-face" onClick={handleRegisterFaceClick}>
+              Register Face
+            </a>
           </section>
 
           <div className="videoCard">
@@ -229,12 +240,16 @@ export function DemoPage() {
               <span className={`status ${socketStatus}`}>WS: {socketStatus}</span>
             </div>
 
-            {demoMode === "backend-stream" ? (
+            {demoMode === "backend-stream" && isStreamLive ? (
               <img
                 src={BACKEND_VIDEO_FEED_URL}
                 alt="Backend annotated video stream"
                 className="video streamImage"
               />
+            ) : demoMode === "backend-stream" ? (
+              <div className="streamPlaceholder">
+                Stream stopped. Click Start Stream.
+              </div>
             ) : cameraError ? (
               <div className="error">Camera error: {cameraError}</div>
             ) : (
