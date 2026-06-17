@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
+import { type ChatMessage } from "../api/chat";
 import { createRealtimeSocket, type RealtimeMessage, type RealtimeResult } from "../api/realtime";
+import { ChatPanel } from "../components/ChatPanel";
 import { OverlayCanvas } from "../components/OverlayCanvas";
 
 
@@ -10,11 +12,30 @@ const FRAME_HEIGHT = 240;
 const FRAME_JPEG_QUALITY = 0.7;
 const BACKEND_VIDEO_FEED_URL = "http://127.0.0.1:8000/video-feed";
 const HOST_USERNAME = "hoang";
+const DEMO_ROOM_ID = "demo";
 const MOCK_VIEWER_COUNT = 128;
-const INITIAL_CHAT_MESSAGES = [
-  { author: "Minh", text: "Hello!" },
-  { author: "An", text: "Nice stream!" },
-  { author: "Khoa", text: "Raise your hand!" },
+const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
+  {
+    id: "demo-initial-1",
+    room_id: DEMO_ROOM_ID,
+    author: "Minh",
+    text: "Hello!",
+    created_at: "",
+  },
+  {
+    id: "demo-initial-2",
+    room_id: DEMO_ROOM_ID,
+    author: "An",
+    text: "Nice stream!",
+    created_at: "",
+  },
+  {
+    id: "demo-initial-3",
+    room_id: DEMO_ROOM_ID,
+    author: "Khoa",
+    text: "Raise your hand!",
+    created_at: "",
+  },
 ];
 
 type DemoMode = "browser-ws" | "backend-stream";
@@ -35,8 +56,6 @@ export function DemoPage() {
   const [showAiOverlay, setShowAiOverlay] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [streamDurationSeconds, setStreamDurationSeconds] = useState(0);
-  const [chatMessages, setChatMessages] = useState(INITIAL_CHAT_MESSAGES);
-  const [chatInput, setChatInput] = useState("");
   const realtimeResult = isRealtimeResult(latestResult) ? latestResult : null;
   const isBrowserMode = demoMode === "browser-ws";
 
@@ -165,16 +184,6 @@ export function DemoPage() {
     return () => window.clearInterval(timer);
   }, [isStreamLive]);
 
-  function handleSendChatMessage() {
-    const text = chatInput.trim();
-    if (!text) {
-      return;
-    }
-
-    setChatMessages((messages) => [...messages, { author: "You", text }]);
-    setChatInput("");
-  }
-
   return (
     <main className="page">
       <section className="livestreamShell">
@@ -283,35 +292,11 @@ export function DemoPage() {
           ) : null}
         </div>
 
-        <aside className="chatPanel">
-          <div className="chatHeader">
-            <h2>Live Chat</h2>
-            <span>{chatMessages.length} messages</span>
-          </div>
-          <div className="chatMessages">
-            {chatMessages.map((message, index) => (
-              <div className="chatMessage" key={`${message.author}-${index}`}>
-                <strong>{message.author}</strong>
-                <span>{message.text}</span>
-              </div>
-            ))}
-          </div>
-          <div className="chatInputRow">
-            <input
-              value={chatInput}
-              onChange={(event) => setChatInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  handleSendChatMessage();
-                }
-              }}
-              placeholder="Send a message..."
-            />
-            <button type="button" onClick={handleSendChatMessage}>
-              Send
-            </button>
-          </div>
-        </aside>
+        <ChatPanel
+          roomId={DEMO_ROOM_ID}
+          author={HOST_USERNAME}
+          initialMessages={INITIAL_CHAT_MESSAGES}
+        />
       </section>
     </main>
   );
