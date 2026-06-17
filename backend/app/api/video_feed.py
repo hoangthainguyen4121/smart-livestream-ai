@@ -16,6 +16,7 @@ ensure_project_root_on_path()
 from config.settings import CAMERA  # noqa: E402
 from face_recognition.embedding_store import EmbeddingStore  # noqa: E402
 from face_recognition.recognizer import InsightFaceRecognizer  # noqa: E402
+from gesture_detection.gesture_detector import GestureDetector  # noqa: E402
 
 
 router = APIRouter(tags=["video-feed"])
@@ -24,6 +25,9 @@ logger = logging.getLogger(__name__)
 BOUNDARY = "frame"
 BLACK_FRAME_MEAN_THRESHOLD = 4.0
 MJPEG_RECOGNITION_INTERVAL_FRAMES = 3
+MJPEG_GESTURE_INTERVAL_FRAMES = 3
+MJPEG_GESTURE_FRAME_OFFSET = 2
+GESTURE_OVERLAY_COOLDOWN_SECONDS = 1.0
 
 
 @router.get("/video-feed")
@@ -37,9 +41,11 @@ def video_feed() -> StreamingResponse:
 def stream_annotated_frames() -> Generator[bytes, None, None]:
     capture = open_webcam()
     recognizer: InsightFaceRecognizer | None = None
+    gesture_detector: GestureDetector | None = None
     fps_meter = SimpleFPSMeter()
     frame_count = 0
     cached_recognition_results = []
+    active_gesture_overlays: dict[str, float] = {}
 
     try:
         if not capture.isOpened():
@@ -61,7 +67,10 @@ def stream_annotated_frames() -> Generator[bytes, None, None]:
         capture.set(cv2.CAP_PROP_FPS, CAMERA.fps)
 
         recognizer = InsightFaceRecognizer(store=EmbeddingStore())
-        # Gesture overlay is disabled in Mode B for FPS stability.
+        try:
+            gesture_detector = GestureDetector()
+        except Exception:
+            logger.exception("GestureDetector unavailable for MJPEG feed; continuing face-only")
 
         while True:
             ok, frame = read_frame_with_retries(capture)
@@ -82,13 +91,25 @@ def stream_annotated_frames() -> Generator[bytes, None, None]:
             fps = fps_meter.update()
             if should_run_recognition(frame_count):
                 cached_recognition_results = recognizer.recognize(frame)
+            if gesture_detector is not None and should_run_gesture(frame_count):
+                update_active_gestures(
+                    active_gesture_overlays,
+                    gesture_detector.detect(frame),
+                )
 
             draw_recognition_overlay(frame, cached_recognition_results)
+            draw_gesture_overlay(
+                frame,
+                active_gesture_overlays,
+                get_primary_username(cached_recognition_results),
+            )
             draw_fps(frame, fps)
             draw_dark_frame_warning(frame)
 
             yield encode_mjpeg_frame(frame)
     finally:
+        if gesture_detector is not None:
+            gesture_detector.close()
         capture.release()
         logger.info("Released webcam for MJPEG video feed")
 
@@ -145,6 +166,69 @@ def should_run_recognition(frame_count: int) -> bool:
         frame_count == 1
         or frame_count % max(1, MJPEG_RECOGNITION_INTERVAL_FRAMES) == 0
     )
+
+
+def should_run_gesture(frame_count: int) -> bool:
+    interval = max(1, MJPEG_GESTURE_INTERVAL_FRAMES)
+    return frame_count % interval == MJPEG_GESTURE_FRAME_OFFSET % interval
+
+
+def update_active_gestures(active_gestures: dict[str, float], gesture_events) -> None:
+    now = time.perf_counter()
+    expired = [
+        gesture_name
+        for gesture_name, expires_at in active_gestures.items()
+        if expires_at <= now
+    ]
+    for gesture_name in expired:
+        active_gestures.pop(gesture_name, None)
+
+    for event in gesture_events:
+        active_gestures[event.name] = now + GESTURE_OVERLAY_COOLDOWN_SECONDS
+
+
+def draw_gesture_overlay(
+    frame,
+    active_gestures: dict[str, float],
+    username: str,
+) -> None:
+    now = time.perf_counter()
+    visible_gestures = [
+        gesture_name
+        for gesture_name, expires_at in active_gestures.items()
+        if expires_at > now
+    ]
+    for index, gesture_name in enumerate(visible_gestures):
+        label = format_gesture_label(username, gesture_name)
+        y = 70 + index * 38
+        cv2.rectangle(frame, (18, y - 26), (360, y + 8), (255, 0, 255), -1)
+        cv2.putText(
+            frame,
+            label,
+            (28, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.75,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
+
+
+def format_gesture_label(username: str, gesture_name: str) -> str:
+    if gesture_name == "Raise Hand":
+        return f"{username} [hand] Raise Hand"
+    if gesture_name == "Wave":
+        return f"{username} [wave] Wave"
+    return f"{username} {gesture_name}"
+
+
+def get_primary_username(recognition_results) -> str:
+    for result in recognition_results:
+        if result.is_known:
+            return result.label
+    if recognition_results:
+        return recognition_results[0].label
+    return "Viewer"
 
 
 def draw_fps(frame, fps: float) -> None:
