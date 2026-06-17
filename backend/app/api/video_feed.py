@@ -10,6 +10,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from app.project_paths import ensure_project_root_on_path
+from app.services.interaction_events import interaction_event_service
 
 ensure_project_root_on_path()
 
@@ -91,17 +92,19 @@ def stream_annotated_frames() -> Generator[bytes, None, None]:
             fps = fps_meter.update()
             if should_run_recognition(frame_count):
                 cached_recognition_results = recognizer.recognize(frame)
+            primary_username = get_primary_username(cached_recognition_results)
             if gesture_detector is not None and should_run_gesture(frame_count):
                 update_active_gestures(
                     active_gesture_overlays,
                     gesture_detector.detect(frame),
+                    primary_username,
                 )
 
             draw_recognition_overlay(frame, cached_recognition_results)
             draw_gesture_overlay(
                 frame,
                 active_gesture_overlays,
-                get_primary_username(cached_recognition_results),
+                primary_username,
             )
             draw_fps(frame, fps)
             draw_dark_frame_warning(frame)
@@ -173,7 +176,11 @@ def should_run_gesture(frame_count: int) -> bool:
     return frame_count % interval == MJPEG_GESTURE_FRAME_OFFSET % interval
 
 
-def update_active_gestures(active_gestures: dict[str, float], gesture_events) -> None:
+def update_active_gestures(
+    active_gestures: dict[str, float],
+    gesture_events,
+    username: str,
+) -> None:
     now = time.perf_counter()
     expired = [
         gesture_name
@@ -185,6 +192,11 @@ def update_active_gestures(active_gestures: dict[str, float], gesture_events) ->
 
     for event in gesture_events:
         active_gestures[event.name] = now + GESTURE_OVERLAY_COOLDOWN_SECONDS
+        interaction_event_service.append_gesture_event(
+            username=username,
+            gesture=event.name,
+            now=now,
+        )
 
 
 def draw_gesture_overlay(

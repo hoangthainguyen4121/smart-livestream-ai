@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { type ChatMessage } from "../api/chat";
 import { createRealtimeSocket, type RealtimeMessage, type RealtimeResult } from "../api/realtime";
+import { AiEventFeedPanel } from "../components/AiEventFeedPanel";
 import { ChatPanel } from "../components/ChatPanel";
 import { OverlayCanvas } from "../components/OverlayCanvas";
 
@@ -281,6 +282,8 @@ export function DemoPage() {
               {showDebugPanel ? "Hide Debug Panel" : "Show Debug Panel"}
             </button>
           </section>
+
+          <AiEventFeedPanel />
 
           {showDebugPanel ? (
             <section className="debugCard">

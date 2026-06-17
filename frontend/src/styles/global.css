@@ -117,6 +117,7 @@ h1 {
 
 .videoCard,
 .debugCard,
+.aiEventFeedPanel,
 .chatPanel {
   padding: 20px;
   border: 1px solid #d9e2ef;
@@ -210,6 +211,42 @@ h1 {
   background: #0f172a;
   color: #d8e4ff;
   font-size: 0.9rem;
+}
+
+.aiEventFeedPanel {
+  margin-bottom: 16px;
+}
+
+.aiEventList {
+  display: grid;
+  gap: 10px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.aiEventItem {
+  display: grid;
+  grid-template-columns: 86px 96px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f4f7fb;
+  color: #46556a;
+}
+
+.aiEventItem time {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.aiEventItem strong {
+  color: #2f6fed;
+}
+
+.emptyState {
+  margin: 0;
+  color: #64748b;
 }
 
 .controlBar {
