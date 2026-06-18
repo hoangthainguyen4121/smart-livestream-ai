@@ -48,8 +48,9 @@ class FakeRecognizer:
 
 
 class FakeStore:
-    def __init__(self) -> None:
+    def __init__(self, existing_embeddings=None) -> None:
         self.saved = []
+        self.existing_embeddings = existing_embeddings or {}
 
     def save_user(self, username, embedding, samples):
         self.saved.append(
@@ -60,6 +61,9 @@ class FakeStore:
             }
         )
         return Path(f"{username.lower()}.npy")
+
+    def load_embeddings(self):
+        return self.existing_embeddings
 
 
 def test_registration_service_accepts_valid_sample() -> None:
@@ -157,6 +161,63 @@ def test_registration_service_completes_after_minimum_pose_requirements() -> Non
     assert store.saved[0]["samples"] == 5
 
 
+def test_registration_service_rejects_duplicate_existing_identity() -> None:
+    store = FakeStore(existing_embeddings={"existing-user": unit_embedding(0)})
+    service = WebFaceRegistrationService(
+        recognizer=FakeRecognizer(
+            faces_by_call=[
+                [create_face(unit_embedding(angle))]
+                for angle in (-20, -10, 0, 10, 20)
+            ]
+        ),
+        store=store,
+    )
+    session = service.create_session("new-user")
+
+    for pose in ("front", "left", "front", "right", "front"):
+        service.add_sample(
+            session_id=session["session_id"],
+            pose=pose,
+            frame_payload=create_test_frame_data_url(),
+        )
+
+    try:
+        service.complete_session(session["session_id"])
+        assert False, "Expected duplicate identity rejection"
+    except ValueError as error:
+        assert str(error) == (
+            "This face appears to already be registered as existing-user."
+        )
+
+    assert store.saved == []
+
+
+def test_registration_service_accepts_different_existing_identity() -> None:
+    store = FakeStore(existing_embeddings={"different-user": unit_embedding(90)})
+    service = WebFaceRegistrationService(
+        recognizer=FakeRecognizer(
+            faces_by_call=[
+                [create_face(unit_embedding(angle))]
+                for angle in (-20, -10, 0, 10, 20)
+            ]
+        ),
+        store=store,
+    )
+    session = service.create_session("new-user")
+
+    for pose in ("front", "left", "front", "right", "front"):
+        service.add_sample(
+            session_id=session["session_id"],
+            pose=pose,
+            frame_payload=create_test_frame_data_url(),
+        )
+
+    response = service.complete_session(session["session_id"])
+
+    assert response["display_name"] == "new-user"
+    assert store.saved[0]["username"] == "new-user"
+
+
 def test_face_registration_api_create_sample_complete_and_cancel(monkeypatch) -> None:
     service = WebFaceRegistrationService(
         recognizer=FakeRecognizer(
@@ -225,6 +286,11 @@ def create_embedding(seed: int):
     rng = np.random.default_rng(seed)
     embedding = rng.normal(size=8).astype(np.float32)
     return embedding / np.linalg.norm(embedding)
+
+
+def unit_embedding(angle_degrees: float):
+    angle = np.deg2rad(angle_degrees)
+    return np.array([np.cos(angle), np.sin(angle)], dtype=np.float32)
 
 
 def create_test_frame_data_url() -> str:

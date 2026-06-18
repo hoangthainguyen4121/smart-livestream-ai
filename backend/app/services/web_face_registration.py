@@ -13,6 +13,7 @@ from app.utils.image_codec import decode_data_url_frame
 
 ensure_project_root_on_path()
 
+from config.settings import DUPLICATE_IDENTITY_THRESHOLD  # noqa: E402
 from face_recognition.embedding_store import EmbeddingStore  # noqa: E402
 from face_recognition.recognizer import InsightFaceRecognizer  # noqa: E402
 
@@ -124,6 +125,13 @@ class WebFaceRegistrationService:
         embeddings = np.vstack([sample.embedding for sample in session.accepted_samples])
         averaged_embedding = np.mean(embeddings, axis=0)
         averaged_embedding = self._get_recognizer()._normalize_embedding(averaged_embedding)
+        duplicate_identity = self._find_duplicate_identity(averaged_embedding)
+        if duplicate_identity is not None:
+            username, _similarity = duplicate_identity
+            raise ValueError(
+                f"This face appears to already be registered as {username}."
+            )
+
         embedding_path = self._store.save_user(
             session.display_name,
             averaged_embedding,
@@ -218,6 +226,28 @@ class WebFaceRegistrationService:
             cosine_similarity(embedding, sample.embedding)
             for sample in session.accepted_samples
         )
+
+    def _find_duplicate_identity(
+        self,
+        embedding: np.ndarray,
+    ) -> tuple[str, float] | None:
+        existing_embeddings = self._store.load_embeddings()
+        best_username = None
+        best_similarity = -1.0
+
+        for username, stored_embedding in existing_embeddings.items():
+            similarity = cosine_similarity(embedding, stored_embedding)
+            if similarity > best_similarity:
+                best_username = username
+                best_similarity = similarity
+
+        if (
+            best_username is not None
+            and best_similarity >= DUPLICATE_IDENTITY_THRESHOLD
+        ):
+            return best_username, best_similarity
+
+        return None
 
     def _session_summary(self, session_id: str) -> dict[str, Any]:
         session = self._get_session(session_id)

@@ -3,6 +3,7 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+DUPLICATE_IDENTITY_THRESHOLD = 0.88
 
 
 @dataclass(frozen=True)
