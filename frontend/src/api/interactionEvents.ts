@@ -1,8 +1,15 @@
 export type InteractionEvent = {
   id: string;
-  type: "gesture";
+  type:
+    | "identity_appeared"
+    | "identity_disappeared"
+    | "unknown_face_detected"
+    | "multiple_faces_detected"
+    | "raise_hand"
+    | "thumbs_up"
+    | "wave";
   username: string;
-  gesture: "Raise Hand" | "Wave";
+  gesture: string;
   label: string;
   created_at: string;
 };

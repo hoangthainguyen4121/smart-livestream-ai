@@ -388,6 +388,17 @@ h1 {
   color: #2f6fed;
 }
 
+.aiEventCountBadge {
+  display: inline-flex;
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
 .emptyState {
   margin: 0;
   color: #64748b;

@@ -9,9 +9,15 @@ import {
 const EVENT_REFRESH_INTERVAL_MS = 1500;
 
 
+type CompressedInteractionEvent = InteractionEvent & {
+  count: number;
+};
+
+
 export function AiEventFeedPanel() {
   const [events, setEvents] = useState<InteractionEvent[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const compressedEvents = compressConsecutiveDuplicateEvents(events);
 
   useEffect(() => {
     let isMounted = true;
@@ -47,24 +53,68 @@ export function AiEventFeedPanel() {
     <section className="aiEventFeedPanel">
       <div className="cardHeader">
         <h2>AI Event Feed</h2>
-        <span className="status">Gestures</span>
+        <span className="status">Events</span>
       </div>
       {errorMessage ? <div className="error">{errorMessage}</div> : null}
       <div className="aiEventList">
-        {events.length > 0 ? (
-          events.map((event) => (
+        {compressedEvents.length > 0 ? (
+          compressedEvents.map((event) => (
             <div className="aiEventItem" key={event.id}>
               <time>{formatEventTime(event.created_at)}</time>
-              <strong>{event.gesture}</strong>
-              <span>{event.label}</span>
+              <strong>{formatEventType(event.type)}</strong>
+              <span>
+                {event.label}
+                {event.count > 1 ? (
+                  <span className="aiEventCountBadge">x{event.count}</span>
+                ) : null}
+              </span>
             </div>
           ))
         ) : (
-          <p className="emptyState">Raise a hand or wave in Backend Annotated Stream.</p>
+          <p className="emptyState">Start Backend Annotated Stream to see AI events.</p>
         )}
       </div>
     </section>
   );
+}
+
+
+function compressConsecutiveDuplicateEvents(events: InteractionEvent[]) {
+  const compressedEvents: CompressedInteractionEvent[] = [];
+
+  for (const event of events) {
+    const previousEvent = compressedEvents[compressedEvents.length - 1];
+    if (previousEvent && isSameDisplayEvent(previousEvent, event)) {
+      previousEvent.count += 1;
+      previousEvent.id = event.id;
+      previousEvent.created_at = event.created_at;
+      continue;
+    }
+
+    compressedEvents.push({
+      ...event,
+      count: 1,
+    });
+  }
+
+  return compressedEvents;
+}
+
+
+function isSameDisplayEvent(first: InteractionEvent, second: InteractionEvent) {
+  return (
+    first.type === second.type
+    && first.username === second.username
+    && first.label === second.label
+  );
+}
+
+
+function formatEventType(value: string) {
+  return value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 

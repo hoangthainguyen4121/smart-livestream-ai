@@ -29,6 +29,7 @@ MJPEG_RECOGNITION_INTERVAL_FRAMES = 3
 MJPEG_GESTURE_INTERVAL_FRAMES = 3
 MJPEG_GESTURE_FRAME_OFFSET = 2
 GESTURE_OVERLAY_COOLDOWN_SECONDS = 1.0
+IDENTITY_DISAPPEAR_GRACE_SECONDS = 1.0
 
 
 @router.get("/video-feed")
@@ -47,6 +48,7 @@ def stream_annotated_frames() -> Generator[bytes, None, None]:
     frame_count = 0
     cached_recognition_results = []
     active_gesture_overlays: dict[str, float] = {}
+    identity_presence = IdentityPresenceState()
 
     try:
         if not capture.isOpened():
@@ -92,6 +94,7 @@ def stream_annotated_frames() -> Generator[bytes, None, None]:
             fps = fps_meter.update()
             if should_run_recognition(frame_count):
                 cached_recognition_results = recognizer.recognize(frame)
+                update_face_interaction_events(cached_recognition_results, identity_presence)
             primary_username = get_primary_username(cached_recognition_results)
             if gesture_detector is not None and should_run_gesture(frame_count):
                 update_active_gestures(
@@ -176,6 +179,55 @@ def should_run_gesture(frame_count: int) -> bool:
     return frame_count % interval == MJPEG_GESTURE_FRAME_OFFSET % interval
 
 
+class IdentityPresenceState:
+    def __init__(self) -> None:
+        self.visible_usernames: set[str] = set()
+        self.missing_since: dict[str, float] = {}
+
+    def update(self, current_usernames: set[str], now: float) -> None:
+        for username in current_usernames:
+            if username not in self.visible_usernames:
+                interaction_event_service.append_event(
+                    event_type="identity_appeared",
+                    username=username,
+                    now=now,
+                )
+            self.visible_usernames.add(username)
+            self.missing_since.pop(username, None)
+
+        for username in list(self.visible_usernames - current_usernames):
+            missing_since = self.missing_since.setdefault(username, now)
+            if now - missing_since >= IDENTITY_DISAPPEAR_GRACE_SECONDS:
+                interaction_event_service.append_event(
+                    event_type="identity_disappeared",
+                    username=username,
+                    now=now,
+                )
+                self.visible_usernames.discard(username)
+                self.missing_since.pop(username, None)
+
+
+def update_face_interaction_events(recognition_results, identity_presence) -> None:
+    now = time.perf_counter()
+    known_usernames = {
+        result.label
+        for result in recognition_results
+        if result.is_known
+    }
+    identity_presence.update(known_usernames, now)
+
+    if any(not result.is_known for result in recognition_results):
+        interaction_event_service.append_event(
+            event_type="unknown_face_detected",
+            now=now,
+        )
+    if len(recognition_results) >= 2:
+        interaction_event_service.append_event(
+            event_type="multiple_faces_detected",
+            now=now,
+        )
+
+
 def update_active_gestures(
     active_gestures: dict[str, float],
     gesture_events,
@@ -190,13 +242,22 @@ def update_active_gestures(
     for gesture_name in expired:
         active_gestures.pop(gesture_name, None)
 
-    for event in gesture_events:
+    visible_events = suppress_conflicting_gestures(gesture_events)
+    for event in visible_events:
         active_gestures[event.name] = now + GESTURE_OVERLAY_COOLDOWN_SECONDS
         interaction_event_service.append_gesture_event(
             username=username,
             gesture=event.name,
             now=now,
         )
+
+
+def suppress_conflicting_gestures(gesture_events):
+    has_raise_hand = any(event.name == "Raise Hand" for event in gesture_events)
+    if not has_raise_hand:
+        return gesture_events
+
+    return [event for event in gesture_events if event.name != "Thumbs Up"]
 
 
 def draw_gesture_overlay(
@@ -229,6 +290,8 @@ def draw_gesture_overlay(
 def format_gesture_label(username: str, gesture_name: str) -> str:
     if gesture_name == "Raise Hand":
         return f"{username} [hand] Raise Hand"
+    if gesture_name == "Thumbs Up":
+        return f"{username} [thumb] Thumbs Up"
     if gesture_name == "Wave":
         return f"{username} [wave] Wave"
     return f"{username} {gesture_name}"

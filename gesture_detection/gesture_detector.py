@@ -44,9 +44,15 @@ class GestureDetector:
         for hand_landmarks in result.multi_hand_landmarks:
             wrist = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST]
             index_tip = hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP]
+            is_raise_hand = (
+                wrist.y < GESTURE.raise_hand_y_threshold
+                or index_tip.y < GESTURE.raise_hand_y_threshold
+            )
 
-            if wrist.y < GESTURE.raise_hand_y_threshold or index_tip.y < GESTURE.raise_hand_y_threshold:
+            if is_raise_hand:
                 events.append(GestureEvent(name="Raise Hand", confidence=0.8))
+            elif self._is_thumbs_up(hand_landmarks):
+                events.append(GestureEvent(name="Thumbs Up", confidence=0.72))
 
             self.wrist_x_history.append(wrist.x)
             if self._is_wave():
@@ -73,6 +79,34 @@ class GestureDetector:
         )
 
         return direction_changes >= GESTURE.wave_min_direction_changes
+
+    def _is_thumbs_up(self, hand_landmarks) -> bool:
+        landmarks = self.mp_hands.HandLandmark
+        thumb_tip = hand_landmarks.landmark[landmarks.THUMB_TIP]
+        thumb_ip = hand_landmarks.landmark[landmarks.THUMB_IP]
+        thumb_mcp = hand_landmarks.landmark[landmarks.THUMB_MCP]
+
+        # Normalized MediaPipe coordinates use smaller y values higher in the image.
+        thumb_is_clearly_up = (
+            thumb_tip.y < thumb_ip.y - 0.03
+            and thumb_tip.y < thumb_mcp.y - 0.08
+        )
+        if not thumb_is_clearly_up:
+            return False
+
+        folded_fingers = 0
+        for tip_name, pip_name in (
+            ("INDEX_FINGER_TIP", "INDEX_FINGER_PIP"),
+            ("MIDDLE_FINGER_TIP", "MIDDLE_FINGER_PIP"),
+            ("RING_FINGER_TIP", "RING_FINGER_PIP"),
+            ("PINKY_TIP", "PINKY_PIP"),
+        ):
+            tip = hand_landmarks.landmark[getattr(landmarks, tip_name)]
+            pip = hand_landmarks.landmark[getattr(landmarks, pip_name)]
+            if tip.y > pip.y + 0.02:
+                folded_fingers += 1
+
+        return folded_fingers >= 3
 
     @staticmethod
     def _deduplicate(events: list[GestureEvent]) -> list[GestureEvent]:
