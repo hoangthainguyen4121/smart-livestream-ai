@@ -26,8 +26,7 @@ logger = logging.getLogger(__name__)
 BOUNDARY = "frame"
 BLACK_FRAME_MEAN_THRESHOLD = 4.0
 MJPEG_RECOGNITION_INTERVAL_FRAMES = 3
-MJPEG_GESTURE_INTERVAL_FRAMES = 3
-MJPEG_GESTURE_FRAME_OFFSET = 2
+MJPEG_GESTURE_INTERVAL_FRAMES = 1
 GESTURE_OVERLAY_COOLDOWN_SECONDS = 1.0
 IDENTITY_DISAPPEAR_GRACE_SECONDS = 1.0
 
@@ -68,6 +67,22 @@ def stream_annotated_frames() -> Generator[bytes, None, None]:
         capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA.width)
         capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA.height)
         capture.set(cv2.CAP_PROP_FPS, CAMERA.fps)
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+        ok, warmup_frame = read_frame_with_retries(capture, attempts=15)
+        if not ok:
+            logger.error("Unable to read initial webcam frame for MJPEG video feed.")
+            yield encode_mjpeg_frame(
+                create_error_frame(
+                    "Unable to read webcam frame",
+                    "Close other camera users, stop old backend, then Start Stream again.",
+                )
+            )
+            return
+
+        loading_frame = warmup_frame.copy()
+        draw_status_banner(loading_frame, "Loading AI models...")
+        yield encode_mjpeg_frame(loading_frame)
 
         recognizer = InsightFaceRecognizer(store=EmbeddingStore())
         try:
@@ -116,7 +131,8 @@ def stream_annotated_frames() -> Generator[bytes, None, None]:
     finally:
         if gesture_detector is not None:
             gesture_detector.close()
-        capture.release()
+        if capture is not None:
+            capture.release()
         logger.info("Released webcam for MJPEG video feed")
 
 
@@ -176,7 +192,7 @@ def should_run_recognition(frame_count: int) -> bool:
 
 def should_run_gesture(frame_count: int) -> bool:
     interval = max(1, MJPEG_GESTURE_INTERVAL_FRAMES)
-    return frame_count % interval == MJPEG_GESTURE_FRAME_OFFSET % interval
+    return frame_count % interval == 0
 
 
 class IdentityPresenceState:
@@ -216,11 +232,6 @@ def update_face_interaction_events(recognition_results, identity_presence) -> No
     }
     identity_presence.update(known_usernames, now)
 
-    if any(not result.is_known for result in recognition_results):
-        interaction_event_service.append_event(
-            event_type="unknown_face_detected",
-            now=now,
-        )
     if len(recognition_results) >= 2:
         interaction_event_service.append_event(
             event_type="multiple_faces_detected",
@@ -253,6 +264,10 @@ def update_active_gestures(
 
 
 def suppress_conflicting_gestures(gesture_events):
+    has_wave = any(event.name == "Wave" for event in gesture_events)
+    if has_wave:
+        return [event for event in gesture_events if event.name == "Wave"]
+
     has_raise_hand = any(event.name == "Raise Hand" for event in gesture_events)
     if not has_raise_hand:
         return gesture_events
@@ -332,6 +347,21 @@ def draw_dark_frame_warning(frame) -> None:
         cv2.FONT_HERSHEY_SIMPLEX,
         0.8,
         (0, 0, 255),
+        2,
+        cv2.LINE_AA,
+    )
+
+
+def draw_status_banner(frame, message: str) -> None:
+    height, width = frame.shape[:2]
+    cv2.rectangle(frame, (0, 0), (width, 40), (0, 0, 0), -1)
+    cv2.putText(
+        frame,
+        message,
+        (12, 28),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.65,
+        (255, 255, 255),
         2,
         cv2.LINE_AA,
     )

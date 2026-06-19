@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections import deque
+import time
 from dataclasses import dataclass
 
 import cv2
@@ -9,6 +9,7 @@ import mediapipe as mp
 import numpy as np
 
 from config.settings import GESTURE
+from gesture_detection.wave_tracker import WaveTracker
 
 logger = logging.getLogger(__name__)
 
@@ -29,56 +30,71 @@ class GestureDetector:
             min_detection_confidence=GESTURE.detection_confidence,
             min_tracking_confidence=GESTURE.tracking_confidence,
         )
-        self.wrist_x_history: deque[float] = deque(maxlen=GESTURE.wave_window_size)
+        self._wave_trackers: dict[int, WaveTracker] = {}
 
     def detect(self, frame: np.ndarray) -> list[GestureEvent]:
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         result = self.hands.process(rgb_frame)
+        now = time.perf_counter()
 
         if not result.multi_hand_landmarks:
-            self.wrist_x_history.clear()
+            self._mark_all_wave_trackers_missed()
             return []
 
         events: list[GestureEvent] = []
+        seen_hand_indices: set[int] = set()
 
-        for hand_landmarks in result.multi_hand_landmarks:
+        for hand_index, hand_landmarks in enumerate(result.multi_hand_landmarks):
+            seen_hand_indices.add(hand_index)
+            tracker = self._get_wave_tracker(hand_index)
+
             wrist = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST]
             index_tip = hand_landmarks.landmark[self.mp_hands.HandLandmark.INDEX_FINGER_TIP]
+            wave_x = wrist.x
             is_raise_hand = (
                 wrist.y < GESTURE.raise_hand_y_threshold
                 or index_tip.y < GESTURE.raise_hand_y_threshold
             )
+            is_wave = tracker.observe(wave_x, wrist.y, now)
 
-            if is_raise_hand:
+            if is_wave:
+                logger.info("Wave detected on hand_index=%s wrist_y=%.3f", hand_index, wrist.y)
+                events.append(GestureEvent(name="Wave", confidence=0.78))
+            elif is_raise_hand:
                 events.append(GestureEvent(name="Raise Hand", confidence=0.8))
             elif self._is_thumbs_up(hand_landmarks):
                 events.append(GestureEvent(name="Thumbs Up", confidence=0.72))
 
-            self.wrist_x_history.append(wrist.x)
-            if self._is_wave():
-                events.append(GestureEvent(name="Wave", confidence=0.75))
+        for hand_index, tracker in self._wave_trackers.items():
+            if hand_index not in seen_hand_indices:
+                tracker.mark_missed()
 
         return self._deduplicate(events)
 
     def close(self) -> None:
         self.hands.close()
 
-    def _is_wave(self) -> bool:
-        if len(self.wrist_x_history) < self.wrist_x_history.maxlen:
-            return False
+    def _get_wave_tracker(self, hand_index: int) -> WaveTracker:
+        tracker = self._wave_trackers.get(hand_index)
+        if tracker is None:
+            tracker = WaveTracker(
+                window_seconds=GESTURE.wave_window_seconds,
+                min_reversals=GESTURE.wave_min_reversals,
+                min_peak_to_peak=GESTURE.wave_min_peak_to_peak,
+                min_path_length=GESTURE.wave_min_path_length,
+                max_wrist_y=GESTURE.wave_max_wrist_y,
+                min_span_seconds=GESTURE.wave_min_span_seconds,
+                cooldown_seconds=GESTURE.wave_cooldown_seconds,
+                missed_frame_grace=GESTURE.wave_missed_frame_grace,
+                min_samples=GESTURE.wave_min_samples,
+                min_delta=GESTURE.wave_min_delta,
+            )
+            self._wave_trackers[hand_index] = tracker
+        return tracker
 
-        values = list(self.wrist_x_history)
-        horizontal_motion = max(values) - min(values)
-        if horizontal_motion < GESTURE.wave_min_horizontal_motion:
-            return False
-
-        deltas = np.diff(values)
-        directions = [1 if delta > 0 else -1 for delta in deltas if abs(delta) > 0.01]
-        direction_changes = sum(
-            1 for previous, current in zip(directions, directions[1:]) if previous != current
-        )
-
-        return direction_changes >= GESTURE.wave_min_direction_changes
+    def _mark_all_wave_trackers_missed(self) -> None:
+        for tracker in self._wave_trackers.values():
+            tracker.mark_missed()
 
     def _is_thumbs_up(self, hand_landmarks) -> bool:
         landmarks = self.mp_hands.HandLandmark

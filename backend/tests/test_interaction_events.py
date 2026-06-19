@@ -134,6 +134,17 @@ def test_video_feed_suppresses_thumbs_up_when_raise_hand_is_present() -> None:
     assert [event.name for event in visible_events] == ["Raise Hand"]
 
 
+def test_video_feed_prioritizes_wave_over_raise_hand() -> None:
+    events = [
+        GestureEventStub("Raise Hand"),
+        GestureEventStub("Wave"),
+    ]
+
+    visible_events = suppress_conflicting_gestures(events)
+
+    assert [event.name for event in visible_events] == ["Wave"]
+
+
 class RecognitionResultStub:
     def __init__(self, label: str, is_known: bool) -> None:
         self.label = label

@@ -29,7 +29,9 @@ export function AiEventFeedPanel() {
           return;
         }
 
-        setEvents(response.events);
+        setEvents(
+          response.events.filter((event) => event.type !== "unknown_face_detected"),
+        );
         setErrorMessage(null);
       } catch (error) {
         if (!isMounted) {
