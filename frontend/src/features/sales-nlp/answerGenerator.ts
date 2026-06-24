@@ -23,7 +23,7 @@ export function generateAnswer(
 ): string {
   switch (intent) {
     case "ASK_PRICE":
-      return `${product.name} hiện có giá ${formatVnd(product.price)}. Bạn muốn mình gửi link mua hàng không?`;
+      return `${product.name} hiện có giá ${formatVnd(product.price)}. Bạn có thể bấm **Thêm vào giỏ** trên panel Giỏ hàng hoặc nhắn **chốt đơn** để checkout demo.`;
     case "ASK_STOCK":
       return `${product.name} hiện còn ${product.stock} sản phẩm trong kho.`;
     case "ASK_COLOR": {
@@ -44,7 +44,7 @@ export function generateAnswer(
       return `${product.name} đang có size ${sizeList}.`;
     }
     case "ASK_LINK":
-      return `Bạn có thể xem ${product.name} tại ${product.productUrl}.`;
+      return `Bạn có thể xem ${product.name} tại ${product.productUrl}. Trên livestream demo, mở **Giỏ hàng livestream** để thêm sản phẩm và checkout.`;
     case "ASK_SHIPPING":
       if (entities.shippingLocation) {
         return `POC chưa có bảng phí ship chi tiết. Host sẽ xác nhận giao ${entities.shippingLocation} qua inbox.`;
@@ -63,9 +63,9 @@ export function generateAnswer(
     }
     case "PURCHASE_INTENT":
       if (entities.quantity) {
-        return `Cảm ơn bạn. Mình sẽ inbox để xác nhận ${entities.quantity} sản phẩm ${product.name} và thông tin giao hàng.`;
+        return `Cảm ơn bạn. Mình ghi nhận ${entities.quantity} ${product.name}. Bấm **Thêm vào giỏ** rồi **Checkout** trên panel demo để hoàn tất đơn giả lập.`;
       }
-      return "Cảm ơn bạn. Mình sẽ inbox để xác nhận đơn hàng và thông tin giao hàng.";
+      return "Cảm ơn bạn. Bạn có thể **Thêm vào giỏ** sản phẩm vừa hỏi và **Checkout ngay** trên panel Giỏ hàng livestream.";
     default:
       return "Host sẽ trả lời thủ công cho câu hỏi này.";
   }

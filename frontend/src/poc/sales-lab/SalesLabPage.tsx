@@ -1,6 +1,11 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
-import { AI_SALES_ASSISTANT_ACTOR } from "../../features/sales-assistant/salesAssistantTypes";
+import {
+  CartPanel,
+  CheckoutModal,
+  OrderSummary,
+  useCommerceCart,
+} from "../../features/commerce";
 import {
   processSalesCommentWithMl,
   shouldAutoReplyInChat,
@@ -21,7 +26,7 @@ import {
   type BrowserArEffect,
 } from "../../features/browser-ar/types";
 import { BrowserArStream } from "../../features/browser-ar/components/BrowserArStream";
-import { createInitialAnalytics } from "../../features/sales-assistant/salesAssistantTypes";
+import { createInitialAnalytics, AI_SALES_ASSISTANT_ACTOR } from "../../features/sales-assistant/salesAssistantTypes";
 
 type SimulatedChatMessage = {
   id: string;
@@ -47,8 +52,15 @@ export function SalesLabPage() {
     Record<string, ChatMlIntentBadge>
   >({});
   const salesAnalyticsRef = useRef(salesAnalytics);
+  const cartPanelRef = useRef<HTMLElement>(null);
 
   salesAnalyticsRef.current = salesAnalytics;
+
+  const scrollToCart = useCallback(() => {
+    cartPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, []);
+
+  const cart = useCommerceCart({ onOpenCart: scrollToCart });
 
   const pinnedProduct = useMemo(
     () => getProductById(pinnedProductId) ?? getAllProducts()[0],
@@ -148,6 +160,29 @@ export function SalesLabPage() {
             pinnedProductId={pinnedProductId}
             onPinProduct={handlePinProduct}
           />
+          <section className="commerceRow" ref={cartPanelRef}>
+            <CartPanel
+              items={cart.items}
+              itemCount={cart.itemCount}
+              subtotal={cart.subtotal}
+              pinnedProductName={pinnedProduct.name}
+              onAddPinnedProduct={() => cart.addPinnedProduct(pinnedProduct)}
+              onRemoveItem={cart.removeLine}
+              onUpdateQuantity={cart.updateLineQuantity}
+              onCheckout={cart.openCheckout}
+              onClearCart={cart.clearCart}
+            />
+            <OrderSummary order={cart.order} isPaying={cart.isPaying} />
+          </section>
+          <CheckoutModal
+            open={cart.checkoutOpen}
+            items={cart.items}
+            subtotal={cart.subtotal}
+            form={cart.checkoutForm}
+            onClose={cart.closeCheckout}
+            onChange={cart.updateCheckoutField}
+            onSubmit={cart.submitCheckout}
+          />
         </div>
 
         <div className="salesLabColumn salesLabColumnCenter">
@@ -242,7 +277,11 @@ export function SalesLabPage() {
         </div>
 
         <div className="salesLabColumn salesLabColumnRight">
-          <SalesAssistantPanel events={salesEvents} analytics={salesAnalytics} />
+          <SalesAssistantPanel
+            events={salesEvents}
+            analytics={salesAnalytics}
+            onCommerceAction={cart.applySuggestedAction}
+          />
         </div>
       </section>
     </main>

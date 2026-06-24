@@ -1,4 +1,5 @@
 import { getActionLabel, getIntentLabel } from "./processSalesComment";
+import type { CommerceSuggestedAction } from "../commerce/commerceTypes";
 import { getProductById } from "../product-catalog/productCatalogService";
 import { generateSalesRecommendations } from "./salesRecommendations";
 import { AI_SALES_ASSISTANT_ACTOR } from "./salesAssistantTypes";
@@ -7,9 +8,14 @@ import type { SalesAssistantAnalytics, SalesAssistantEvent } from "./salesAssist
 type SalesAssistantPanelProps = {
   events: SalesAssistantEvent[];
   analytics: SalesAssistantAnalytics;
+  onCommerceAction?: (action: CommerceSuggestedAction) => void;
 };
 
-export function SalesAssistantPanel({ events, analytics }: SalesAssistantPanelProps) {
+export function SalesAssistantPanel({
+  events,
+  analytics,
+  onCommerceAction,
+}: SalesAssistantPanelProps) {
   const mostAskedProduct = analytics.mostAskedProductId
     ? getProductById(analytics.mostAskedProductId)
     : undefined;
@@ -214,6 +220,23 @@ export function SalesAssistantPanel({ events, analytics }: SalesAssistantPanelPr
                     <dt>Suggested reply</dt>
                     <dd>{event.suggestedReply}</dd>
                   </div>
+                  {event.commerceActions.length > 0 ? (
+                    <div className="salesEventDetailsWide">
+                      <dt>Commerce actions</dt>
+                      <dd className="commerceActionRow">
+                        {event.commerceActions.map((action) => (
+                          <button
+                            key={`${event.id}-${action.id}`}
+                            type="button"
+                            className="commerceActionButton"
+                            onClick={() => onCommerceAction?.(action)}
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                      </dd>
+                    </div>
+                  ) : null}
                 </dl>
               </article>
             ))}

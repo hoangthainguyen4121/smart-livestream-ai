@@ -2,6 +2,7 @@ import type { CatalogProduct } from "../product-catalog/productCatalogTypes";
 import type { ProductResolution, ProductResolutionSource } from "./productMentionResolver";
 import type { ProductSearchDiagnostics } from "../product-search/productSearchTypes";
 import type { IntentSource, MlIntentBridge } from "./mlIntentBridge";
+import type { CommerceSuggestedAction } from "../commerce/commerceTypes";
 
 export type SalesNlpIntent =
   | "ASK_PRICE"
@@ -64,6 +65,7 @@ export type SalesNlpPipelineResult = {
   suppressEvent: boolean;
   isComplaintEscalation: boolean;
   isSpamModeration: boolean;
+  commerceActions: CommerceSuggestedAction[];
 };
 
 export function isRecognizedNlpIntent(

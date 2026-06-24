@@ -1,6 +1,8 @@
 import { getAllProducts, getDefaultPinnedProduct, getProductById } from "../product-catalog";
 import type { CatalogProduct } from "../product-catalog";
 import { predictIntent } from "../../api/nlpIntent";
+import { classifyIntent } from "../sales-nlp/intentClassifier";
+import { normalizeText } from "../sales-nlp/normalizeText";
 import {
   buildChatMlIntentBadge,
   buildMlIntentBridge,
@@ -135,6 +137,7 @@ export function processSalesComment(
     mlRawIntent: nlp.mlRawIntent,
     mlConfidence: nlp.mlConfidence,
     intentSource: nlp.intentSource,
+    commerceActions: nlp.commerceActions,
   };
 
   return {
@@ -148,8 +151,10 @@ export async function processSalesCommentWithMl(
   input: Omit<ProcessSalesCommentInput, "mlBridge">,
   currentAnalytics: SalesAssistantAnalytics = createInitialAnalytics(),
 ): Promise<ProcessSalesCommentResult> {
+  const normalizedComment = normalizeText(input.comment);
+  const regexClassification = classifyIntent(normalizedComment);
   const mlResponse = await predictIntent(input.comment);
-  const mlBridge = buildMlIntentBridge(mlResponse);
+  const mlBridge = buildMlIntentBridge(mlResponse, regexClassification, normalizedComment);
   return processSalesComment({ ...input, mlBridge }, currentAnalytics);
 }
 

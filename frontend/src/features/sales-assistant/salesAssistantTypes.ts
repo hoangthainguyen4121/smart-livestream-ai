@@ -2,6 +2,7 @@ import type { ExtractedEntities, SalesNlpAction, SalesNlpIntent } from "../sales
 import type { ProductResolutionSource } from "../sales-nlp/productMentionResolver";
 import type { ProductSearchDiagnostics } from "../product-search/productSearchTypes";
 import type { IntentSource } from "../sales-nlp/mlIntentBridge";
+import type { CommerceSuggestedAction } from "../commerce/commerceTypes";
 
 export type SalesIntent = SalesNlpIntent;
 export type SalesAssistantAction = SalesNlpAction;
@@ -32,6 +33,7 @@ export type SalesAssistantEvent = {
   mlRawIntent: string | null;
   mlConfidence: number | null;
   intentSource: IntentSource;
+  commerceActions: CommerceSuggestedAction[];
 };
 
 export type SalesAssistantAnalytics = {

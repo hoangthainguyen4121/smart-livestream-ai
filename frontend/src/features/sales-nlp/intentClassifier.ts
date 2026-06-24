@@ -1,5 +1,8 @@
 import type { SalesNlpIntent } from "./salesNlpTypes";
 
+const COLOR_TOKENS =
+  "xanh|den|do|vang|trang|tim|hong|xam|nau|be|ruby|cam|xanh la|xanh duong";
+
 export type IntentRule = {
   intent: Exclude<SalesNlpIntent, "UNKNOWN">;
   patterns: Array<{ regex: RegExp; label: string }>;
@@ -85,6 +88,8 @@ export const INTENT_RULES: IntentRule[] = [
     patterns: [
       { regex: /\bcon mau\b/, label: "còn màu" },
       { regex: /\bco mau\b/, label: "có màu" },
+      { regex: new RegExp(`\\bco .+ (${COLOR_TOKENS})\\b`), label: "có màu cụ thể" },
+      { regex: new RegExp(`\\b(${COLOR_TOKENS}) .+ khong\\b`), label: "màu còn không" },
       { regex: /\bmau den\b/, label: "màu đen" },
       { regex: /\bmau do\b/, label: "màu đỏ" },
       { regex: /\bmau gi\b/, label: "màu gì" },

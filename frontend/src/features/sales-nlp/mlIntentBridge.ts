@@ -1,7 +1,33 @@
 import type { PredictIntentApiResponse } from "../../api/nlpIntent";
+import type { IntentClassification } from "./intentClassifier";
 import type { SalesNlpAction, SalesNlpIntent } from "./salesNlpTypes";
 
 export const ML_INTENT_CONFIDENCE_THRESHOLD = 0.5;
+
+const COLOR_TOKENS =
+  "xanh|den|do|vang|trang|tim|hong|xam|nau|be|ruby|cam|xanh la|xanh duong";
+
+const COMMERCE_SIGNAL_PATTERN = new RegExp(
+  [
+    "\\bgia\\b",
+    "\\bbao nhieu\\b",
+    "\\bhang\\b",
+    "\\bton\\b",
+    "\\blink\\b",
+    "\\bship\\b",
+    "\\bmua\\b",
+    "\\bchot\\b",
+    "\\bkinh\\b",
+    "\\bson\\b",
+    "\\bmau\\b",
+    "\\bsize\\b",
+    "\\bco mau\\b",
+    "\\bcon mau\\b",
+    `\\b(${COLOR_TOKENS})\\b`,
+    "\\bsan pham\\b",
+    "\\bsp\\b",
+  ].join("|"),
+);
 
 export type IntentSource = "ml" | "regex" | "regex_fallback";
 
@@ -35,6 +61,22 @@ const ML_INTENT_MAP: Record<string, { intent: SalesNlpIntent; action: SalesNlpAc
   PRODUCT_INFO: { intent: "ASK_PRODUCT_INFO", action: "AUTO_REPLY_SUGGESTED" },
   PURCHASE_INTENT: { intent: "PURCHASE_INTENT", action: "ESCALATE_TO_HOST" },
 };
+
+function getMlConfidenceThreshold(mlIntent: string): number {
+  switch (mlIntent.trim().toUpperCase()) {
+    case "PRODUCT_INFO":
+      return 0.7;
+    case "CHITCHAT":
+    case "SPAM_TOXIC":
+      return 0.45;
+    default:
+      return ML_INTENT_CONFIDENCE_THRESHOLD;
+  }
+}
+
+export function hasCommerceProductSignal(normalizedComment: string): boolean {
+  return COMMERCE_SIGNAL_PATTERN.test(normalizedComment);
+}
 
 export function mapMlIntentLabel(mlIntent: string): {
   mappedIntent: SalesNlpIntent;
@@ -95,7 +137,51 @@ export function mapMlIntentLabel(mlIntent: string): {
   };
 }
 
-export function buildMlIntentBridge(response: PredictIntentApiResponse): MlIntentBridge {
+function shouldUseMlIntent(
+  mlIntent: string,
+  mlConfidence: number,
+  mappedIntent: SalesNlpIntent,
+  regexClassification: IntentClassification,
+  normalizedComment: string,
+): boolean {
+  const normalizedMlIntent = mlIntent.trim().toUpperCase();
+  const threshold = getMlConfidenceThreshold(normalizedMlIntent);
+
+  if (mlConfidence >= threshold) {
+    if (
+      normalizedMlIntent === "PRODUCT_INFO" &&
+      regexClassification.intent === "UNKNOWN" &&
+      !hasCommerceProductSignal(normalizedComment)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  if (
+    normalizedMlIntent === "CHITCHAT" ||
+    normalizedMlIntent === "SPAM_TOXIC" ||
+    normalizedMlIntent === "COMPLAINT"
+  ) {
+    return mlConfidence >= threshold;
+  }
+
+  if (
+    mlConfidence >= 0.4 &&
+    regexClassification.intent !== "UNKNOWN" &&
+    mappedIntent === regexClassification.intent
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function buildMlIntentBridge(
+  response: PredictIntentApiResponse,
+  regexClassification: IntentClassification,
+  normalizedComment: string,
+): MlIntentBridge {
   if (!response.ml_available || !response.intent) {
     return {
       mlAvailable: false,
@@ -113,7 +199,13 @@ export function buildMlIntentBridge(response: PredictIntentApiResponse): MlInten
 
   const mappedIntent = (response.mapped_intent as SalesNlpIntent | null) ?? "UNKNOWN";
   const mappedAction = (response.mapped_action as SalesNlpAction | null) ?? "IGNORE";
-  const usedMl = response.confidence >= ML_INTENT_CONFIDENCE_THRESHOLD;
+  const usedMl = shouldUseMlIntent(
+    response.intent,
+    response.confidence,
+    mappedIntent,
+    regexClassification,
+    normalizedComment,
+  );
 
   return {
     mlAvailable: true,

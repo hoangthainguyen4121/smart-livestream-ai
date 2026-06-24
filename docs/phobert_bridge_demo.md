@@ -50,7 +50,16 @@ Open:
 - Main demo: http://127.0.0.1:5173/
 - Sales Lab: http://127.0.0.1:5173/poc/sales-lab
 
-## Hybrid behavior
+### Hybrid confidence rules (M1.1)
+
+| ML intent | Threshold | Notes |
+|-----------|-----------|-------|
+| Most commerce intents | **≥ 0.50** | Default |
+| PRODUCT_INFO | **≥ 0.70** | Blocks false replies on social comments like `hài nhể ?` |
+| CHITCHAT / SPAM | **≥ 0.45** | Suppress sales cards earlier |
+| ML + regex agree | **≥ 0.40** | e.g. `giá` → ASK_PRICE uses PhoBERT badge when regex agrees |
+
+PRODUCT_INFO also requires a **commerce signal** in the comment (`giá`, `kính`, `màu`, `son`, …). Social reactions fall back to regex/ignore.
 
 1. Frontend sends viewer comment to `POST /api/nlp/predict-intent` (via PoC backend proxy).
 2. If ML is available **and** confidence **≥ 0.50**, mapped ML intent drives the sales pipeline.

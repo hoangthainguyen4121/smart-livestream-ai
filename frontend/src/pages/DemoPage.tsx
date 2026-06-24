@@ -9,6 +9,12 @@ import {
   type BrowserArEffect,
 } from "../features/browser-ar/types";
 import {
+  CartPanel,
+  CheckoutModal,
+  OrderSummary,
+  useCommerceCart,
+} from "../features/commerce";
+import {
   DEFAULT_PINNED_PRODUCT_ID,
   getAllProducts,
   getProductById,
@@ -73,8 +79,15 @@ export function DemoPage() {
     Record<string, ChatMlIntentBadge>
   >({});
   const salesAnalyticsRef = useRef(salesAnalytics);
+  const cartPanelRef = useRef<HTMLElement>(null);
 
   salesAnalyticsRef.current = salesAnalytics;
+
+  const scrollToCart = useCallback(() => {
+    cartPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, []);
+
+  const cart = useCommerceCart({ onOpenCart: scrollToCart });
 
   const pinnedProduct = useMemo(
     () => getProductById(pinnedProductId) ?? getAllProducts()[0],
@@ -251,7 +264,36 @@ export function DemoPage() {
             </button>
           </section>
 
-          <SalesAssistantPanel events={salesEvents} analytics={salesAnalytics} />
+          <SalesAssistantPanel
+            events={salesEvents}
+            analytics={salesAnalytics}
+            onCommerceAction={cart.applySuggestedAction}
+          />
+
+          <section className="commerceRow" ref={cartPanelRef}>
+            <CartPanel
+              items={cart.items}
+              itemCount={cart.itemCount}
+              subtotal={cart.subtotal}
+              pinnedProductName={pinnedProduct.name}
+              onAddPinnedProduct={() => cart.addPinnedProduct(pinnedProduct)}
+              onRemoveItem={cart.removeLine}
+              onUpdateQuantity={cart.updateLineQuantity}
+              onCheckout={cart.openCheckout}
+              onClearCart={cart.clearCart}
+            />
+            <OrderSummary order={cart.order} isPaying={cart.isPaying} />
+          </section>
+
+          <CheckoutModal
+            open={cart.checkoutOpen}
+            items={cart.items}
+            subtotal={cart.subtotal}
+            form={cart.checkoutForm}
+            onClose={cart.closeCheckout}
+            onChange={cart.updateCheckoutField}
+            onSubmit={cart.submitCheckout}
+          />
 
           <AiEventFeedPanel />
         </div>

@@ -9,6 +9,7 @@ import {
 } from "./productMentionResolver";
 import type { ProductResolution } from "./productMentionResolver";
 import type { IntentSource, MlIntentBridge } from "./mlIntentBridge";
+import { buildCommerceSuggestedActions } from "../commerce/commerceIntentActions";
 import {
   isRecognizedNlpIntent,
   type SalesNlpAction,
@@ -30,8 +31,13 @@ function boostConfidence(
 function inferIntentFromProductResolution(
   classification: IntentClassification,
   productResolution: ProductResolution,
+  normalizedText: string,
 ): IntentClassification {
   if (classification.intent !== "UNKNOWN") {
+    return classification;
+  }
+
+  if (/\bmau\b/.test(normalizedText) || /\bco .+ (xanh|den|do|vang|trang)\b/.test(normalizedText)) {
     return classification;
   }
 
@@ -149,6 +155,7 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
   const regexClassification = inferIntentFromProductResolution(
     classifyIntent(normalizedText),
     productResolution,
+    normalizedText,
   );
   const mlApplied = applyMlIntentBridge(regexClassification, input.mlBridge);
   const classification = mlApplied.classification;
@@ -173,6 +180,9 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
     : 0;
 
   const action = mlApplied.actionOverride ?? decideAction(classification.intent, autoReplyInChat);
+  const commerceActions = isRecognizedNlpIntent(classification.intent)
+    ? buildCommerceSuggestedActions(classification.intent, productResolution.selectedProduct, entities)
+    : [];
   let suggestedReply = "";
 
   if (mlApplied.suggestedReplyOverride) {
@@ -218,5 +228,6 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
     suppressEvent: mlApplied.suppressEvent,
     isComplaintEscalation: mlApplied.isComplaintEscalation,
     isSpamModeration: mlApplied.isSpamModeration,
+    commerceActions,
   };
 }
