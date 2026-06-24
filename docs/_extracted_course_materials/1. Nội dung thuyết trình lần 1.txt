@@ -1,0 +1,23 @@
+NỘI DUNG THUYẾT TRÌNH LẦN 1
+(Học viên có thể điều chỉnh lại cho phù hợp với đề tài)
+Mục tiêu
+Đánh giá ý tưởng, tính khả thi và thiết kế hệ thống trước khi triển khai.
+Nội dung trình bày (30–35 slide)
+Giới thiệu đề tài 
+Bối cảnh và tính cấp thiết 
+Mục tiêu nghiên cứu 
+Các nghiên cứu/giải pháp liên quan 
+Khoảng trống và lý do lựa chọn giải pháp 
+Phân tích yêu cầu 
+Kiến trúc hệ thống đề xuất 
+Công nghệ sử dụng 
+Thiết kế cơ sở dữ liệu 
+Thiết kế các chức năng chính 
+Kế hoạch thực hiện 
+Tiến độ dự kiến 
+Kết quả mong đợi 
+Khó khăn dự kiến 
+Trao đổi và phản biện 
+Sản phẩm nộp
+Slide trình bày 
+Đề cương tiểu luận (Chương 1, 2 và dự thảo Chương 3)

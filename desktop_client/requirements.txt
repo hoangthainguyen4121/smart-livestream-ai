@@ -1,6 +1,0 @@
-# Desktop client uses the shared project AI stack from the repository root.
-# Install root dependencies first:
-#   pip install -r requirements.txt
-#
-# Then install desktop HTTP client dependency:
-httpx>=0.27.0

@@ -1,0 +1,369 @@
+--- Page 1 ---
+Học Phần: CHUYÊN ĐỀ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN
+TS. Cao Văn Kiên
+Khoa Công nghệthông tin, trường Đại học Nguyễn Tất Thành
+
+--- Page 2 ---
+THÔNG TIN HỌC PHẦN
+Thông tin Giảng viên:
+• Giảng viên: TS. Cao Văn Kiên
+• Khoa: Khoa CNTT
+• Email: cvkien@ntt.edu.vn
+• Link tài liệu: https://byvn.net/GghO
+• Link nhóm: https://byvn.net/RlHU
+• Group Zalo: https://zalo.me/g/1jdn4pwwsbij3e7aesyf
+
+--- Page 3 ---
+Kiến thức chuyên sâu
+Cập nhật và làm chủcác xu hướng 
+công nghệtiên tiến (AI, Cloud, Big 
+Data). Hiểu rõ các mô hình kiến trúc 
+và quy trình phát triển hệthống hiện 
+đại.
+Kỹ năng triển khai
+Phát triển năng lực thiết kế, tối ưu 
+hóa và thực thi các giải pháp CNTT 
+phức tạp. Sửdụng thành thạo các 
+công cụhỗtrợvận hành và quản lý 
+(MLOps, CI/CD).
+Tư duy đổi mới
+Xây dựng phương pháp luận nghiên 
+cứu độc lập. Có khảnăng đánh giá, 
+phản biện và giải quyết các bài toán 
+thực tiễn trong quá trình chuyển đổi 
+số.
+Mục tiêu học phần: Chuyên đề ứng dụng CNTT
+Định hướng năng lực nghiên cứu và triển khai giải pháp công nghệcao cho học viên cao học.
+
+--- Page 4 ---
+Tiến trình học tập & Lịch trình triển khai
+HỌC PHẦN CHUYÊN ĐỀỨNG DỤNG CNTT • HỌC KỲ III - 2026
+Tuần
+Nội dung
+Mục tiêu
+Hạn nộp
+1
+Tổng quan học phần
+Giới thiệu mục tiêu, yêu cầu và phương thức đánh giá
+học phần; định hướng lựa chọn đềtài; hình thành nhóm
+và xác định bài toán ứng dụng CNTT/AI cần giải quyết.
+2
+Thiết kếhệthống AI
+Phân tích bài toán, xác định mục tiêu nghiên cứu và yêu
+cầu hệthống; khảo sát các giải pháp liên quan; đềxuất
+mô hình AI và thiết kếkiến trúc tổng thểcủa hệthống.
+3
+Thiết kếkiến trúc triển khai và công nghệphát
+triển hệthống AI
+Lựa chọn công nghệphù hợp; thiết kếkiến trúc triển khai
+(Frontend, Backend, AI Engine, Database, Cloud).
+4
+Thuyết trình thiết kếnhóm 1–2-3
+Thuyết trình thiết kế(30 phút trình bày, 10 phút trao đổi)
+04/07/2026
+Upload lên Drive
+5
+Thuyết trình thiết kếnhóm 4-5-6
+6
+Thuyết trình thiết kếnhóm 7-8-9-10
+7
+Demo hệthống nhóm 1–2-3
+Demo hệthống (30 phút trình bày, 10 phút trao đổi)
+25/07/2026
+Upload lên Drive
+8
+Demo hệthống nhóm 4-5-6
+9
+Demo hệthống đợt nhóm 7-8-9-10
+10
+Nhận xét tiểu luận nhóm 1-2-3-4-5
+Đánh giá sản phẩm, chất lượng tiểu luận và định hướng
+phát triển
+15/08/2026
+Nộp qua email GV
+11
+Nhận xét tiểu luận nhóm 6-7-8-9-10
+
+--- Page 5 ---
+CHƯƠNG 1: TỔNG QUAN HỌC PHẦN
+Định hướng AI – Nghiên cứu – Ứng dụng
+Học phần: Phương pháp NCKH | Chuyên đềKhoa học Công nghệ| Chuyên đềỨng dụng CNTT
+
+--- Page 6 ---
+Nghiên cứu
+Đọc, phân tích bài báo quốc tếvà 
+xác định Research Gap.
+Thực nghiệm
+Thiết kếvà đánh giá mô hình AI 
+theo chuẩn Benchmark quốc tế.
+Ứng dụng
+Xây dựng hệthống AI hoàn chỉnh 
+và triển khai vào thực tế.
+MỤC TIÊU CỦA CHUỖI HỌC PHẦN
+
+--- Page 7 ---
+HK1: Research Literacy
+HK2: Research Execution
+HK3: AI Engineering
+Phương pháp NCKH
+Đọc hiểu, viết đềcương, Seminar 
+khoa học.
+Chuyên đềKHCN
+Xây dựng mô hình, thực nghiệm, 
+phân tích kết quả.
+Chuyên đềỨng dụng
+API/Web/App, Deployment, 
+Demo hệthống.
+CHUỖI PHÁT TRIỂN NĂNG LỰC
+
+--- Page 8 ---
+PBL
+Project-Based Learning: Một đề
+tài xuyên suốt nhiều học phần.
+RBL
+Research-Based Learning: Đọc 
+paper quốc tế& Seminar học 
+thuật.
+AI Practice
+Thực nghiệm mô hình và triển 
+khai hệthống thực tế.
+PHƯƠNG PHÁP HỌC TẬP HIỆN ĐẠI
+
+--- Page 9 ---
+Năng lực Nghiên cứu
+Năng lực Kỹ thuật
+Literature Review
+Research Proposal
+Scientific Writing
+Deep Learning (NLP/CV)
+REST API & Web App
+Docker & Deployment
+KỸ NĂNG KỲ VỌNG ĐẠT ĐƯỢC
+
+--- Page 10 ---
+Vai trò: Hình thành tư duy NCKH
+Nội dung chính:
+Sản phẩm: Literature Review, Research Proposal.
+
+Cấu trúc bài báo khoa học quốc tế
+
+Cách tìm Research Gap & Viết Proposal
+
+Kỹ năng Seminar & Tổng quan tài liệu
+HK1: PHƯƠNG PHÁP NGHIÊN CỨU KHOA HỌC
+
+--- Page 11 ---
+Tuần
+Nội dung học tập
+Mục tiêu cụthể
+1-2
+Tổng quan NCKH & Cấu trúc bài báo
+Hiểu quy trình nghiên cứu chuẩn
+3-4
+Xác định vấn đề& Tìm kiếm paper
+Phân tích và tổng hợp tài liệu
+5
+Phương pháp viết tiểu luận nghiên cứu
+Định dạng chuẩn học thuật
+6-8
+Thuyết trình Đềcương nhóm
+Nhận góp ý cho hướng nghiên cứu
+9-11
+Báo cáo kết quảnghiên cứu
+Trình bày mô hình và thực nghiệm
+TIẾN TRÌNH HỌC TẬP - HK1
+
+--- Page 12 ---
+Bắt buộc
+Khuyến khích
+Đọc paper quốc tếuy tín
+Trích dẫn chuẩn (IEEE/APA)
+Tham gia phản biện Seminar
+Báo cáo bằng Tiếng Anh
+Slide format học thuật chuyên nghiệp
+Tổng quan từ15-20 paper
+YÊU CẦU HỌC THUẬT HK1
+
+--- Page 13 ---
+Vai trò: Thực thi nghiên cứu thực nghiệm
+Nội dung chính:
+Sản phẩm: Experimental Report, Mini Research Paper.
+
+Xây dựng mô hình AI & Thiết kếthực nghiệm
+
+So sánh Baseline & Benchmark quốc tế
+
+Phân tích kết quả& Viết Mini-paper
+HK2: CHUYÊN ĐỀ KHOA HỌC CÔNG NGHỆ
+
+--- Page 14 ---
+Tuần
+Nội dung học tập
+Mục tiêu cụthể
+1-2
+Xu hướng CNTT & Thiết kếthực nghiệm
+Xây dựng phương pháp có Baseline
+3-4
+Phân tích kết quả& Viết báo cáo IEEE
+Biết trình bày bảng biểu, hình ảnh
+5-7
+Thuyết trình Đềcương thực nghiệm
+Góp ý phương pháp và tham số
+8-10
+Báo cáo kết quảnghiên cứu
+Trình bày mô hình và so sánh SOTA
+11
+Tổng kết & Hoàn thiện Mini-paper
+Sẵn sàng cho việc công bốkhoa học
+TIẾN TRÌNH HỌC TẬP - HK2
+
+--- Page 15 ---
+Thực nghiệm
+Bắt buộc có thực nghiệm thật 
+trên dữliệu chuẩn.
+Baseline
+Bắt buộc có sựso sánh với các 
+phương pháp cơ sở.
+Định lượng
+Đánh giá bằng các chỉsốkhoa 
+học (Accuracy, F1, AUC...).
+TIÊU CHÍ NGHIÊN CỨU HK2
+
+--- Page 16 ---
+Vai trò: Chuyển nghiên cứu thành ứng dụng
+Nội dung chính:
+Sản phẩm: AI Application, Technical Report, Demo System.
+
+Thiết kếhệthống AI (Backend & Frontend)
+
+Triển khai API & Web Application
+
+Dockerization & Deployment
+HK3: CHUYÊN ĐỀ ỨNG DỤNG CNTT
+
+--- Page 17 ---
+Tuần
+Nội dung học tập
+Mục tiêu cụthể
+1-2
+Thiết kếhệthống AI ứng dụng
+Kiến trúc Microservices/API-first
+3-4
+Web App & Deployment
+Biết đóng gói Docker & Cloud
+5-7
+Thuyết trình thiết kếhệthống
+Tối ưu hóa luồng dữliệu và UI/UX
+8-10
+Demo sản phẩm thực tế
+Hệthống chạy ổn định, xửlý lỗi
+11
+Tổng kết & Báo cáo Technical
+Hoàn thiện hồsơ kỹ thuật dựán
+TIẾN TRÌNH HỌC TẬP - HK3
+
+--- Page 18 ---
+Bắt buộc
+Khuyến khích
+Hệthống chạy được (Ready-to-use)
+Có Giao diện hoặc REST API
+Quản lý mã nguồn qua GitHub
+Triển khai Cloud/Docker
+Streamlit / React UI
+Video demo tính năng hệthống
+YÊU CẦU TRIỂN KHAI HỆ THỐNG
+
+--- Page 19 ---
+*Tiểu luận nộp bản mềm qua email giảng viên theo định dạng chuẩn.
+PHƯƠNG PHÁP ĐÁNH GIÁ HỌC PHẦN
+
+--- Page 20 ---
+HK1
+Literature Review & Research 
+Proposal: Phân tích ít nhất 10-20 
+papers.
+HK2
+Mini-paper: Tập trung vào thực 
+nghiệm, so sánh mô hình và phân 
+tích kết quả.
+HK3
+Technical Report: Mô tảkiến trúc 
+hệthống, hướng dẫn sửdụng và 
+kết quảDemo.
+NỘI DUNG TIỂU LUẬN CUỐI KỲ
+
+--- Page 21 ---
+Lĩnh vực
+Tên đềtài (Tiếng Việt)
+Ghi chú ứng dụng
+Y tế
+Phát hiện viêm phổi từảnh X-quang
+Deep Learning / Computer Vision
+Y tế
+Học liên bang cho dựđoán nguy cơ bệnh tim
+Federated Learning / Privacy
+Kinh tế
+Dựbáo thịtrường chứng khoán đa nguồn
+Multimodal / Time Series
+Kinh tế
+Phát hiện gian lận giao dịch tài chính
+Anomaly Detection / ML
+NLP
+Phát hiện tin giảbằng mô hình Transformer
+LLMs / BERT / RoBERTa
+NLP
+Phân tích cảm xúc văn bản đa khía cạnh
+Sentiment Analysis / E-commerce
+DANH MỤC ĐỀ TÀI NGHIÊN CỨU GỢI Ý
+
+--- Page 22 ---
+Kaggle & UCI
+Nguồn dữliệu đa dạng cho các 
+bài toán ML/DL.
+ImageNet / COCO
+Chuẩn đánh giá cho các bài toán 
+Computer Vision.
+GLUE / SQuAD
+Benchmark cho xửlý ngôn ngữ
+tựnhiên (NLP).
+SỬ DỤNG DỮ LIỆU BENCHMARK QUỐC TẾ
+
+--- Page 23 ---
+AI Frameworks
+PyTorch, TensorFlow, 
+HuggingFace Transformers.
+Deployment
+FastAPI, Flask, Streamlit, Docker, 
+GitHub.
+Research Tools
+Overleaf (LaTeX), Zotero, 
+Mendeley, Kaggle.
+CÔNG CỤ & NỀN TẢNG CÔNG NGHỆ
+
+--- Page 24 ---
+Tìm kiếm Paper
+Tài nguyên AI
+Google Scholar
+IEEE Xplore
+arXiv.org
+Papers With Code
+HuggingFace
+GitHub Research
+NGUỒN TÀI LIỆU VÀ BÀI BÁO KHOA HỌC
+
+--- Page 25 ---
+100%
+Học viên làm chủquy trình
+Đọc hiểu sâu paper SOTA quốc tế.
+Tựthiết kếvà thực thi nghiên cứu AI.
+Viết báo cáo khoa học đúng chuẩn IEEE.
+Triển khai sản phẩm AI hoàn chỉnh.
+NĂNG LỰC ĐẠT ĐƯỢC SAU CHUỖI HỌC PHẦN
+
+--- Page 26 ---
+Q&A
+Thảo luận & Giải đáp thắc mắc
+Trân trọng cảm ơn!
+1. Thảo luận định hướng đềtài nghiên cứu
+2. Chia nhóm học tập & Seminar
+3. Hướng dẫn chuẩn bịcho buổi học tiếp theo

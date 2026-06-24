@@ -1,0 +1,65 @@
+CẤU TRÚC TIỂU LUẬN CUỐI KỲ HỌC PHẦN 
+CHUYÊN ĐỀ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN
+(Học viên có thể điều chỉnh lại cho phù hợp với đề tài)
+Chương 1. Giới thiệu
+1.1. Đặt vấn đề
+Bối cảnh thực tiễn
+Tính cấp thiết của bài toán
+Những hạn chế của các giải pháp hiện có
+1.2. Mục tiêu nghiên cứu và phát triển hệ thống
+Mục tiêu tổng quát
+Mục tiêu cụ thể
+1.3. Phạm vi nghiên cứu
+Đối tượng nghiên cứu
+Dữ liệu sử dụng
+Phạm vi triển khai
+1.4. Phương pháp thực hiện
+Phương pháp nghiên cứu
+Công nghệ sử dụng
+Quy trình phát triển
+1.5. Cấu trúc tiểu luận
+Chương 2. Cơ sở lý thuyết và các nghiên cứu liên quan
+2.1. Cơ sở lý thuyết
+Các khái niệm nền tảng
+Các mô hình, thuật toán liên quan
+2.2. Công nghệ sử dụng
+AI/Machine Learning
+Web/Mobile
+Cloud Computing
+Database
+2.3. Các nghiên cứu và hệ thống liên quan
+Tổng quan các nghiên cứu
+So sánh các giải pháp hiện có
+2.4. Khoảng trống nghiên cứu và định hướng đề xuất
+Chương 3. Phân tích và thiết kế hệ thống
+3.1. Phân tích yêu cầu
+Yêu cầu chức năng
+Yêu cầu phi chức năng
+3.2. Kiến trúc tổng thể hệ thống
+3.3. Thiết kế cơ sở dữ liệu
+3.4. Thiết kế các thành phần hệ thống
+Frontend
+Backend
+AI Engine/API
+3.5. Quy trình xử lý dữ liệu và luồng hoạt động
+3.6. Kế hoạch triển khai
+Chương 4. Xây dựng và đánh giá hệ thống
+4.1. Môi trường thực nghiệm
+4.2. Quá trình triển khai
+4.3. Giao diện và các chức năng chính
+4.4. Kết quả thực nghiệm
+Các kịch bản kiểm thử
+Kết quả đạt được
+4.5. Đánh giá hệ thống
+Ưu điểm
+Hạn chế
+Chương 5. Kết luận và hướng phát triển
+5.1. Kết quả đạt được
+5.2. Những đóng góp của đề tài
+5.3. Hạn chế
+5.4. Hướng phát triển trong tương lai
+Tài liệu tham khảo
+Phụ lục
+Link Mã nguồn
+Hướng dẫn sử dụng
+Một số giao diện hệ thống

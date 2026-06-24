@@ -1,0 +1,20 @@
+NỘI DUNG THUYẾT TRÌNH LẦN 2
+(Học viên có thể điều chỉnh lại cho phù hợp với đề tài)
+Mục tiêu
+Đánh giá mức độ hoàn thiện của hệ thống và khả năng chuyển thành tiểu luận cuối kỳ.
+Nội dung trình bày (30–35 slide)
+Tóm tắt đề tài 
+Kiến trúc hệ thống hoàn chỉnh 
+Các chức năng đã triển khai 
+Demo hệ thống 
+Mô hình AI/thuật toán sử dụng 
+Kết quả thực nghiệm 
+So sánh với mục tiêu ban đầu 
+Những vấn đề gặp phải 
+Các cải tiến sau phản biện lần 1 
+Kế hoạch hoàn thiện tiểu luận 
+Hướng phát triển 
+Sản phẩm nộp
+Slide trình bày 
+Video demo (nếu có) 
+Mã nguồn hoặc link GitHub

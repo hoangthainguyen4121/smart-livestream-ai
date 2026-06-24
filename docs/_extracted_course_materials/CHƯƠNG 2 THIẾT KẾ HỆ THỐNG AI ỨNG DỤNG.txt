@@ -1,0 +1,233 @@
+--- Slide 1 ---
+CHƯƠNG 2:THIẾT KẾ HỆ THỐNG AI
+Giảng viên: TS. Cao Văn Kiên
+Khoa Công nghệ thông tin - Trường Đại học Nguyễn Tất Thành
+
+--- Slide 2 ---
+01. Tư duy thiết kế: Research vs. App
+02. Vòng đời phát triển MLOps
+03. Kiến trúc hệ thống AI hiện đại
+04. Thiết kế API & AI Serving
+05. Dữ liệu & Vector Databases
+06. Thiết kế Frontend & UX/UI cho AI
+07. Case Study & Thực hành thiết kế
+08. Tổng kết & Bài tập nhóm
+NỘI DUNG CHÍNH BUỔI HỌC
+
+--- Slide 3 ---
+"Một mô hình chính xác 99% nhưng mất 10 phút để phản hồi là một ứng dụng thất bại."
+Nghiên cứu (HK2)
+Tập trung vào Độ chính xác (Accuracy).
+Môi trường: Tĩnh (Static Data).
+Output: Bài báo, báo cáo khoa học.
+Ứng dụng (HK3)
+Tập trung vào Giá trị sử dụng (Value).
+Môi trường: Động (Real-time Data).
+Output: Phần mềm, hệ thống vận hành.
+ÔN TẬP: RESEARCH (HK2) VS. APP (HK3)
+
+--- Slide 4 ---
+SỰ DỊCH CHUYỂN CÁC CHỈ SỐ (KPIS)
+
+--- Slide 5 ---
+PHẦN 1
+VÒNG ĐỜI PHÁT TRIỂN HỆ THỐNG AI (MLOps)
+
+--- Slide 6 ---
+Tổng quan MLOps
+MLOps (Machine Learning Operations) là sự kết hợp giữa ML + DevOps + Data Engineering.
+Mục tiêu: Tự động hóa việc triển khai và quản lý mô hình trong sản xuất một cách tin cậy và hiệu quả.
+
+--- Slide 7 ---
+Trong ứng dụng, dữ liệu không có sẵn trong file .csv sạch sẽ.
+Thách thức: Dữ liệu bị nhiễu, thiếu sót, hoặc bị lệch (Data Drift).
+Giải pháp: Xây dựng bộ lọc và kiểm tra chất lượng dữ liệu tự động.
+•
+Thu thập: API, Web Scraping, IoT Sensors.
+•
+Xử lý: Real-time Pipeline (Kafka, Spark).
+•
+Lưu trữ: Data Lake vs. Database.
+GIAI ĐOẠN 1: CHIẾN LƯỢC DỮ LIỆU THỰC TẾ
+
+--- Slide 8 ---
+Lưu ý: Mỗi bước (Preprocessing, Training, Inference) nên là một module riêng.
+Jupyter Notebook
+Thích hợp cho: Khám phá (EDA), Thử nghiệm nhanh.
+Hạn chế: Khó bảo trì, khó scale, khó unit test.
+Python Scripts (.py)
+Thích hợp cho: Hệ thống thực tế (Production).
+Ưu điểm: Cấu trúc rõ ràng, dễ tích hợp CI/CD, có thể đóng gói.
+GIAI ĐOẠN 2: TỪ NOTEBOOK SANG MODULAR CODE
+
+--- Slide 9 ---
+Artifacts Management
+Đảm bảo: "Bạn có thể tái tạo lại đúng kết quả mô hình của 3 tháng trước."
+•
+Mô hình: Lưu dưới dạng .h5, .pth, .onnx.
+•
+Versioning: Sử dụng công cụ như MLflow hoặc DVC.
+•
+Dependency: requirements.txt hoặc environment.yml.
+GIAI ĐOẠN 3: ĐÓNG GÓI & QUẢN LÝ PHIÊN BẢN
+
+--- Slide 10 ---
+Model Monitoring
+Mô hình AI sẽ yếu đi theo thời gian vì thế giới luôn thay đổi.
+•
+Data Drift: Phân phối dữ liệu đầu vào thay đổi.
+•
+Concept Drift: Mối quan hệ giữa Input và Output thay đổi.
+GIAI ĐOẠN 4: GIÁM SÁT SỰ SAI LỆCH (DRIFT)
+
+--- Slide 11 ---
+PHẦN 2
+KIẾN TRÚC HỆ THỐNG AI
+
+--- Slide 12 ---
+Mọi thứ (UI, Logic, AI) nằm chung trong một ứng dụng.
+Ưu điểm: Dễ triển khai, chi phí thấp cho demo.
+Nhược điểm: AI chiếm dụng tài nguyên (RAM/GPU) làm treo toàn bộ ứng dụng Web.
+Khi nào dùng? Dự án cá nhân, Proof of Concept (PoC), Ứng dụng nhỏ không cần scale.
+KIẾN TRÚC MONOLITHIC (ĐƠN KHỐI)
+
+--- Slide 13 ---
+Kiến trúc Microservices
+Tách AI thành một dịch vụ độc lập.
+Lợi ích:
+•
+Scale GPU riêng cho AI.
+•
+Dễ dàng nâng cấp mô hình mà không ảnh hưởng Web.
+•
+Hỗ trợ nhiều ngôn ngữ lập trình khác nhau.
+
+--- Slide 14 ---
+PHẦN 3
+THIẾT KẾ API & AI SERVING
+
+--- Slide 15 ---
+REST API là chuẩn giao tiếp phổ biến nhất thế giới.
+Request: { "image": "base64..." }
+Response: { "label": "Pneumonia", "confidence": 0.98 }
+•
+Dễ tích hợp: Mọi Frontend (Web, Mobile) đều gọi được.
+•
+Stateless: Dễ mở rộng quy mô (Scaling).
+•
+Dữ liệu JSON: Nhẹ, dễ đọc, dễ xử lý.
+TẠI SAO CHỌN REST API CHO AI?
+
+--- Slide 16 ---
+Framework Python hiện đại, tốc độ cực nhanh (ngang Node.js/Go).
+•
+Hiệu năng: Dựa trên Starlette và Pydantic.
+•
+Async-first: Xử lý nhiều yêu cầu đồng thời.
+•
+Auto Docs: Tự động tạo Swagger UI.
+FASTAPI: LỰA CHỌN SỐ 1 CHO AI
+
+--- Slide 17 ---
+Trong AI, việc chạy mô hình có thể mất từ 0.5s - 2s. Nếu dùng Synchronous (Đồng bộ), server sẽ bị chặn (block) và không thể nhận thêm yêu cầu khác.
+FastAPI Async: Cho phép server xử lý các tác vụ khác trong khi chờ GPU thực hiện inference.
+@app.post("/predict")  async def predict(data: InputData): ...
+XỬ LÝ BẤT ĐỒNG BỘ (ASYNC/AWAIT)
+
+--- Slide 18 ---
+PHẦN 4
+DỮ LIỆU & VECTOR DATABASES
+
+--- Slide 19 ---
+Mỗi lần AI dự đoán, hãy lưu lại: Dữ liệu vào + Kết quả ra + Thời gian + Model Version.
+SQL (PostgreSQL)
+Lưu: Cấu trúc rõ ràng, thông tin người dùng, log dự đoán cơ bản.
+NoSQL (MongoDB)
+Lưu: Dữ liệu JSON linh hoạt, metadata không cố định.
+LƯU TRỮ METADATA INFERENCE
+
+--- Slide 20 ---
+PHẦN 5
+THIẾT KẾ FRONTEND & UX/UI CHO AI
+
+--- Slide 21 ---
+Biến script Python thành Web Dashboard trong vài phút.
+•
+Không cần HTML/CSS/JS.
+•
+Có sẵn các widget cho AI (Image upload, Charts).
+•
+Lý tưởng cho giai đoạn Demo dự án HK3.
+RAPID PROTOTYPING: STREAMLIT
+
+--- Slide 22 ---
+Đừng chỉ đưa ra con số 90%. Hãy cho người dùng biết Tại sao AI chọn vậy?
+Giúp xây dựng Lòng tin (Trust) của người dùng.
+•
+Heatmaps (Grad-CAM): Tô màu vùng ảnh AI chú ý.
+•
+Feature Importance: Liệt kê các yếu tố quan trọng nhất.
+UX: TÍNH GIẢI THÍCH ĐƯỢC (XAI)
+
+--- Slide 23 ---
+AI không bao giờ đúng 100%. Luôn phải có cơ chế để con người chỉnh sửa kết quả của AI.
+•
+Validation UI: Cho phép chuyên gia duyệt/sửa kết quả.
+•
+Confidence Threshold: Nếu độ tự tin thấp (< 70%), hãy chuyển cho người xử lý thủ công thay vì tự động đưa ra quyết định sai.
+UX: QUYỀN KIỂM SOÁT & GHI ĐÈ
+
+--- Slide 24 ---
+Dữ liệu phản hồi từ người dùng là nguồn "vàng" để cải thiện mô hình.
+Lưu phản hồi vào Database -> Retraining Pipeline.
+•
+Phản hồi tường minh: Like/Dislike, Rate 5 sao.
+•
+Phản hồi ngầm định: Người dùng có click vào kết quả gợi ý không? Họ có sửa lại text AI đã sinh không?
+VÒNG LẶP PHẢN HỒI (FEEDBACK LOOPS)
+
+--- Slide 25 ---
+Quản lý kỳ vọng
+Thêm các dòng cảnh báo: "AI có thể nhầm lẫn, hãy kiểm tra lại thông tin quan trọng."
+Fallback UI
+Nếu server AI chết, hãy hiển thị thông báo lỗi thân thiện thay vì màn hình trắng hoặc lỗi 500 thô thiển.
+XỬ LÝ LỖI & ẢO GIÁC (HALLUCINATION)
+
+--- Slide 26 ---
+PHẦN 6
+TỐI ƯU HÓA & CASE STUDIES
+
+--- Slide 27 ---
+Quantization
+Chuyển từ Float32 sang Int8. Giảm dung lượng mô hình 4 lần, tăng tốc độ 2-3 lần với sai số rất nhỏ.
+Pruning
+Cắt bỏ các kết nối neuron không quan trọng. Giúp mô hình nhẹ hơn.
+Knowledge Distillation
+Dùng mô hình lớn (Teacher) để dạy một mô hình cực nhỏ (Student).
+TỐI ƯU HÓA TỐC ĐỘ INFERENCE
+
+--- Slide 28 ---
+Upload DICOM/JPG
+Preprocess (Normalize)
+FastAPI Inference
+Grad-CAM Heatmap
+Doc Validation
+CASE STUDY: MEDICAL AI PIPELINE
+
+--- Slide 29 ---
+Mỗi nhóm hãy thực hiện các yêu cầu sau trên giấy/công cụ vẽ (Draw.io):
+1.
+Xác định các thành phần (Frontend, Backend, Database, AI Engine).
+2.
+Vẽ luồng dữ liệu khi người dùng gửi 1 yêu cầu.
+3.
+Chọn Framework sẽ sử dụng (Ví dụ: React + FastAPI + PostgreSQL).
+4.
+Xác định cách lưu trữ Metadata và Feedback.
+THỰC HÀNH: VẼ SƠ ĐỒ KIẾN TRÚC
+
+--- Slide 30 ---
+TỔNG KẾT & Q&A
+"Thiết kế tốt là nền tảng của một ứng dụng AI bền vững."
+Bài tập về nhà: Hoàn thiện Sơ đồ thiết kế hệ thống nhóm (v1.0).
+cvkien@ntt.edu.vn              fit.ntt.edu.vn

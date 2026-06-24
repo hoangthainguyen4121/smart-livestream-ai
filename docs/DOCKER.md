@@ -73,7 +73,6 @@ The main demo runs **Browser AR** locally in the browser (MediaPipe FaceLandmark
 |-----------------|--------|
 | `POST /api/inference/frame` | Legacy browser-camera inference |
 | `GET /video-feed` | Legacy backend MJPEG (OpenCV webcam in container) |
-| Desktop client events | Experimental — see `desktop_client/README.md` |
 
 These are no longer exposed in the main demo UI.
 

@@ -1,0 +1,127 @@
+TRƯỜNG ĐẠI HỌC NGUYỄN TẤT THÀNH
+KHOA CÔNG NGHỆ THÔNG TIN
+TÊN HỌC PHẦN:
+CHUYÊN ĐỀ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN
+Tên đề tài:	
+(Bold, size 18-30, tùy theo số chữ,… của tên đề tài)
+Giảng viên hướng dẫn: TS. Cao Văn Kiên
+Học viên thực hiện: TRẦN THỊ HOA (Bold, size 14, in hoa)
+MSHV: (Bold, in hoa, size 14)
+Khoá:.…........(Bold, in hoa, size 14)
+Ngành/ chuyên ngành:   (Bold, in hoa, size 14)
+Tp HCM, tháng … năm … (Bold, size 13)
+TRƯỜNG ĐẠI HỌC NGUYỄN TẤT THÀNH
+KHOA CÔNG NGHỆ THÔNG TIN
+TÊN HỌC PHẦN:
+CHUYÊN ĐỀ ỨNG DỤNG CÔNG NGHỆ THÔNG TIN
+Tên đề tài	
+(Bold, size 18-30, tùy theo số chữ, của tên đề tài)
+Giảng viên hướng dẫn: TS. Cao Văn Kiên
+Học viên thực hiện:  TRẦN THỊ HOA (Bold, size 14, in hoa)
+MSHV:    ……… (Bold, in hoa, size 14)
+Khoá:.…........(Bold, in hoa, size 14)
+Ngành/ chuyên ngành:.…........(Bold, in hoa, size 14)
+TPHCM, tháng … năm … (Bold, size 13)
+LỜI CẢM ƠN
+(bold, size 14, xếp sau trang lời mở đầu)
+Nội dung size13	
+PHIẾU CHẤM THI TIỂU LUẬN/ĐỒ ÁN
+Môn thi:		Lớp học phần:	
+Học viên thực hiện:		
+Ngày thi:	Phòng thi:	
+Đề tài tiểu luận của học viên:		
+Phần đánh giá của giảng viên (căn cứ trên thang rubrics của môn học):
+MỤC LỤC
+(Bold, size 14)
+Lời mở đầu: (size 13)		
+Chương 1...................................................	1	
+1.1................................................................	1 
+1.1.1	
+1.1.2	
+1.1.3	
+1.2 	7	
+1.2.1		
+1.2.2	
+….
+Chương 2	30	
+2.1	30
+2.1.1	
+2.1.2	
+….
+KẾT LUẬN 	120	
+PHỤ LỤC	122	 
+DANH MỤC TÀI LIỆU TAM KHẢO	127	 
+Ghi chú: 
+- In đậm và in hoa tiêu đề của các chương, mục lớn
+- Chữ số thứ nhất chỉ thứ tự chương
+- Chữ số thứ 2 chỉ thứ tự mục trong chương
+- Chữ số thứ 3,…, chỉ thứ tự các tiểu mục
+(Mẫu)
+DANH MỤC BẢNG, HÌNH
+(In đậm, in hoa, size14)
+Bảng 1.1 (size 13)	
+Bảng 1.2	
+…
+Hình 1.1 
+…….....................................................................
+……......................................................................
+Ghi chú:
+ Xếp sau trang Mục lục
+Số thứ nhất chỉ số thự tự chương
+Số thứ hai chỉ thứ tự bảng biểu trong mỗi chương
+Tên đề của bảng biểu nằm phía trên của bảng phải có ghi chú, giải thích, nêu rõ nguồn trích hoặc sao chụp
+(Mẫu)
+DANH MỤC HÌNH
+(In đậm, in hoa, size14)
+Hình 1.1 	
+Hình 1.2	
+…
+Ghi chú:
+ Xếp sau trang Mục lục
+Số thứ nhất chỉ số thự tự chương
+Số thứ hai chỉ thứ tự hình,…trong mỗi chương
+Ở cuối mỗi hình, trong mỗi chương phải có ghi chú, giải thích, nêu rõ nguồn trích hoặc sao chụp,…
+Tên của hình (đồ thị, hình vẽ) đặt ở bên dưới hình (đồ thị, hình vẽ)
+(Mẫu)
+KÍ HIỆU CÁC CỤM TỪ VIẾT TẮT (size 14)
+(Được xếp sau trang Danh mục Các bảng biểu, hình)
+Ghi chú:
+Cụm từ viết viết tắt là các chữ cái và các ký hiệu thay chữ được viết liền nhau, để thay cho một cụm từ có nghĩa thường được lặp nhiều lần trong văn bản hoặc được mọi người mặc nhiên chấp nhận, xếp theo thự tự ABC
+(Mẫu)
+Trình bày mỗi trang của đồ án, tiểu luận 
+Bắt đầu đánh số trang từ chương 1, in đậm tiêu đề các chương, các mục
+CHƯƠNG 1 (bold, size 16-) 
+Tên chương (bold, size 16-)
+Nội dung size13…
+ (Mẫu)
+PHỤ LỤC
+(Đánh số trang riêng)
+(Mẫu)
+DANH MỤC TÀI LIỆU THAM KHẢO
+1. Nguyễn Văn An (2005), An cư với lạc nghiệp, Nhà xuất bản Văn hóa Thông tin, Hà Nội.
+2. Nguyễn Văn Bằng (2007), Chi tiết máy, NXB Đại học bách khoa Hà Nội, lưu hành nội bộ.
+……………….
+Ghi chú:
+Danh mục tài liệu tham khảo tiếng việt phải xếp theo abc tên tác giả, năm xuất bản, tên tài liệu, nơi phát hành
+Danh mục tài liệu tham khảo tiếng anh xếp theo tên họ và vần ABC tên tác giả, năm xuất bản, tên tài liệu, nơi phát hành
+Danh mục tài liệu tham khảo trên internet tên tác giả, năm xuất bản, tên tài liệu, nơi phát hành và đường liên kết (link) ngày , tháng, năm truy cập;
+Danh mục tài liệu tham khảo xếp cuối cùng, sau các trang phụ lục
+TRƯỜNG ĐẠI HỌC NGUYỄN TẤT THÀNH
+TRUNG TÂM KHẢO THÍ | KỲ THI KẾT THÚC HỌC PHẦN
+HỌC KỲ …..…  NĂM HỌC …….. - ….…
+Tiêu chí (theo CĐR HP) | Đánh giá của GV | Điểm tối đa | Điểm đạt được
+Cấu trúc của báo cáo |  | 1.5 | 
+Nội dung |  |  | 
+Các nội dung thành phần |  | 4.0 | 
+Lập luận |  | 1.5 | 
+Kết luận |  | 1.5 | 
+Trình bày |  | 1.5 | 
+TỔNG ĐIỂM |  | 10 | 
+ | Giảng viên chấm thi
+(ký, ghi rõ họ tên)
+
+
+
+TS. Cao Văn Kiên
+Chữ viết tắt | Ý nghĩa
+Ví dụ: CSDL | Cơ sở dữ liệu

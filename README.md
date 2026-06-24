@@ -22,12 +22,13 @@ No database, web app, cloud service, Docker, message queue, authentication, or a
 
 ```text
 smart-livestream-poc/
-├── desktop_client/
-│   ├── main.py
-│   ├── backend_client.py
-│   ├── event_publisher.py
-│   └── pipeline/
-├── main.py
+├── backend/
+│   └── app/                 # FastAPI: chat, NLP proxy, face registration, events
+├── frontend/
+│   └── src/                 # React demo: Browser AR, sales assistant, commerce
+├── face_recognition/
+├── gesture_detection/
+├── main.py                  # Original local OpenCV CLI (optional dev tool)
 ├── requirements.txt
 ├── config/
 │   └── settings.py
@@ -175,16 +176,15 @@ The backend is used for **dashboard services**: chat, AI Event Feed, face regist
 
 Shared AR code lives in `frontend/src/features/browser-ar/`. Benchmark harness: `/poc/ar-lab`.
 
-### Legacy / experimental camera paths
+### Optional legacy backend camera APIs
 
-These remain in the repo for tests and reference but are **not** shown in the main demo UI:
+These remain for tests and reference; the **main demo** uses Browser AR in the frontend:
 
 | Path | Status |
 |------|--------|
-| Browser Camera (`POST /api/inference/frame`) | Legacy — backend-inferred overlays in browser |
-| Backend MJPEG (`GET /video-feed`) | Legacy — OpenCV webcam inside backend |
-| Desktop client (`desktop_client/`) | Experimental / archived — native OpenCV window |
-| CLI `python main.py run` | Original OpenCV-only PoC |
+| `POST /api/inference/frame` | Legacy — backend-inferred overlays in browser |
+| `GET /video-feed` | Legacy — MJPEG stream with backend OpenCV capture |
+| CLI `python main.py run` | Original local OpenCV PoC (not part of web demo) |
 
 See [docs/DOCKER.md](docs/DOCKER.md) for environment variables, production profile, and troubleshooting.
 

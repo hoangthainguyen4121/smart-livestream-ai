@@ -144,8 +144,8 @@ During a successful demo:
 
 - Wave gesture is temporarily disabled (`ENABLE_WAVE_GESTURE=false`).
 - FPS depends on CPU speed, camera resolution, lighting, and current AI inference load.
-- The camera can be held by only one mode or process at a time.
-- Backend Annotated Stream, Browser Camera + WebSocket Debug, the CLI app, and other camera apps can conflict with each other.
+- Only one browser tab or app should capture the webcam at a time (Browser AR on `/`).
+- Legacy backend camera modes (`/video-feed`, `/api/inference/frame`) can conflict with Browser AR if used simultaneously.
 - The AI Event Feed is in-memory only. Events disappear when the backend restarts.
 - Chat is in-memory only. Chat history disappears when the backend restarts.
 - There is no auth, database, or cloud deployment in this MVP.

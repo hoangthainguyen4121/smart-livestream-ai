@@ -1,0 +1,218 @@
+--- Slide 1 ---
+Chương 3: Thiết kế kiến trúc triển khai & Công nghệ phát triển hệ thống AI
+Giảng viên: TS. Cao Văn Kiên
+Khoa Công nghệ thông tin - Trường Đại học Nguyễn Tất Thành
+
+--- Slide 2 ---
+Mục tiêu học tập
+Kiến trúc
+Nắm vững các mẫu kiến trúc AI (Microservices, Serverless, Client-Server).
+Phát triển
+Thiết kế API hiệu năng cao với FastAPI, xác thực và quản lý lỗi.
+Triển khai
+Làm chủ Docker, Kubernetes và các định dạng mô hình (ONNX, TorchScript).
+
+--- Slide 3 ---
+4 Thành phần cốt lõi của hệ thống AI
+Frontend (UI): Tương tác người dùng (Web/Mobile).
+Backend (API): Xử lý logic, điều phối yêu cầu.
+AI Layer (Inference): Nơi mô hình chạy dự đoán (GPU/CPU).
+Data Pipeline: Thu thập, biến đổi và lưu trữ dữ liệu.
+
+--- Slide 4 ---
+Kiến trúc: Client-Server & Microservices
+Client-Server
+Mô hình truyền thống, dễ xây dựng nhưng khó mở rộng khi hệ thống lớn. Thường dùng cho các MVP hoặc ứng dụng nhỏ.
+Microservices
+Chia nhỏ hệ thống thành các dịch vụ độc lập. Ưu điểm: Horizontal Scaling, khả năng chịu lỗi cao và phát triển độc lập (Polyglot).
+
+--- Slide 5 ---
+Kiến trúc: Serverless & Containers
+Serverless (AWS Lambda, Cloud Functions): Chỉ chạy code khi có sự kiện, không cần quản lý hạ tầng. Tối ưu chi phí cho các tác vụ không thường xuyên.
+Containers (Docker): Đóng gói ứng dụng và môi trường chạy nhất quán. Cơ sở cho việc triển khai linh hoạt trên mọi nền tảng.
+Sự kết hợp: Sử dụng API Gateway để điều phối giữa Microservices và các hàm Serverless.
+
+--- Slide 6 ---
+So sánh các loại kiến trúc
+
+--- Slide 7 ---
+Ví dụ thực tế: Netflix & Uber
+Netflix: Sử dụng hàng ngàn microservices để phục vụ hàng triệu người dùng đồng thời, giúp họ có thể cập nhật tính năng mới mà không làm gián đoạn dịch vụ.
+FastAPI Adoption: Uber và Microsoft đã chuyển dịch sang FastAPI cho các service AI vì tốc độ xử lý Async vượt trội.
+Insight
+"Nvidia minh chứng FastAPI nhanh hơn Flask nhờ ASGI, xử lý số lượng kết nối lớn đồng thời."
+
+--- Slide 8 ---
+Phần II: Thiết kế Backend và API
+Framework, Data Validation và Bảo mật
+
+--- Slide 9 ---
+FastAPI vs Flask: Chọn framework nào?
+FastAPI (Modern)
+Dựa trên ASGI (Async), tự động sinh docs OpenAPI, kiểm tra dữ liệu bằng Pydantic. Hiệu năng tương đương NodeJS/Go.
+Flask (Classic)
+Dựa trên WSGI (Sync), cộng đồng cực lớn, dễ học. Phù hợp cho ứng dụng nhỏ hoặc hệ thống legacy.
+
+--- Slide 10 ---
+Đo lường hiệu năng: Throughput
+
+--- Slide 11 ---
+Lợi thế của FastAPI trong AI
+Async Support
+Xử lý nhiều yêu cầu I/O (gọi model, truy vấn DB) không gây nghẽn.
+Auto Swagger
+Tự động tạo giao diện thử nghiệm tại /docs.
+Pydantic
+Validate dữ liệu đầu vào ngay tại runtime, giảm lỗi tiềm ẩn.
+
+--- Slide 12 ---
+from pydantic import BaseModel class PredictionInput(BaseModel): feature1: float feature2: float description: str = None # Optional field # FastAPI sẽ tự động kiểm tra xem request JSON có đúng cấu trúc này không.
+Định nghĩa dữ liệu với Pydantic
+
+--- Slide 13 ---
+@app.post("/predict") async def predict(data: InputData): try: # Chuẩn bị dữ liệu cho mô hình x = np.array([[data.feature1, data.feature2]]) # Dự đoán pred = model.predict(x) return {"prediction": int(pred[0]), "status": "success"} except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+Mã nguồn mẫu: AI Inference API
+
+--- Slide 14 ---
+Bảo mật API & Xử lý lỗi
+Sử dụng HTTPException để trả về mã lỗi chuẩn (401 Unauthorized, 404 Not Found, 500 Server Error).
+Xác thực (Auth)
+Sử dụng OAuth2 + JWT. FastAPI tích hợp sẵn OAuth2PasswordBearer để bảo vệ endpoint.
+
+--- Slide 15 ---
+Phần III: Đóng gói và Inference
+Tối ưu hóa mô hình cho môi trường thực tế
+
+--- Slide 16 ---
+Các định dạng mô hình phổ biến
+.pt / .pth (PyTorch): Định dạng gốc, phụ thuộc Python.
+TorchScript: Chuyển model thành đồ thị tĩnh, chạy được với C++ runtime.
+ONNX: Độc lập framework, hỗ trợ tăng tốc trên nhiều phần cứng.
+
+--- Slide 17 ---
+Sức mạnh của ONNX Runtime
+ONNX (Open Neural Network Exchange) cho phép bạn huấn luyện mô hình ở một framework (PyTorch/TF) và triển khai ở một framework khác.
+Lợi ích: Tăng tốc inference nhờ vào các tối ưu hóa toán học trên CPU/GPU. Hỗ trợ quantization trực tiếp trên file ONNX.
+
+--- Slide 18 ---
+Các mẫu Inference (Suy luận)
+Batch Inference: Gom nhiều yêu cầu để xử lý cùng lúc trên GPU, tăng throughput.
+Synchronous
+Đợi kết quả ngay lập tức. Dùng cho task nhanh.
+Asynchronous
+Gửi request, nhận Job ID và lấy kết quả sau. Dùng cho model nặng.
+Streaming
+Trả kết quả từng phần (token by token). Thường dùng cho LLMs/Chatbot.
+
+--- Slide 19 ---
+Phần IV: Frontend và Trải nghiệm
+Từ Prototype nhanh đến Sản phẩm chuyên nghiệp
+
+--- Slide 20 ---
+Streamlit & Gradio: Demo AI cực nhanh
+Streamlit
+Viết UI bằng thuần Python. Rất mạnh cho dashboard dữ liệu và công cụ nội bộ.
+Gradio
+Tập trung vào model demo. Tích hợp cực tốt với HuggingFace Spaces.
+
+--- Slide 21 ---
+React cho ứng dụng Production
+Khi cần tùy chỉnh tối đa, UI phức tạp và hỗ trợ hàng triệu người dùng, React/JS là lựa chọn tối ưu.
+Toàn quyền kiểm soát UI/UX.
+Tối ưu hóa hiệu năng phía client.
+Hệ sinh thái thư viện đồ sộ.
+
+--- Slide 22 ---
+Phần V: Lưu trữ và Quản lý phiên bản
+SQL, NoSQL và MLOps Data Version Control
+
+--- Slide 23 ---
+Hệ sinh thái lưu trữ dữ liệu AI
+SQL (PostgreSQL)
+Lưu user profile, logs có cấu trúc, quản lý transaction (ACID).
+NoSQL (MongoDB)
+Dữ liệu phi cấu trúc, embeddings, metadata linh hoạt.
+Object Storage (S3)
+Lưu model files lớn (.pt, .onnx), datasets huấn luyện.
+
+--- Slide 24 ---
+MLOps: Quản lý phiên bản
+Truy vết (Traceability): Biết chính xác phiên bản code nào, dataset nào tạo ra model nào.
+Git: Quản lý mã nguồn (Source Code).
+DVC (Data Version Control): Quản lý phiên bản dữ liệu và file model lớn (vốn không thể commit trực tiếp vào Git).
+MLflow: Tracking các thử nghiệm, siêu tham số (hyperparameters) và lưu trữ Artifacts.
+
+--- Slide 25 ---
+Phần VI: Triển khai hệ thống
+Docker, Kubernetes và Cloud Native AI
+
+--- Slide 26 ---
+Container hóa với Docker
+Tại sao cần Docker?
+Nhất quán môi trường Dev/Prod.
+Dễ dàng mở rộng (Scaling).
+Cách ly tài nguyên hiệu quả.
+
+--- Slide 27 ---
+Kubernetes: Điều phối ở quy mô lớn
+Auto-scaling: Tự động tăng số lượng Pod khi tải cao.
+Self-healing: Tự khởi động lại container khi bị lỗi.
+Load Balancing: Phân phối yêu cầu đến các worker AI.
+
+--- Slide 28 ---
+Nền tảng triển khai hiện đại
+HF Spaces
+Miễn phí, tối ưu cho demo ML. Chỉ cần push git là deploy.
+Render
+Deploy FastAPI/Docker cực nhanh từ GitHub, hỗ trợ HTTPS tự động.
+Cloud (AWS/GCP)
+SageMaker, Vertex AI - Giải pháp cho doanh nghiệp lớn.
+
+--- Slide 29 ---
+Phần VII: Giám sát và Tối ưu
+Giữ cho hệ thống luôn ổn định và nhanh chóng
+
+--- Slide 30 ---
+Giám sát hệ thống & Mô hình
+Cần theo dõi hai loại chỉ số:
+System Metrics: CPU, RAM, GPU, Latency, Error Rate.
+Model Metrics: Prediction drift, Data drift (đảm bảo chất lượng mô hình không giảm theo thời gian).
+
+--- Slide 31 ---
+Tối ưu hiệu năng Inference
+Quantization: Chuyển float32 → int8 (giảm size model 4x, tăng tốc đáng kể trên CPU).
+Pruning: Loại bỏ các trọng số không quan trọng trong mạng thần kinh.
+Caching: Lưu kết quả inference cho các đầu vào phổ biến (Redis).
+
+--- Slide 32 ---
+Quy trình CI/CD cho AI
+Tự động hóa: Build Docker → Test Code → Validate Model Quality → Deploy Prod.
+
+--- Slide 33 ---
+An ninh và Quyền riêng tư
+Mã hóa dữ liệu: Sử dụng TLS/HTTPS cho mọi giao tiếp API.
+Bảo vệ PII: Ẩn danh hóa thông tin cá nhân nhạy cảm trong logs.
+Rate Limiting: Chống tấn công brute-force hoặc spam API.
+Bảo vệ mô hình: Phòng chống tấn công "Adversarial" hoặc đánh cắp tham số model.
+
+--- Slide 34 ---
+Kiểm thử hệ thống AI
+Unit Tests
+Kiểm tra các hàm tiền xử lý dữ liệu và logic API.
+Validation Tests
+Kiểm tra độ chính xác của model mới so với model cũ.
+Load Tests
+Dùng Locust/JMeter để giả lập hàng ngàn user đồng thời.
+
+--- Slide 35 ---
+Tóm tắt chương
+Kiến trúc Microservices là xu hướng cho hệ thống lớn.
+FastAPI là framework hàng đầu cho AI serving.
+Sử dụng Docker & Kubernetes để triển khai ổn định và mở rộng.
+Tối ưu Quantization/ONNX để tiết kiệm tài nguyên.
+MLOps (DVC, MLflow) giúp quản trị vòng đời mô hình chuyên nghiệp.
+
+--- Slide 36 ---
+Câu hỏi & Thảo luận
+Cảm ơn các bạn đã lắng nghe!
+cvkien@ntt.edu.vn              fit.ntt.edu.vn

@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
     chat,
-    desktop_events,
     face_profiles,
     face_registration,
     health,
@@ -48,7 +47,6 @@ app.include_router(health.router, prefix="/api")
 app.include_router(face_profiles.router, prefix="/api")
 app.include_router(face_registration.router, prefix="/api")
 app.include_router(interaction_events.router, prefix="/api")
-app.include_router(desktop_events.router, prefix="/api")
 app.include_router(inference.router, prefix="/api")
 app.include_router(nlp.router, prefix="/api")
 app.include_router(realtime.router)
