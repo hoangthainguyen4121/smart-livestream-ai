@@ -117,7 +117,7 @@ sequenceDiagram
 
 - Hand landmark detection.
 - Raise Hand detection.
-- Wave detection.
+- Wave detection (temporarily disabled via `ENABLE_WAVE_GESTURE=false`).
 - Gesture event smoothing/cooldown.
 
 ### FAQ AI Bot Service
@@ -243,7 +243,7 @@ Raw face images should not be stored by default. This table is optional and shou
 | --- | --- | --- |
 | id | UUID | Primary key |
 | session_id | UUID | Foreign key to livestream_sessions |
-| gesture_name | VARCHAR | Raise Hand or Wave |
+| gesture_name | VARCHAR | Raise Hand or Thumbs Up |
 | confidence | FLOAT | Gesture confidence |
 | frame_index | INTEGER | Frame number |
 | created_at | TIMESTAMP | Event time |
@@ -362,7 +362,7 @@ Cloud scaling, queues, GPU inference nodes, object storage, and Android clients 
 - Live camera / livestream-like interaction screen.
 - Realtime face recognition through backend WebSocket.
 - Username overlay rendered in browser.
-- Raise Hand and Wave gesture effects.
+- Raise Hand and Thumbs Up gesture effects.
 - Basic FAQ support bot with curated answers.
 - Local or lab-server deployment.
 - PostgreSQL-backed user, face profile, session, and metrics data.

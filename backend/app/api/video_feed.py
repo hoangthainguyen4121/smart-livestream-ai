@@ -1,3 +1,8 @@
+"""Legacy backend MJPEG webcam stream (GET /video-feed).
+
+The main demo uses Browser AR in the browser. This endpoint remains for tests
+and local OpenCV webcam debugging when the backend runs on the host.
+"""
 from __future__ import annotations
 
 import logging
@@ -10,14 +15,23 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from app.project_paths import ensure_project_root_on_path
-from app.services.interaction_events import interaction_event_service
+from app.services.stream_inference import (
+    StreamInferenceService,
+    format_gesture_label,
+)
 
 ensure_project_root_on_path()
 
 from config.settings import CAMERA  # noqa: E402
-from face_recognition.embedding_store import EmbeddingStore  # noqa: E402
-from face_recognition.recognizer import InsightFaceRecognizer  # noqa: E402
-from gesture_detection.gesture_detector import GestureDetector  # noqa: E402
+from app.services.stream_inference import (  # noqa: E402
+    IdentityPresenceState,
+    get_primary_username,
+    should_run_gesture,
+    should_run_recognition,
+    suppress_conflicting_gestures,
+    update_active_gestures,
+    update_face_interaction_events,
+)
 
 
 router = APIRouter(tags=["video-feed"])
@@ -25,10 +39,6 @@ logger = logging.getLogger(__name__)
 
 BOUNDARY = "frame"
 BLACK_FRAME_MEAN_THRESHOLD = 4.0
-MJPEG_RECOGNITION_INTERVAL_FRAMES = 3
-MJPEG_GESTURE_INTERVAL_FRAMES = 1
-GESTURE_OVERLAY_COOLDOWN_SECONDS = 1.0
-IDENTITY_DISAPPEAR_GRACE_SECONDS = 1.0
 
 
 @router.get("/video-feed")
@@ -41,13 +51,8 @@ def video_feed() -> StreamingResponse:
 
 def stream_annotated_frames() -> Generator[bytes, None, None]:
     capture = open_webcam()
-    recognizer: InsightFaceRecognizer | None = None
-    gesture_detector: GestureDetector | None = None
+    inference = StreamInferenceService()
     fps_meter = SimpleFPSMeter()
-    frame_count = 0
-    cached_recognition_results = []
-    active_gesture_overlays: dict[str, float] = {}
-    identity_presence = IdentityPresenceState()
 
     try:
         if not capture.isOpened():
@@ -84,11 +89,7 @@ def stream_annotated_frames() -> Generator[bytes, None, None]:
         draw_status_banner(loading_frame, "Loading AI models...")
         yield encode_mjpeg_frame(loading_frame)
 
-        recognizer = InsightFaceRecognizer(store=EmbeddingStore())
-        try:
-            gesture_detector = GestureDetector()
-        except Exception:
-            logger.exception("GestureDetector unavailable for MJPEG feed; continuing face-only")
+        inference.warm_up()
 
         while True:
             ok, frame = read_frame_with_retries(capture)
@@ -105,32 +106,19 @@ def stream_annotated_frames() -> Generator[bytes, None, None]:
                 )
                 break
 
-            frame_count += 1
+            snapshot = inference.process_frame(frame)
             fps = fps_meter.update()
-            if should_run_recognition(frame_count):
-                cached_recognition_results = recognizer.recognize(frame)
-                update_face_interaction_events(cached_recognition_results, identity_presence)
-            primary_username = get_primary_username(cached_recognition_results)
-            if gesture_detector is not None and should_run_gesture(frame_count):
-                update_active_gestures(
-                    active_gesture_overlays,
-                    gesture_detector.detect(frame),
-                    primary_username,
-                )
-
-            draw_recognition_overlay(frame, cached_recognition_results)
+            draw_recognition_overlay(frame, snapshot.faces)
             draw_gesture_overlay(
                 frame,
-                active_gesture_overlays,
-                primary_username,
+                snapshot.gesture_names,
+                snapshot.primary_username,
             )
             draw_fps(frame, fps)
             draw_dark_frame_warning(frame)
 
             yield encode_mjpeg_frame(frame)
     finally:
-        if gesture_detector is not None:
-            gesture_detector.close()
         if capture is not None:
             capture.release()
         logger.info("Released webcam for MJPEG video feed")
@@ -183,110 +171,12 @@ def draw_recognition_overlay(frame, recognition_results) -> None:
         )
 
 
-def should_run_recognition(frame_count: int) -> bool:
-    return (
-        frame_count == 1
-        or frame_count % max(1, MJPEG_RECOGNITION_INTERVAL_FRAMES) == 0
-    )
-
-
-def should_run_gesture(frame_count: int) -> bool:
-    interval = max(1, MJPEG_GESTURE_INTERVAL_FRAMES)
-    return frame_count % interval == 0
-
-
-class IdentityPresenceState:
-    def __init__(self) -> None:
-        self.visible_usernames: set[str] = set()
-        self.missing_since: dict[str, float] = {}
-
-    def update(self, current_usernames: set[str], now: float) -> None:
-        for username in current_usernames:
-            if username not in self.visible_usernames:
-                interaction_event_service.append_event(
-                    event_type="identity_appeared",
-                    username=username,
-                    now=now,
-                )
-            self.visible_usernames.add(username)
-            self.missing_since.pop(username, None)
-
-        for username in list(self.visible_usernames - current_usernames):
-            missing_since = self.missing_since.setdefault(username, now)
-            if now - missing_since >= IDENTITY_DISAPPEAR_GRACE_SECONDS:
-                interaction_event_service.append_event(
-                    event_type="identity_disappeared",
-                    username=username,
-                    now=now,
-                )
-                self.visible_usernames.discard(username)
-                self.missing_since.pop(username, None)
-
-
-def update_face_interaction_events(recognition_results, identity_presence) -> None:
-    now = time.perf_counter()
-    known_usernames = {
-        result.label
-        for result in recognition_results
-        if result.is_known
-    }
-    identity_presence.update(known_usernames, now)
-
-    if len(recognition_results) >= 2:
-        interaction_event_service.append_event(
-            event_type="multiple_faces_detected",
-            now=now,
-        )
-
-
-def update_active_gestures(
-    active_gestures: dict[str, float],
-    gesture_events,
-    username: str,
-) -> None:
-    now = time.perf_counter()
-    expired = [
-        gesture_name
-        for gesture_name, expires_at in active_gestures.items()
-        if expires_at <= now
-    ]
-    for gesture_name in expired:
-        active_gestures.pop(gesture_name, None)
-
-    visible_events = suppress_conflicting_gestures(gesture_events)
-    for event in visible_events:
-        active_gestures[event.name] = now + GESTURE_OVERLAY_COOLDOWN_SECONDS
-        interaction_event_service.append_gesture_event(
-            username=username,
-            gesture=event.name,
-            now=now,
-        )
-
-
-def suppress_conflicting_gestures(gesture_events):
-    has_wave = any(event.name == "Wave" for event in gesture_events)
-    if has_wave:
-        return [event for event in gesture_events if event.name == "Wave"]
-
-    has_raise_hand = any(event.name == "Raise Hand" for event in gesture_events)
-    if not has_raise_hand:
-        return gesture_events
-
-    return [event for event in gesture_events if event.name != "Thumbs Up"]
-
-
 def draw_gesture_overlay(
     frame,
-    active_gestures: dict[str, float],
+    gesture_names: list[str],
     username: str,
 ) -> None:
-    now = time.perf_counter()
-    visible_gestures = [
-        gesture_name
-        for gesture_name, expires_at in active_gestures.items()
-        if expires_at > now
-    ]
-    for index, gesture_name in enumerate(visible_gestures):
+    for index, gesture_name in enumerate(gesture_names):
         label = format_gesture_label(username, gesture_name)
         y = 70 + index * 38
         cv2.rectangle(frame, (18, y - 26), (360, y + 8), (255, 0, 255), -1)
@@ -300,25 +190,6 @@ def draw_gesture_overlay(
             2,
             cv2.LINE_AA,
         )
-
-
-def format_gesture_label(username: str, gesture_name: str) -> str:
-    if gesture_name == "Raise Hand":
-        return f"{username} [hand] Raise Hand"
-    if gesture_name == "Thumbs Up":
-        return f"{username} [thumb] Thumbs Up"
-    if gesture_name == "Wave":
-        return f"{username} [wave] Wave"
-    return f"{username} {gesture_name}"
-
-
-def get_primary_username(recognition_results) -> str:
-    for result in recognition_results:
-        if result.is_known:
-            return result.label
-    if recognition_results:
-        return recognition_results[0].label
-    return "Viewer"
 
 
 def draw_fps(frame, fps: float) -> None:

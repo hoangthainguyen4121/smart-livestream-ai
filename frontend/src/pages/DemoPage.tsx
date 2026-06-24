@@ -1,11 +1,32 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type ChatMessage } from "../api/chat";
 import { AiEventFeedPanel } from "../components/AiEventFeedPanel";
 import { ChatPanel } from "../components/ChatPanel";
+import { BrowserArStream } from "../features/browser-ar/components/BrowserArStream";
+import {
+  BROWSER_AR_EFFECT_LABELS,
+  type BrowserArEffect,
+} from "../features/browser-ar/types";
+import {
+  DEFAULT_PINNED_PRODUCT_ID,
+  getAllProducts,
+  getProductById,
+  mapArEffectTypeToBrowserAr,
+} from "../features/product-catalog";
+import { ProductCatalogPanel } from "../features/product-catalog/components/ProductCatalogPanel";
+import { PinnedProductPanel } from "../features/sales-assistant/PinnedProductPanel";
+import { buildAssistantChatMessage } from "../features/sales-assistant/assistantChatMessages";
+import { processSalesCommentWithMl, shouldAutoReplyInChat } from "../features/sales-assistant/processSalesComment";
+import type { ChatMlIntentBadge } from "../features/sales-nlp/mlIntentBridge";
+import { SalesAssistantPanel } from "../features/sales-assistant/SalesAssistantPanel";
+import {
+  createInitialAnalytics,
+  type SalesAssistantAnalytics,
+  type SalesAssistantEvent,
+} from "../features/sales-assistant/salesAssistantTypes";
 
 
-const BACKEND_VIDEO_FEED_URL = "http://127.0.0.1:8000/video-feed";
 const HOST_USERNAME = "hoang";
 const DEMO_ROOM_ID = "demo";
 const MOCK_VIEWER_COUNT = 128;
@@ -33,9 +54,32 @@ const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
   },
 ];
 
+const AR_EFFECTS = Object.keys(BROWSER_AR_EFFECT_LABELS) as BrowserArEffect[];
+
 export function DemoPage() {
   const [isStreamLive, setIsStreamLive] = useState(false);
   const [streamDurationSeconds, setStreamDurationSeconds] = useState(0);
+  const [pinnedProductId, setPinnedProductId] = useState(DEFAULT_PINNED_PRODUCT_ID);
+  const [effect, setEffect] = useState<BrowserArEffect>("glasses");
+  const [debugOverlay, setDebugOverlay] = useState(false);
+  const [salesEvents, setSalesEvents] = useState<SalesAssistantEvent[]>([]);
+  const [salesAnalytics, setSalesAnalytics] = useState<SalesAssistantAnalytics>(
+    createInitialAnalytics(),
+  );
+  const [assistantRepliesByTriggerId, setAssistantRepliesByTriggerId] = useState<
+    Record<string, ChatMessage>
+  >({});
+  const [mlIntentBadgesByMessageId, setMlIntentBadgesByMessageId] = useState<
+    Record<string, ChatMlIntentBadge>
+  >({});
+  const salesAnalyticsRef = useRef(salesAnalytics);
+
+  salesAnalyticsRef.current = salesAnalytics;
+
+  const pinnedProduct = useMemo(
+    () => getProductById(pinnedProductId) ?? getAllProducts()[0],
+    [pinnedProductId],
+  );
 
   useEffect(() => {
     if (!isStreamLive) {
@@ -49,12 +93,77 @@ export function DemoPage() {
     return () => window.clearInterval(timer);
   }, [isStreamLive]);
 
+  function handlePinProduct(productId: string) {
+    const product = getProductById(productId);
+    if (!product) {
+      return;
+    }
+    setPinnedProductId(productId);
+    if (!isStreamLive) {
+      setEffect(mapArEffectTypeToBrowserAr(product.arEffectType));
+    }
+  }
+
+  const handleViewerMessageSent = useCallback(
+    async ({ messageId, author, text }: { messageId: string; author: string; text: string }) => {
+      const result = await processSalesCommentWithMl(
+        {
+          comment: text,
+          viewerAuthor: author,
+          pinnedProduct,
+          catalog: getAllProducts(),
+          autoReplyInChat: true,
+        },
+        salesAnalyticsRef.current,
+      );
+
+      if (result.chatMlBadge) {
+        setMlIntentBadgesByMessageId((current) => ({
+          ...current,
+          [messageId]: result.chatMlBadge!,
+        }));
+      }
+
+      setSalesAnalytics(result.analytics);
+
+      if (!result.event) {
+        return;
+      }
+
+      setSalesEvents((currentEvents) => [result.event!, ...currentEvents]);
+
+      if (shouldAutoReplyInChat(result.event)) {
+        setAssistantRepliesByTriggerId((currentReplies) => {
+          if (currentReplies[messageId]) {
+            return currentReplies;
+          }
+
+          return {
+            ...currentReplies,
+            [messageId]: buildAssistantChatMessage(result.event!, {
+              id: messageId,
+              author,
+              text,
+              room_id: DEMO_ROOM_ID,
+            }),
+          };
+        });
+      }
+    },
+    [pinnedProduct],
+  );
+
   function handleRegisterFaceClick(event: { preventDefault: () => void }) {
     event.preventDefault();
     setIsStreamLive(false);
     window.setTimeout(() => {
       window.location.href = "/register-face";
     }, 500);
+  }
+
+  function handleStopStream() {
+    setIsStreamLive(false);
+    setStreamDurationSeconds(0);
   }
 
   return (
@@ -66,7 +175,8 @@ export function DemoPage() {
               <p className="eyebrow">Smart Livestream AI MVP</p>
               <h1>AI Livestream Demo</h1>
               <p className="streamMeta">
-                Hosted by <strong>@{HOST_USERNAME}</strong>
+                Hosted by <strong>@{HOST_USERNAME}</strong> · Browser AR · AI Sales Assistant
+                NLP POC
               </p>
             </div>
             <div className="streamStats">
@@ -79,42 +189,69 @@ export function DemoPage() {
           </header>
 
           <section className="modeToggle" aria-label="Stream actions">
+            {AR_EFFECTS.map((entry) => (
+              <button
+                key={entry}
+                type="button"
+                className={effect === entry ? "active" : ""}
+                onClick={() => setEffect(entry)}
+                disabled={isStreamLive}
+              >
+                {BROWSER_AR_EFFECT_LABELS[entry]}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={debugOverlay ? "active" : ""}
+              onClick={() => setDebugOverlay((value) => !value)}
+            >
+              Debug
+            </button>
             <a className="modeLink" href="/register-face" onClick={handleRegisterFaceClick}>
               Register Face
             </a>
+            <a className="modeLink" href="/poc/ar-lab">
+              AR Lab
+            </a>
+            <a className="modeLink" href="/poc/sales-lab">
+              Sales Lab
+            </a>
           </section>
 
-          <div className="videoCard">
-            <div className="cardHeader">
-              <h2>Main Stream</h2>
-            </div>
-
-            {isStreamLive ? (
-              <img
-                src={BACKEND_VIDEO_FEED_URL}
-                alt="Backend annotated video stream"
-                className="video streamImage"
-              />
-            ) : (
-              <div className="streamPlaceholder">
-                Stream stopped. Click Start Stream.
+          <div className="streamMediaRow">
+            <div className="videoCard">
+              <div className="cardHeader">
+                <h2>Browser AR Stream</h2>
+                <span className="status">{BROWSER_AR_EFFECT_LABELS[effect]}</span>
               </div>
-            )}
 
-            <div className="metricsRow">
-              <span>Backend owns webcam capture</span>
-              <span>Annotated MJPEG stream</span>
+              <BrowserArStream
+                isLive={isStreamLive}
+                effect={effect}
+                debugOverlay={debugOverlay}
+                hostLabel={`@${HOST_USERNAME}`}
+              />
             </div>
+
+            <PinnedProductPanel product={pinnedProduct} />
           </div>
+
+          <ProductCatalogPanel
+            compact
+            pinnedProductId={pinnedProductId}
+            onPinProduct={handlePinProduct}
+          />
 
           <section className="controlBar">
             <button type="button" onClick={() => setIsStreamLive(true)}>
               Start Stream
             </button>
-            <button type="button" onClick={() => setIsStreamLive(false)}>
+            <button type="button" onClick={handleStopStream}>
               Stop Stream
             </button>
           </section>
+
+          <SalesAssistantPanel events={salesEvents} analytics={salesAnalytics} />
 
           <AiEventFeedPanel />
         </div>
@@ -123,6 +260,9 @@ export function DemoPage() {
           roomId={DEMO_ROOM_ID}
           author={HOST_USERNAME}
           initialMessages={INITIAL_CHAT_MESSAGES}
+          assistantRepliesByTriggerId={assistantRepliesByTriggerId}
+          mlIntentBadgesByMessageId={mlIntentBadgesByMessageId}
+          onViewerMessageSent={handleViewerMessageSent}
         />
       </section>
     </main>

@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "./config";
+
 export type InteractionEvent = {
   id: string;
   type:
@@ -19,7 +21,7 @@ export type RecentInteractionEventsResponse = {
 };
 
 export async function fetchRecentInteractionEvents() {
-  const response = await fetch("http://127.0.0.1:8000/api/interaction-events/recent");
+  const response = await fetch(`${getApiBaseUrl()}/api/interaction-events/recent`);
   if (!response.ok) {
     throw new Error("Unable to load AI events.");
   }

@@ -6,23 +6,47 @@ import {
   type ChatEvent,
   type ChatMessage,
 } from "../api/chat";
+import {
+  isAssistantChatMessage,
+  mergeChatWithAssistantReplies,
+} from "../features/sales-assistant/assistantChatMessages";
+import type { ChatMlIntentBadge } from "../features/sales-nlp/mlIntentBridge";
 
 
 type ChatPanelProps = {
   roomId: string;
   author: string;
   initialMessages: ChatMessage[];
+  assistantRepliesByTriggerId?: Record<string, ChatMessage>;
+  mlIntentBadgesByMessageId?: Record<string, ChatMlIntentBadge>;
+  onViewerMessageSent?: (message: {
+    messageId: string;
+    author: string;
+    text: string;
+  }) => void;
 };
 
 
-export function ChatPanel({ roomId, author, initialMessages }: ChatPanelProps) {
+export function ChatPanel({
+  roomId,
+  author,
+  initialMessages,
+  assistantRepliesByTriggerId = {},
+  mlIntentBadgesByMessageId = {},
+  onViewerMessageSent,
+}: ChatPanelProps) {
   const socketRef = useRef<WebSocket | null>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  const displayNameRef = useRef(author);
+  const onViewerMessageSentRef = useRef(onViewerMessageSent);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [displayName, setDisplayName] = useState(author);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("disconnected");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  displayNameRef.current = displayName;
+  onViewerMessageSentRef.current = onViewerMessageSent;
 
   useEffect(() => {
     const socket = createChatSocket(roomId);
@@ -54,7 +78,12 @@ export function ChatPanel({ roomId, author, initialMessages }: ChatPanelProps) {
     messagesRef.current?.scrollTo({
       top: messagesRef.current.scrollHeight,
     });
-  }, [messages]);
+  }, [messages, assistantRepliesByTriggerId]);
+
+  const visibleMessages = mergeChatWithAssistantReplies(
+    messages,
+    assistantRepliesByTriggerId,
+  );
 
   function handleChatEvent(event: ChatEvent) {
     if (event.type === "chat_history") {
@@ -64,6 +93,14 @@ export function ChatPanel({ roomId, author, initialMessages }: ChatPanelProps) {
 
     if (event.type === "chat_message") {
       setMessages((currentMessages) => [...currentMessages, event]);
+
+      if (event.author === displayNameRef.current.trim()) {
+        onViewerMessageSentRef.current?.({
+          messageId: event.id,
+          author: event.author,
+          text: event.text,
+        });
+      }
       return;
     }
 
@@ -88,7 +125,7 @@ export function ChatPanel({ roomId, author, initialMessages }: ChatPanelProps) {
       <div className="chatHeader">
         <div>
           <h2>Live Chat</h2>
-          <span>{messages.length} messages</span>
+          <span>{visibleMessages.length} messages</span>
         </div>
         <span className={`status ${status}`}>WS: {status}</span>
       </div>
@@ -102,10 +139,36 @@ export function ChatPanel({ roomId, author, initialMessages }: ChatPanelProps) {
         />
       </label>
       <div className="chatMessages" ref={messagesRef}>
-        {messages.map((message) => (
-          <div className="chatMessage" key={message.id}>
-            <strong>{message.author}</strong>
-            <span>{message.text}</span>
+        {visibleMessages.map((message) => (
+          <div
+            className={
+              isAssistantChatMessage(message)
+                ? "chatMessage chatMessageAssistant"
+                : "chatMessage"
+            }
+            key={message.id}
+          >
+            {isAssistantChatMessage(message) ? (
+              <>
+                <strong>{message.author}</strong>
+                <span className="chatReplyContext">
+                  Replying to {message.replyToAuthor}: {message.replyToText}
+                </span>
+                <span>{message.text}</span>
+              </>
+            ) : (
+              <>
+                <strong>{message.author}</strong>
+                <span>{message.text}</span>
+                {mlIntentBadgesByMessageId[message.id] ? (
+                  <span
+                    className={`chatMlIntentBadge chatMlIntentBadge--${mlIntentBadgesByMessageId[message.id].intentSource}`}
+                  >
+                    {formatMlIntentBadge(mlIntentBadgesByMessageId[message.id])}
+                  </span>
+                ) : null}
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -120,7 +183,7 @@ export function ChatPanel({ roomId, author, initialMessages }: ChatPanelProps) {
             }
           }}
           maxLength={300}
-          placeholder="Send a message..."
+          placeholder="Hỏi về sản phẩm: giá?, còn màu đen không?, xin link..."
         />
         <button type="button" onClick={handleSendChatMessage}>
           Send
@@ -128,4 +191,18 @@ export function ChatPanel({ roomId, author, initialMessages }: ChatPanelProps) {
       </div>
     </aside>
   );
+}
+
+function formatMlIntentBadge(badge: ChatMlIntentBadge): string {
+  if (badge.intentSource === "ml" && badge.confidence !== null) {
+    return `${badge.label} ${(badge.confidence * 100).toFixed(0)}%`;
+  }
+
+  if (badge.intentSource === "regex_fallback") {
+    const confidenceLabel =
+      badge.confidence !== null ? ` ${(badge.confidence * 100).toFixed(0)}%` : "";
+    return `rules fallback · ${badge.mappedIntent ?? badge.label}${confidenceLabel}`;
+  }
+
+  return badge.label;
 }

@@ -1,9 +1,14 @@
+import { getWebSocketBaseUrl } from "./config";
+
 export type ChatMessage = {
   id: string;
   room_id: string;
   author: string;
   text: string;
   created_at: string;
+  replyToMessageId?: string;
+  replyToAuthor?: string;
+  replyToText?: string;
 };
 
 export type ChatHistoryEvent = {
@@ -30,7 +35,7 @@ export type OutgoingChatMessage = {
 };
 
 export function createChatSocket(roomId: string) {
-  return new WebSocket(`ws://127.0.0.1:8000/ws/chat/${encodeURIComponent(roomId)}`);
+  return new WebSocket(`${getWebSocketBaseUrl()}/ws/chat/${encodeURIComponent(roomId)}`);
 }
 
 export function createOutgoingChatMessage(author: string, text: string): OutgoingChatMessage {

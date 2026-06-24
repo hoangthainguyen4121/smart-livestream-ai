@@ -11,7 +11,8 @@ Local proof of concept for a smart livestream system that combines face recognit
 - Keep `users.json` as a lightweight local index only.
 - Recognize registered users in real time.
 - Display `Unknown` for unregistered faces.
-- Detect `Raise Hand` and `Wave Hand` with MediaPipe Hands.
+- Detect `Raise Hand` and `Thumbs Up` with MediaPipe Hands.
+- Wave gesture is temporarily disabled (`ENABLE_WAVE_GESTURE=false`).
 - Render username, gesture effects, and FPS overlays with OpenCV.
 - Write application logs to `logs/app.log`.
 
@@ -21,6 +22,11 @@ No database, web app, cloud service, Docker, message queue, authentication, or a
 
 ```text
 smart-livestream-poc/
+├── desktop_client/
+│   ├── main.py
+│   ├── backend_client.py
+│   ├── event_publisher.py
+│   └── pipeline/
 ├── main.py
 ├── requirements.txt
 ├── config/
@@ -80,9 +86,10 @@ smart-livestream-poc/
 
 1. Run MediaPipe Hands on webcam frames.
 2. Detect `Raise Hand` based on hand landmark height.
-3. Detect `Wave Hand` based on horizontal wrist movement over a short time window.
-4. Render global gesture effects.
-5. Render username and FPS overlays.
+3. Detect `Raise Hand` and `Thumbs Up` with MediaPipe Hands.
+4. Wave gesture is temporarily disabled. Set `ENABLE_WAVE_GESTURE=true` to re-enable it.
+5. Render global gesture effects.
+6. Render username and FPS overlays.
 
 ### Phase 3
 
@@ -143,3 +150,42 @@ Most tunable values live in `config/settings.py`, including:
 - Gesture detection thresholds.
 - Overlay style.
 - Local storage and log paths.
+
+## Docker (Web Dashboard)
+
+Run the web dashboard/control plane with Docker Compose:
+
+```powershell
+docker compose up --build
+```
+
+- Frontend dashboard: http://127.0.0.1:5173
+- Backend API: http://127.0.0.1:8000
+
+### Primary demo path: Browser AR (local FaceLandmarker)
+
+The main demo at `/` runs **Browser AR** entirely in the browser:
+
+- Webcam via `getUserMedia()` on the host
+- Face landmarks and effects via MediaPipe **FaceLandmarker** (`@mediapipe/tasks-vision`)
+- Effect presets: None, Glasses, Makeup Lite, Full Filter
+- Optional debug overlay (FPS, inference timing)
+
+The backend is used for **dashboard services**: chat, AI Event Feed, face registration API, and future identity/events integration — not for rendering the main camera preview.
+
+Shared AR code lives in `frontend/src/features/browser-ar/`. Benchmark harness: `/poc/ar-lab`.
+
+### Legacy / experimental camera paths
+
+These remain in the repo for tests and reference but are **not** shown in the main demo UI:
+
+| Path | Status |
+|------|--------|
+| Browser Camera (`POST /api/inference/frame`) | Legacy — backend-inferred overlays in browser |
+| Backend MJPEG (`GET /video-feed`) | Legacy — OpenCV webcam inside backend |
+| Desktop client (`desktop_client/`) | Experimental / archived — native OpenCV window |
+| CLI `python main.py run` | Original OpenCV-only PoC |
+
+See [docs/DOCKER.md](docs/DOCKER.md) for environment variables, production profile, and troubleshooting.
+
+Local scripts (`scripts/start-backend.ps1`, `npm run dev`) remain supported without Docker.

@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "./config";
+
 export type PoseName = "front" | "left" | "right" | "up" | "down";
 
 export type PoseCounts = Record<PoseName, number>;
@@ -36,10 +38,12 @@ export type FaceRegistrationCompleteResponse = {
   embedding_file: string;
 };
 
-const FACE_REGISTRATION_BASE_URL = "http://127.0.0.1:8000/api/face-registration";
+function getFaceRegistrationBaseUrl(): string {
+  return `${getApiBaseUrl()}/api/face-registration`;
+}
 
 export async function createFaceRegistrationSession(displayName: string) {
-  const response = await fetch(`${FACE_REGISTRATION_BASE_URL}/sessions`, {
+  const response = await fetch(`${getFaceRegistrationBaseUrl()}/sessions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -55,7 +59,7 @@ export async function submitFaceRegistrationSample(
   pose: PoseName,
   frame: string,
 ) {
-  const response = await fetch(`${FACE_REGISTRATION_BASE_URL}/sessions/${sessionId}/samples`, {
+  const response = await fetch(`${getFaceRegistrationBaseUrl()}/sessions/${sessionId}/samples`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -67,7 +71,7 @@ export async function submitFaceRegistrationSample(
 }
 
 export async function completeFaceRegistrationSession(sessionId: string) {
-  const response = await fetch(`${FACE_REGISTRATION_BASE_URL}/sessions/${sessionId}/complete`, {
+  const response = await fetch(`${getFaceRegistrationBaseUrl()}/sessions/${sessionId}/complete`, {
     method: "POST",
   });
 
@@ -75,7 +79,7 @@ export async function completeFaceRegistrationSession(sessionId: string) {
 }
 
 export async function cancelFaceRegistrationSession(sessionId: string) {
-  const response = await fetch(`${FACE_REGISTRATION_BASE_URL}/sessions/${sessionId}`, {
+  const response = await fetch(`${getFaceRegistrationBaseUrl()}/sessions/${sessionId}`, {
     method: "DELETE",
   });
 

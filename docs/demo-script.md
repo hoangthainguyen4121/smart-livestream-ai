@@ -1,11 +1,12 @@
 # Smart Livestream AI MVP Demo Script
 
-This script demonstrates the current web MVP:
+> **Current primary path:** The main demo at `/` uses **Browser AR** (local MediaPipe FaceLandmarker, effect presets, optional debug overlay). Chat and AI Event Feed still use the backend. Sections below that reference Backend Annotated Stream or Browser Camera describe **legacy** camera modes kept for reference.
 
-- Backend Annotated Stream
-- Face Recognition
-- Raise Hand Gesture Overlay
-- AI Event Feed
+This script demonstrates the web MVP:
+
+- Browser AR (primary camera preview)
+- Face Recognition (via registration API; identity on AR stream planned)
+- Raise Hand Gesture / AI Event Feed (backend events)
 - Realtime WebSocket Chat
 - Multi-tab chat sync
 
@@ -97,12 +98,14 @@ Expected:
   - event type, such as `Raise Hand`
   - label, such as `hoang raised hand`
 
-Optional: wave with a large left-right movement.
+Optional: try Thumbs Up with a clear thumb-up pose.
 
 Expected:
 
-- If the movement is large enough, a Wave overlay appears.
-- The AI Event Feed receives a `Wave` event with a label like `hoang waved`.
+- If the gesture is clear enough, a Thumbs Up overlay may appear.
+- The AI Event Feed receives a `Thumbs Up` event when detected.
+
+Note: Wave gesture is temporarily disabled in this demo build.
 
 ### Step 5: Open Second Tab And Test Realtime Chat
 
@@ -132,14 +135,14 @@ During a successful demo:
 - Backend Annotated Stream opens the webcam.
 - Face recognition overlays appear on the stream.
 - Raise Hand gesture overlay appears when the hand is raised clearly.
-- AI Event Feed shows recent Raise Hand and Wave events.
+- AI Event Feed shows recent Raise Hand and Thumbs Up events.
 - Realtime chat works in one tab.
 - Realtime chat syncs across two tabs.
 - Existing face recognition and chat features continue working while the AI Event Feed is visible.
 
 ## 4. Known Limitations
 
-- Wave gesture is unreliable and requires a large, clear left-right hand movement.
+- Wave gesture is temporarily disabled (`ENABLE_WAVE_GESTURE=false`).
 - FPS depends on CPU speed, camera resolution, lighting, and current AI inference load.
 - The camera can be held by only one mode or process at a time.
 - Backend Annotated Stream, Browser Camera + WebSocket Debug, the CLI app, and other camera apps can conflict with each other.
@@ -199,12 +202,11 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - Improve lighting.
 - Check that Backend Annotated Stream is selected.
 
-### Wave does not trigger
+### Thumbs Up does not trigger
 
-- Wave with a larger left-right motion.
-- Keep the wrist visible.
-- Move more slowly and clearly.
-- Treat Wave as best-effort because it is currently unreliable.
+- Show a clear thumb-up with other fingers folded.
+- Keep the hand in frame and hold the pose briefly.
+- Improve lighting.
 
 ### AI Event Feed is empty
 

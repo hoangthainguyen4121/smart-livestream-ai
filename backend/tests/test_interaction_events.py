@@ -40,9 +40,9 @@ def test_interaction_event_service_formats_raise_hand_label() -> None:
 def test_interaction_event_service_applies_gesture_cooldown() -> None:
     service = InteractionEventService(cooldown_seconds=2.5)
 
-    first = service.append_gesture_event(username="hoang", gesture="Wave", now=1.0)
-    second = service.append_gesture_event(username="hoang", gesture="Wave", now=2.0)
-    third = service.append_gesture_event(username="hoang", gesture="Wave", now=4.0)
+    first = service.append_gesture_event(username="hoang", gesture="Raise Hand", now=1.0)
+    second = service.append_gesture_event(username="hoang", gesture="Raise Hand", now=2.0)
+    third = service.append_gesture_event(username="hoang", gesture="Raise Hand", now=4.0)
 
     assert first is not None
     assert second is None
@@ -93,29 +93,29 @@ def test_recent_interaction_events_endpoint_returns_events() -> None:
     interaction_event_service.clear()
     interaction_event_service.append_gesture_event(
         username="hoang",
-        gesture="Wave",
+        gesture="Raise Hand",
         now=1.0,
     )
 
     response = client.get("/api/interaction-events/recent")
 
     assert response.status_code == 200
-    assert response.json()["events"][0]["label"] == "hoang waved"
+    assert response.json()["events"][0]["label"] == "hoang raised hand"
     interaction_event_service.clear()
 
 
 def test_video_feed_identity_presence_emits_appeared_and_disappeared(monkeypatch) -> None:
     current_time = 10.0
-    monkeypatch.setattr("app.api.video_feed.time.perf_counter", lambda: current_time)
+    monkeypatch.setattr("app.services.stream_inference.time.perf_counter", lambda: current_time)
     interaction_event_service.clear()
     presence = IdentityPresenceState()
 
     update_face_interaction_events([RecognitionResultStub("hoang", True)], presence)
     current_time = 10.1
-    monkeypatch.setattr("app.api.video_feed.time.perf_counter", lambda: current_time)
+    monkeypatch.setattr("app.services.stream_inference.time.perf_counter", lambda: current_time)
     update_face_interaction_events([], presence)
     current_time = 11.2
-    monkeypatch.setattr("app.api.video_feed.time.perf_counter", lambda: current_time)
+    monkeypatch.setattr("app.services.stream_inference.time.perf_counter", lambda: current_time)
     update_face_interaction_events([], presence)
 
     labels = [event["label"] for event in interaction_event_service.recent_events()]
@@ -134,7 +134,32 @@ def test_video_feed_suppresses_thumbs_up_when_raise_hand_is_present() -> None:
     assert [event.name for event in visible_events] == ["Raise Hand"]
 
 
-def test_video_feed_prioritizes_wave_over_raise_hand() -> None:
+def test_video_feed_suppresses_wave_when_disabled() -> None:
+    events = [
+        GestureEventStub("Raise Hand"),
+        GestureEventStub("Wave"),
+    ]
+
+    visible_events = suppress_conflicting_gestures(events)
+
+    assert [event.name for event in visible_events] == ["Raise Hand"]
+
+
+def test_video_feed_prioritizes_wave_over_raise_hand_when_enabled(monkeypatch) -> None:
+    from dataclasses import replace
+
+    import config.settings as settings
+
+    monkeypatch.setattr(
+        settings,
+        "GESTURE",
+        replace(settings.GESTURE, enable_wave_gesture=True),
+    )
+    monkeypatch.setattr(
+        "app.services.stream_inference.GESTURE",
+        replace(settings.GESTURE, enable_wave_gesture=True),
+    )
+
     events = [
         GestureEventStub("Raise Hand"),
         GestureEventStub("Wave"),

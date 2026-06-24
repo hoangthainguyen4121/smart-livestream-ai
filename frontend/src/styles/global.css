@@ -124,6 +124,86 @@ h1 {
   color: #ffffff;
 }
 
+.modeToggle button.active {
+  border-color: #172033;
+  background: #172033;
+  color: #ffffff;
+}
+
+.browserStreamPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.browserStreamFrame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #0f172a;
+}
+
+.browserStreamDisplay {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+}
+
+.browserStreamVideo {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+.browserStreamOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.previewModeToggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.previewModeToggle button {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.previewModeToggle button.active {
+  border-color: #172033;
+  background: #172033;
+  color: #ffffff;
+}
+
+.previewModeToggle button:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.hiddenVideo {
+  display: none;
+}
+
+.warningNotice {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 600;
+}
+
 .videoCard,
 .aiEventFeedPanel,
 .faceRegistrationPanel,
@@ -193,6 +273,533 @@ h1 {
   margin-top: 12px;
   color: #46556a;
   font-size: 0.9rem;
+}
+
+.browserArStream {
+  display: grid;
+  gap: 12px;
+}
+
+.browserArCanvas {
+  aspect-ratio: 4 / 3;
+}
+
+.browserArHint {
+  margin: 0;
+  color: #46556a;
+  font-size: 0.9rem;
+}
+
+.browserArDebugMetrics {
+  margin-top: 0;
+}
+
+.streamMediaRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.pinnedProductPanel {
+  align-self: start;
+}
+
+.pinnedProductBody {
+  display: grid;
+  gap: 12px;
+}
+
+.pinnedProductTopRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pinnedProductBadge,
+.pinnedProductTryOnBadge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.pinnedProductBadge {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.pinnedProductTryOnBadge {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.pinnedProductBody h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.pinnedProductPrice {
+  margin: 0;
+  color: #2f6fed;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.pinnedProductStatusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pinnedProductStockBadge,
+.pinnedProductStockCount {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.pinnedProductStockBadge.inStock {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pinnedProductStockBadge.lowStock {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.pinnedProductStockBadge.outOfStock {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.pinnedProductStockCount {
+  background: #f4f7fb;
+  color: #46556a;
+}
+
+.pinnedProductColors {
+  display: grid;
+  gap: 8px;
+}
+
+.pinnedProductColorsLabel {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.pinnedProductColorChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pinnedProductColorChip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.pinnedProductLinkButton {
+  display: inline-flex;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #172033;
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.salesAssistantPanel {
+  margin-bottom: 16px;
+}
+
+.salesAnalyticsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.salesAnalyticsItem {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f4f7fb;
+}
+
+.salesAnalyticsItem span {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.salesAnalyticsItem strong {
+  color: #172033;
+  font-size: 1.2rem;
+}
+
+.salesAnalyticsWide {
+  grid-column: span 3;
+}
+
+.salesRecommendations {
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.salesRecommendations h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.salesRecommendations ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #92400e;
+}
+
+.salesRecommendations li + li {
+  margin-top: 6px;
+}
+
+.salesAssistantEvents h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.salesAssistantEventList {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.salesAssistantEventItem {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+}
+
+.salesAssistantEventItemEscalation {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.salesEscalationBanner {
+  margin: 0;
+  color: #c2410c;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.salesAssistantEventMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.salesIntentBadge,
+.salesActionBadge,
+.salesConfidenceBadge {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.salesIntentBadge {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.salesActionBadge {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.salesActionBadge--ESCALATE_TO_HOST {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.salesActionBadge--INBOX_SUGGESTED {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.salesConfidenceBadge {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.salesMlIntentBadge,
+.salesIntentSourceBadge {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.salesMlIntentBadge {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.salesIntentSourceBadge {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.salesIntentSourceBadge--ml {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.salesIntentSourceBadge--regex_fallback {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.salesAssistantEventItemComplaint {
+  border-color: #f97316;
+  box-shadow: inset 0 0 0 1px #fdba74;
+}
+
+.salesEventDetails {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.salesEventDetails div {
+  display: grid;
+  gap: 4px;
+}
+
+.salesEventDetailsWide {
+  grid-column: span 2;
+}
+
+.salesEventDetails dt {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.salesEventDetails dd {
+  margin: 0;
+  color: #172033;
+  font-size: 0.92rem;
+}
+
+.salesAssistantEventItem p {
+  margin: 0;
+  color: #46556a;
+  font-size: 0.92rem;
+}
+
+.chatMessageAssistant {
+  margin-left: 10px;
+  padding-left: 14px;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  border-left: 3px solid #34d399;
+}
+
+.chatMessageAssistant strong {
+  color: #047857;
+}
+
+.chatReplyContext {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.productCatalogPanel {
+  margin-bottom: 16px;
+}
+
+.productCatalogPanel.compact .productCatalogGrid {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  max-height: 320px;
+  overflow: auto;
+}
+
+.productCatalogFilters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.productCatalogFilters input,
+.productCatalogFilters select {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.productCatalogGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.productCard {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.productCard.pinned {
+  border-color: #2f6fed;
+  box-shadow: 0 0 0 1px rgba(47, 111, 237, 0.15);
+}
+
+.productCardImage {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.productCardBody {
+  display: grid;
+  gap: 6px;
+}
+
+.productCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.productCardTop h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.productCardCategory {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.productCardPrice {
+  margin: 0;
+  color: #2f6fed;
+  font-weight: 800;
+}
+
+.productCardDescription {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.productCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.productCardBody button {
+  justify-self: start;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #172033;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.productCardBody button.active {
+  background: #2f6fed;
+}
+
+.salesLabPage {
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.salesLabHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.salesLabGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.2fr) minmax(320px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.salesLabColumn {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.salesLabChatPanel,
+.salesLabArPanel {
+  min-width: 0;
+}
+
+.salesLabChatMessages {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+  margin-bottom: 12px;
 }
 
 .metricsRow span {
@@ -454,6 +1061,30 @@ h1 {
   color: #2f6fed;
 }
 
+.chatMlIntentBadge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.chatMlIntentBadge--ml {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.chatMlIntentBadge--regex_fallback {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.chatMlIntentBadge--regex {
+  background: #e2e8f0;
+  color: #475569;
+}
+
 .chatInputRow {
   display: flex;
   gap: 8px;
@@ -499,6 +1130,26 @@ h1 {
   }
 
   .registrationWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .streamMediaRow {
+    grid-template-columns: 1fr;
+  }
+
+  .salesAnalyticsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .salesAnalyticsWide {
+    grid-column: span 2;
+  }
+
+  .salesLabGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .productCatalogFilters {
     grid-template-columns: 1fr;
   }
 }

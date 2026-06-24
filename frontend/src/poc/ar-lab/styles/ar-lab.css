@@ -1,0 +1,168 @@
+.arLabPage {
+  min-height: 100vh;
+  padding: 24px;
+  background: radial-gradient(circle at top, #1b2740 0%, #0d1117 45%, #090b10 100%);
+  color: #eef2ff;
+}
+
+.arLabHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.arLabEyebrow {
+  margin: 0 0 8px;
+  color: #93c5fd;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.arLabIntro {
+  max-width: 760px;
+  color: #cbd5e1;
+}
+
+.arLabHeaderLinks a {
+  color: #bfdbfe;
+}
+
+.arLabLayout {
+  display: grid;
+  grid-template-columns: minmax(320px, 720px) minmax(280px, 420px);
+  gap: 20px;
+}
+
+.arLabPreviewPanel,
+.arLabPanel {
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.arLabCanvas {
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  border-radius: 12px;
+}
+
+.arLabBrowserInfo {
+  margin: 12px 0 0;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  word-break: break-word;
+}
+
+.arLabSidebar {
+  display: grid;
+  gap: 16px;
+}
+
+.arLabField {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.arLabField select,
+.arLabActions button {
+  width: 100%;
+}
+
+.arLabField select,
+.arLabReportOutput {
+  background: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.arLabActions {
+  display: grid;
+  gap: 10px;
+}
+
+.arLabActions button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+.arLabActions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.arLabMetricsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.arLabMetricsGrid dt {
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.arLabMetricsGrid dd {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.arLabVerdict--excellent {
+  color: #4ade80;
+}
+
+.arLabVerdict--good {
+  color: #86efac;
+}
+
+.arLabVerdict--acceptable {
+  color: #fbbf24;
+}
+
+.arLabVerdict--poor {
+  color: #f87171;
+}
+
+.arLabLatestSummary {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.arLabError {
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.35);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.arLabReportPanel {
+  margin-top: 20px;
+}
+
+.arLabReportOutput {
+  width: 100%;
+  margin-top: 12px;
+  font-family: Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 960px) {
+  .arLabLayout {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,8 +1,19 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+ENABLE_WAVE_GESTURE = _env_bool("ENABLE_WAVE_GESTURE", False)
 DUPLICATE_IDENTITY_THRESHOLD = 0.88
 
 
@@ -28,19 +39,22 @@ class FaceSettings:
 
 @dataclass(frozen=True)
 class GestureSettings:
+    enable_wave_gesture: bool = ENABLE_WAVE_GESTURE
     max_num_hands: int = 2
     detection_confidence: float = 0.6
     tracking_confidence: float = 0.6
     wave_window_seconds: float = 2.5
     wave_min_reversals: int = 2
-    wave_min_peak_to_peak: float = 0.048
-    wave_min_path_length: float = 0.09
-    wave_max_wrist_y: float = 0.82
-    wave_min_span_seconds: float = 0.4
+    wave_min_peak_to_peak: float = 0.055
+    wave_min_path_length: float = 0.10
+    wave_min_wrist_y: float = 0.18
+    wave_max_wrist_y: float = 0.88
+    wave_min_span_seconds: float = 0.35
     wave_cooldown_seconds: float = 2.5
     wave_missed_frame_grace: int = 4
-    wave_min_samples: int = 5
-    wave_min_delta: float = 0.004
+    wave_min_samples: int = 10
+    wave_max_samples: int = 15
+    wave_min_delta: float = 0.006
     raise_hand_y_threshold: float = 0.42
     effect_duration_frames: int = 24
 

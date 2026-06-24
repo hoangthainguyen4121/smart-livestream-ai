@@ -8,21 +8,27 @@ from dataclasses import dataclass, field
 class WaveTracker:
     window_seconds: float = 2.5
     min_reversals: int = 2
-    min_peak_to_peak: float = 0.048
-    min_path_length: float = 0.09
-    max_wrist_y: float = 0.82
-    min_span_seconds: float = 0.4
+    min_peak_to_peak: float = 0.055
+    min_path_length: float = 0.10
+    min_wrist_y: float = 0.18
+    max_wrist_y: float = 0.88
+    min_span_seconds: float = 0.35
     cooldown_seconds: float = 2.5
     missed_frame_grace: int = 4
-    min_samples: int = 5
-    min_delta: float = 0.004
+    min_samples: int = 10
+    max_samples: int = 15
+    min_delta: float = 0.006
 
     _samples: deque[tuple[float, float]] = field(default_factory=deque, init=False, repr=False)
     _cooldown_until: float = field(default=0.0, init=False, repr=False)
     _missed_frames: int = field(default=0, init=False, repr=False)
 
-    def observe(self, x: float, wrist_y: float, now: float) -> bool:
+    def observe(self, x: float, wrist_y: float, now: float, hand_open: bool = True) -> bool:
         self._trim_old_samples(now)
+
+        if not hand_open:
+            self.mark_missed()
+            return False
 
         if now < self._cooldown_until:
             if self._is_trackable(wrist_y):
@@ -59,10 +65,23 @@ class WaveTracker:
         self._samples.clear()
         return True
 
+    def debug_state(self) -> dict[str, float | int]:
+        values = [sample_x for _timestamp, sample_x in self._samples]
+        if len(values) < 2:
+            return {
+                "wrist_dx": 0.0,
+                "direction_changes": 0,
+                "amplitude": 0.0,
+            }
+
+        return {
+            "wrist_dx": values[-1] - values[0],
+            "direction_changes": self._count_reversals(values),
+            "amplitude": max(values) - min(values),
+        }
+
     def _is_trackable(self, wrist_y: float) -> bool:
-        # Reject only when the hand is clearly low in the frame.
-        # Shoulder-level side waves are allowed; no "above head" requirement.
-        return wrist_y < self.max_wrist_y
+        return self.min_wrist_y <= wrist_y <= self.max_wrist_y
 
     def mark_missed(self) -> None:
         self._missed_frames += 1
@@ -75,6 +94,8 @@ class WaveTracker:
 
     def _append_sample(self, now: float, x: float) -> None:
         self._samples.append((now, x))
+        while len(self._samples) > self.max_samples:
+            self._samples.popleft()
 
     def _trim_old_samples(self, now: float) -> None:
         cutoff = now - self.window_seconds
