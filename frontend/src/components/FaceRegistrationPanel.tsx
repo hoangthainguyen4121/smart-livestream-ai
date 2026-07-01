@@ -4,6 +4,8 @@ import {
   cancelFaceRegistrationSession,
   completeFaceRegistrationSession,
   createFaceRegistrationSession,
+  getFaceRegistrationApiBaseUrl,
+  isRegistrationSessionMissingError,
   submitFaceRegistrationSample,
   type FaceRegistrationCompleteResponse,
   type FaceRegistrationSampleResponse,
@@ -67,12 +69,20 @@ export function FaceRegistrationPanel({
 
     try {
       const createdSession = await createFaceRegistrationSession(name);
+      if (!createdSession.session_id?.trim()) {
+        throw new Error(
+          `Registration session was not created. Backend: ${getFaceRegistrationApiBaseUrl()}`,
+        );
+      }
       setSession(createdSession);
-      setStatusMessage("Camera starting. Capture front, then left or right samples.");
+      setStatusMessage(
+        `Session ${createdSession.session_id.slice(0, 8)}… ready. Capture front, then left or right samples.`,
+      );
       await startCamera();
     } catch (error) {
       onRegistrationActiveChange(false);
-      setErrorMessage(error instanceof Error ? error.message : "Unable to start registration.");
+      setSession(null);
+      setErrorMessage(formatRegistrationError(error, "start registration"));
     } finally {
       setIsBusy(false);
     }
@@ -113,7 +123,16 @@ export function FaceRegistrationPanel({
         setSelectedPose(getNextPose(response.pose_counts));
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to submit sample.");
+      if (isRegistrationSessionMissingError(error)) {
+        setSession(null);
+        stopCamera();
+        onRegistrationActiveChange(false);
+        setErrorMessage(
+          "Registration session expired or backend restarted. Click Start Registration again.",
+        );
+      } else {
+        setErrorMessage(formatRegistrationError(error, "submit sample"));
+      }
     } finally {
       setIsBusy(false);
     }
@@ -138,7 +157,16 @@ export function FaceRegistrationPanel({
       stopCamera();
       onRegistrationActiveChange(false);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to complete registration.");
+      if (isRegistrationSessionMissingError(error)) {
+        setSession(null);
+        stopCamera();
+        onRegistrationActiveChange(false);
+        setErrorMessage(
+          "Registration session expired or backend restarted. Click Start Registration again.",
+        );
+      } else {
+        setErrorMessage(formatRegistrationError(error, "complete registration"));
+      }
     } finally {
       setIsBusy(false);
     }
@@ -317,4 +345,12 @@ function getNextPose(poseCounts: Record<PoseName, number>): PoseName {
   }
 
   return "front";
+}
+
+function formatRegistrationError(error: unknown, action: string): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return `Unable to ${action}.`;
 }

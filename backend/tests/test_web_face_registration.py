@@ -274,6 +274,34 @@ def test_face_registration_api_create_sample_complete_and_cancel(monkeypatch) ->
     assert delete_response.json()["cancelled"] is True
 
 
+def test_registration_session_is_reloaded_from_disk(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.services.web_face_registration._session_storage_dir",
+        lambda: tmp_path,
+    )
+
+    service_a = WebFaceRegistrationService(
+        recognizer=FakeRecognizer(),
+        store=FakeStore(),
+    )
+    session = service_a.create_session("hoang")
+
+    service_b = WebFaceRegistrationService(
+        recognizer=FakeRecognizer(),
+        store=FakeStore(),
+    )
+    assert session["session_id"] not in service_b._sessions
+
+    response = service_b.add_sample(
+        session_id=session["session_id"],
+        pose="front",
+        frame_payload=create_test_frame_data_url(),
+    )
+
+    assert response["accepted"] is True
+    assert response["accepted_count"] == 1
+
+
 def create_face(embedding, *, confidence=0.95, bbox=None):
     return SimpleNamespace(
         bbox=bbox or BoundingBox(40, 40, 220, 220),

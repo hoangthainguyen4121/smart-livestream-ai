@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
+import logging
 from collections import Counter
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -13,10 +16,12 @@ from app.utils.image_codec import decode_data_url_frame
 
 ensure_project_root_on_path()
 
-from config.settings import DUPLICATE_IDENTITY_THRESHOLD  # noqa: E402
+from config.settings import DUPLICATE_IDENTITY_THRESHOLD, STORAGE  # noqa: E402
 from face_recognition.embedding_store import EmbeddingStore  # noqa: E402
 from face_recognition.recognizer import InsightFaceRecognizer  # noqa: E402
 
+
+logger = logging.getLogger(__name__)
 
 REQUIRED_POSES = ("front", "left", "right")
 OPTIONAL_POSES = ("up", "down")
@@ -74,6 +79,7 @@ class WebFaceRegistrationService:
         self._recognizer = recognizer
         self._store = store or EmbeddingStore()
         self._sessions: dict[str, FaceRegistrationSession] = {}
+        _session_storage_dir().mkdir(parents=True, exist_ok=True)
 
     def create_session(self, display_name: str) -> dict[str, Any]:
         normalized_display_name = display_name.strip()
@@ -81,10 +87,13 @@ class WebFaceRegistrationService:
             raise ValueError("Display name must not be empty.")
 
         session_id = str(uuid4())
-        self._sessions[session_id] = FaceRegistrationSession(
+        session = FaceRegistrationSession(
             session_id=session_id,
             display_name=normalized_display_name,
         )
+        self._sessions[session_id] = session
+        self._persist_session(session)
+        logger.info("Created face registration session %s", session_id)
         return self._session_summary(session_id)
 
     def add_sample(self, session_id: str, pose: str, frame_payload: str) -> dict[str, Any]:
@@ -107,6 +116,7 @@ class WebFaceRegistrationService:
             session.accepted_samples.append(
                 AcceptedFaceSample(pose=pose, embedding=face.embedding)
             )
+            self._persist_session(session)
 
         return self._sample_response(
             session=session,
@@ -138,7 +148,7 @@ class WebFaceRegistrationService:
             len(session.accepted_samples),
         )
         self._get_recognizer().reload_registered_users()
-        self._sessions.pop(session_id, None)
+        self._delete_session(session_id)
 
         return {
             "display_name": session.display_name,
@@ -147,9 +157,15 @@ class WebFaceRegistrationService:
         }
 
     def cancel_session(self, session_id: str) -> bool:
-        return self._sessions.pop(session_id, None) is not None
+        existed = session_id in self._sessions or _session_file_path(session_id).exists()
+        self._delete_session(session_id)
+        return existed
 
     def clear(self) -> None:
+        for session_id in list(self._sessions):
+            self._delete_session(session_id)
+        for path in _session_storage_dir().glob("*.json"):
+            path.unlink(missing_ok=True)
         self._sessions.clear()
 
     def _validate_frame(
@@ -206,8 +222,59 @@ class WebFaceRegistrationService:
     def _get_session(self, session_id: str) -> FaceRegistrationSession:
         session = self._sessions.get(session_id)
         if session is None:
+            session = self._load_session_from_disk(session_id)
+        if session is None:
+            logger.warning("Registration session not found: %s", session_id)
             raise KeyError("Registration session not found.")
         return session
+
+    def _persist_session(self, session: FaceRegistrationSession) -> None:
+        storage_dir = _session_storage_dir()
+        storage_dir.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "session_id": session.session_id,
+            "display_name": session.display_name,
+            "accepted_samples": [
+                {
+                    "pose": sample.pose,
+                    "embedding": sample.embedding.astype(float).tolist(),
+                }
+                for sample in session.accepted_samples
+            ],
+        }
+        _session_file_path(session.session_id).write_text(
+            json.dumps(payload),
+            encoding="utf-8",
+        )
+
+    def _load_session_from_disk(self, session_id: str) -> FaceRegistrationSession | None:
+        path = _session_file_path(session_id)
+        if not path.exists():
+            return None
+
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            session = FaceRegistrationSession(
+                session_id=str(payload["session_id"]),
+                display_name=str(payload["display_name"]),
+                accepted_samples=[
+                    AcceptedFaceSample(
+                        pose=str(sample["pose"]),
+                        embedding=np.asarray(sample["embedding"], dtype=np.float32),
+                    )
+                    for sample in payload.get("accepted_samples", [])
+                ],
+            )
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            logger.warning("Unable to load registration session %s: %s", session_id, error)
+            return None
+
+        self._sessions[session.session_id] = session
+        return session
+
+    def _delete_session(self, session_id: str) -> None:
+        self._sessions.pop(session_id, None)
+        _session_file_path(session_id).unlink(missing_ok=True)
 
     def _get_recognizer(self):
         if self._recognizer is None:
@@ -292,6 +359,14 @@ class WebFaceRegistrationService:
             and counts.get("front", 0) >= 1
             and (counts.get("left", 0) >= 1 or counts.get("right", 0) >= 1)
         )
+
+
+def _session_storage_dir() -> Path:
+    return STORAGE.embeddings_dir.parent / "registration_sessions"
+
+
+def _session_file_path(session_id: str) -> Path:
+    return _session_storage_dir() / f"{session_id}.json"
 
 
 def calculate_blur_variance(frame: np.ndarray) -> float:
