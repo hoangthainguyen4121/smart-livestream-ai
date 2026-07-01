@@ -37,3 +37,15 @@ docs/literature_review_export/
 # Build / cache artifacts
 dist/
 build/
+
+# Thesis planning/local artifacts
+docs/THESIS_*.md
+docs/LITERATURE_*.md
+docs/PRESENTATION*.md
+docs/BANG_2_2_RELATED_WORK.md
+docs/CHANGELOG_LITERATURE_V3.md
+docs/CHAPTER2_WRITING_PLAN.md
+docs/CHAPTER3_ACADEMIC_POLISH.md
+docs/DEPLOYMENT_STATUS.md
+docs/chapter2/
+docs/chapter3/
