@@ -102,6 +102,7 @@ export function FaceRegistrationPanel({
     setIsBusy(true);
     setErrorMessage(null);
     try {
+      setStatusMessage(`Analyzing ${selectedPose} sample… first capture may take up to 3 minutes on Railway.`);
       const response = await submitFaceRegistrationSample(
         session.session_id,
         selectedPose,

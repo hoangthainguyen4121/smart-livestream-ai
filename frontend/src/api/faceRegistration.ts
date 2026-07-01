@@ -56,6 +56,8 @@ export function getFaceRegistrationApiBaseUrl(): string {
   return getFaceRegistrationBaseUrl();
 }
 
+const SAMPLE_SUBMIT_TIMEOUT_MS = 180_000;
+
 export async function createFaceRegistrationSession(displayName: string) {
   try {
     const response = await fetch(`${getFaceRegistrationBaseUrl()}/sessions`, {
@@ -84,6 +86,9 @@ export async function submitFaceRegistrationSample(
   pose: PoseName,
   frame: string,
 ) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), SAMPLE_SUBMIT_TIMEOUT_MS);
+
   try {
     const response = await fetch(
       `${getFaceRegistrationBaseUrl()}/sessions/${encodeURIComponent(sessionId)}/samples`,
@@ -93,12 +98,15 @@ export async function submitFaceRegistrationSample(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ pose, frame }),
+        signal: controller.signal,
       },
     );
 
     return await readJsonResponse<FaceRegistrationSampleResponse>(response);
   } catch (error) {
     throw toFaceRegistrationRequestError(error, "submit registration sample");
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 }
 
@@ -176,12 +184,25 @@ function extractDetail(payload: unknown): string {
 }
 
 function toFaceRegistrationRequestError(error: unknown, action: string): Error {
-  if (error instanceof FaceRegistrationApiError || error instanceof Error) {
-    if (error instanceof TypeError) {
+  if (error instanceof FaceRegistrationApiError) {
+    return error;
+  }
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return new Error(
+      "Face analysis timed out after 3 minutes. The backend may still be loading InsightFace on Railway — try Capture again.",
+    );
+  }
+  if (error instanceof TypeError) {
+    if (action.includes("submit")) {
       return new Error(
-        `Cannot reach backend at ${getFaceRegistrationBaseUrl()} to ${action}. Check VITE_API_BASE_URL.`,
+        "Backend did not respond while analyzing the face sample. First capture on Railway can take 1–3 minutes — wait and try Capture again.",
       );
     }
+    return new Error(
+      `Cannot reach backend at ${getFaceRegistrationBaseUrl()} to ${action}. Check VITE_API_BASE_URL.`,
+    );
+  }
+  if (error instanceof Error) {
     return error;
   }
 

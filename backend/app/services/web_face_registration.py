@@ -168,6 +168,9 @@ class WebFaceRegistrationService:
             path.unlink(missing_ok=True)
         self._sessions.clear()
 
+    def warmup_recognizer(self) -> None:
+        self._get_recognizer()
+
     def _validate_frame(
         self,
         session: FaceRegistrationSession,

@@ -9,7 +9,7 @@ export type ServiceHealthSnapshot = {
   apiBaseUrl: string;
 };
 
-const HEALTH_TIMEOUT_MS = 4000;
+const HEALTH_TIMEOUT_MS = 15_000;
 
 export async function fetchBackendHealth(): Promise<boolean> {
   const controller = new AbortController();

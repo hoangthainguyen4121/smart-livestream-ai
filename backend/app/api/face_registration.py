@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.concurrency import run_in_threadpool
 
 from app.schemas.face_registration import (
     FaceRegistrationCancelResponse,
@@ -28,15 +29,16 @@ def create_face_registration_session(
     "/sessions/{session_id}/samples",
     response_model=FaceRegistrationSampleResponse,
 )
-def add_face_registration_sample(
+async def add_face_registration_sample(
     session_id: str,
     request: FaceRegistrationSampleRequest,
 ) -> dict:
     try:
-        return face_registration_service.add_sample(
-            session_id=session_id,
-            pose=request.pose,
-            frame_payload=request.frame,
+        return await run_in_threadpool(
+            face_registration_service.add_sample,
+            session_id,
+            request.pose,
+            request.frame,
         )
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
@@ -48,9 +50,12 @@ def add_face_registration_sample(
     "/sessions/{session_id}/complete",
     response_model=FaceRegistrationCompleteResponse,
 )
-def complete_face_registration_session(session_id: str) -> dict:
+async def complete_face_registration_session(session_id: str) -> dict:
     try:
-        return face_registration_service.complete_session(session_id)
+        return await run_in_threadpool(
+            face_registration_service.complete_session,
+            session_id,
+        )
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except ValueError as error:

@@ -1,4 +1,6 @@
+import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +16,10 @@ from app.api import (
     realtime,
     video_feed,
 )
+from app.services.web_face_registration import face_registration_service
 
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_CORS_ORIGINS = [
     "http://localhost:5173",
@@ -40,7 +45,32 @@ def get_cors_origins() -> list[str]:
     return [origin.strip() for origin in configured.split(",") if origin.strip()]
 
 
-app = FastAPI(title="Smart Livestream AI Backend", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    del app
+    if os.getenv("SKIP_FACE_RECOGNIZER_WARMUP", "").lower() in {"1", "true", "yes"}:
+        logger.info("Skipping face recognizer warmup (SKIP_FACE_RECOGNIZER_WARMUP).")
+    else:
+        logger.info("Warming up face registration recognizer...")
+        try:
+            await run_face_registration_warmup()
+            logger.info("Face registration recognizer ready.")
+        except Exception as error:
+            logger.warning("Face recognizer warmup failed: %s", error)
+    yield
+
+
+async def run_face_registration_warmup() -> None:
+    import asyncio
+
+    await asyncio.to_thread(face_registration_service.warmup_recognizer)
+
+
+app = FastAPI(
+    title="Smart Livestream AI Backend",
+    version="0.1.0",
+    lifespan=lifespan,
+)
 
 app.add_middleware(
     CORSMiddleware,
