@@ -45,18 +45,30 @@ def get_cors_origins() -> list[str]:
     return [origin.strip() for origin in configured.split(",") if origin.strip()]
 
 
+def is_face_recognition_warmup_enabled() -> bool:
+    return os.getenv("FACE_RECOGNITION_WARMUP", "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     del app
-    if os.getenv("SKIP_FACE_RECOGNIZER_WARMUP", "").lower() in {"1", "true", "yes"}:
-        logger.info("Skipping face recognizer warmup (SKIP_FACE_RECOGNIZER_WARMUP).")
-    else:
-        logger.info("Warming up face registration recognizer...")
+    if is_face_recognition_warmup_enabled():
+        logger.info("Warming up face registration recognizer (FACE_RECOGNITION_WARMUP=true)...")
         try:
             await run_face_registration_warmup()
             logger.info("Face registration recognizer ready.")
         except Exception as error:
             logger.warning("Face recognizer warmup failed: %s", error)
+    else:
+        logger.info(
+            "Face recognizer warmup disabled (FACE_RECOGNITION_WARMUP=false). "
+            "InsightFace loads lazily on first face-registration capture."
+        )
     yield
 
 

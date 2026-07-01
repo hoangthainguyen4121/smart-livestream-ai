@@ -166,7 +166,7 @@ Track results in [`docs/RAILWAY_DEPLOYMENT_STATUS.md`](RAILWAY_DEPLOYMENT_STATUS
 
 - WebSocket chat cần `wss://` qua HTTPS.
 - Browser AR cần HTTPS + quyền camera.
-- InsightFace tải model lần đầu — cold start 1–3 phút.
+- InsightFace tải model **lazy** khi dùng face registration (không warmup lúc startup mặc định). Local Docker: cold start capture đầu ~1–3 phút. **Railway free tier:** RAM thường không đủ InsightFace ổn định — giữ `FACE_RECOGNITION_WARMUP=false`; face registration best-effort.
 - Legacy MJPEG `/video-feed` **không** hoạt động tin cậy trong container cloud.
 
 ### GitHub Pages (chỉ frontend static)

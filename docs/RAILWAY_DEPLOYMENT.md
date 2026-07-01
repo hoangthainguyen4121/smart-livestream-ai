@@ -59,6 +59,7 @@ Env mẫu: [`.env.railway.example`](../.env.railway.example)
 | `ML_INTENT_API_URL` | No | *(unset)* | Bỏ trống → rules fallback |
 | `ML_INTENT_TIMEOUT_SECONDS` | No | `2` | |
 | `ENABLE_WAVE_GESTURE` | No | `false` | |
+| `FACE_RECOGNITION_WARMUP` | No | `false` | **Bắt buộc false trên free tier** — tránh OOM lúc startup |
 
 ### 2.3 Deploy & lấy URL
 
@@ -191,11 +192,15 @@ Backend proxy `/api/nlp/*` — frontend không đổi.
 | Hạn chế | Chi tiết |
 |---------|----------|
 | Ephemeral disk | Face embeddings **mất** khi redeploy — không volume persistent trên free |
-| Cold start | Backend InsightFace load ~30s–2min sau sleep |
+| InsightFace memory | **Railway free/trial RAM thường không đủ** cho InsightFace (`buffalo_l`) ổn định. Backend mặc định **không** warmup model lúc startup (`FACE_RECOGNITION_WARMUP=false`). Face registration là **best-effort** trên cloud free tier; demo chính (Browser AR, chat) không phụ thuộc register. |
+| First capture | Model load **lazy** khi user chụp mẫu đầu tiên — có thể chậm hoặc OOM; không chặn `/api/health`. |
+| Cold start | Sau sleep, request đầu có thể chậm; không load InsightFace trừ khi dùng face registration |
 | ML model | PhoBERT ~400MB+ — không phù hợp free tier |
 | Legacy MJPEG | `/video-feed` không dùng trên cloud |
 | Sleep / quota | Free tier có giới hạn giờ chạy/tháng — kiểm tra Railway pricing |
 | 2 services | Mỗi service tính quota riêng |
+
+**Env khuyến nghị (backend):** `FACE_RECOGNITION_WARMUP=false` (mặc định). Chỉ bật `true` trên máy có đủ RAM (local Docker / paid Railway).
 
 ---
 
@@ -206,7 +211,8 @@ Backend proxy `/api/nlp/*` — frontend không đổi.
 | Frontend gọi `127.0.0.1:8000` | Build thiếu `VITE_*` | Set build vars + **Redeploy** frontend |
 | CORS error | `CORS_ORIGINS` sai | Set đúng frontend HTTPS URL |
 | Chat `error` / disconnected | WSS blocked or backend down | Kiểm tra backend health, `VITE_WS_BASE_URL` |
-| Build backend fail OOM | InsightFace deps lớn | Retry; cân nhắc Railway paid RAM |
+| Build backend fail OOM | InsightFace deps lớn hoặc warmup bật | Giữ `FACE_RECOGNITION_WARMUP=false`; retry build; cân nhắc Railway paid RAM |
+| Backend OOM sau deploy | Startup warmup load `buffalo_l` | Set `FACE_RECOGNITION_WARMUP=false` (mặc định) và redeploy |
 | Camera không bật | HTTP not HTTPS | Dùng Railway domain HTTPS |
 
 ---
