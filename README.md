@@ -1,22 +1,27 @@
 # Smart Livestream PoC
 
-Local proof of concept for a smart livestream system that combines face recognition and gesture recognition.
+Proof of concept for a smart livestream sales-support system: Browser AR, face registration, gesture/face events, Vietnamese comment intent (PhoBERT bridge optional), and AI sales assistant.
+
+## Quick start (Docker)
+
+```powershell
+docker compose up --build
+```
+
+| URL | Service |
+|-----|---------|
+| http://127.0.0.1:5173 | Frontend demo |
+| http://127.0.0.1:8000/api/health | Backend health |
+
+See [docs/DOCKER.md](docs/DOCKER.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Scope
 
-- Open webcam stream locally.
-- Register users by capturing webcam face samples.
-- Generate face embeddings with InsightFace.
-- Store each user embedding as a separate `.npy` file.
-- Keep `users.json` as a lightweight local index only.
-- Recognize registered users in real time.
-- Display `Unknown` for unregistered faces.
-- Detect `Raise Hand` and `Thumbs Up` with MediaPipe Hands.
-- Wave gesture is temporarily disabled (`ENABLE_WAVE_GESTURE=false`).
-- Render username, gesture effects, and FPS overlays with OpenCV.
-- Write application logs to `logs/app.log`.
-
-No database, web app, cloud service, Docker, message queue, authentication, or additional AI model is used in this phase.
+- **Browser AR** demo (MediaPipe FaceLandmarker in browser — main path).
+- **Backend** FastAPI: chat WebSocket, face registration, NLP proxy, AI event feed.
+- **Optional ML**: PhoBERT intent API in separate repo `smart-livestream-ml` (rules fallback when down).
+- **Legacy CLI** (`main.py`): local OpenCV webcam PoC — optional dev tool.
+- Local embeddings in `storage/embeddings/` — no database, no auth.
 
 ## Folder Structure
 
@@ -54,8 +59,22 @@ smart-livestream-poc/
 ├── logs/
 │   └── app.log
 └── docs/
+    ├── DOCKER.md
+    ├── DEPLOYMENT.md
+    ├── CI_CD.md
     └── limitations.md
 ```
+
+## CI/CD
+
+GitHub Actions on `main`:
+
+- **CI** — backend pytest, frontend test + build, `docker compose config`
+- **Docker Build** — build backend + frontend images (no registry push)
+
+Details: [docs/CI_CD.md](docs/CI_CD.md)
+
+Cloud deploy: [docs/RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md)
 
 ## Architecture
 
@@ -186,6 +205,19 @@ These remain for tests and reference; the **main demo** uses Browser AR in the f
 | `GET /video-feed` | Legacy — MJPEG stream with backend OpenCV capture |
 | CLI `python main.py run` | Original local OpenCV PoC (not part of web demo) |
 
-See [docs/DOCKER.md](docs/DOCKER.md) for environment variables, production profile, and troubleshooting.
+See [docs/DOCKER.md](docs/DOCKER.md) for environment variables, ML optional service, production profile, and troubleshooting.
+
+## ML intent service (optional)
+
+PhoBERT classification runs in repo **`smart-livestream-ml`**, not in this compose stack.
+
+| Mode | ML required? | Intent classification |
+|------|--------------|----------------------|
+| Default Docker | No | Regex/rules fallback |
+| Full NLP demo | Yes (port 8010) | PhoBERT via backend proxy |
+
+Start ML on host, then backend reaches it at `host.docker.internal:8010` (default in compose). See [docs/phobert_bridge_demo.md](phobert_bridge_demo.md).
+
+Frontend shows a yellow banner when ML is optional but unavailable; red banner when backend is down.
 
 Local scripts (`scripts/start-backend.ps1`, `npm run dev`) remain supported without Docker.

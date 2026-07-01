@@ -1,6 +1,8 @@
 # Docker Guide
 
-Run the Smart Livestream PoC with Docker Compose while keeping the existing local workflow (`scripts/start-backend.ps1`, `npm run dev`, etc.).
+Run the Smart Livestream PoC with Docker Compose. Local scripts (`scripts/start-backend.ps1`, `npm run dev`) remain supported.
+
+Deploy overview: [DEPLOYMENT.md](DEPLOYMENT.md) · CI: [CI_CD.md](CI_CD.md)
 
 ## Quick start
 
@@ -34,6 +36,7 @@ docker compose --profile prod up --build
 | `frontend` | http://127.0.0.1:5173 | Vite dev server with hot reload |
 | `frontend-prod` (profile) | http://127.0.0.1:8080 | Built React app served by nginx |
 | `backend` | http://127.0.0.1:8000 | FastAPI + AI pipeline |
+| ML intent (external) | http://127.0.0.1:8010 | **Optional** — `smart-livestream-ml` on host |
 
 Default compose mode is **development-friendly**:
 
@@ -52,6 +55,9 @@ copy .env.example .env
 |----------|---------|
 | `VITE_API_BASE_URL` | API/MJPEG/WebSocket base URL used by the browser |
 | `CORS_ORIGINS` | Allowed frontend origins for backend CORS |
+| `ML_INTENT_API_URL` | PhoBERT ML API URL (backend proxy). Docker default: `http://host.docker.internal:8010` |
+| `ML_INTENT_TIMEOUT_SECONDS` | Timeout when calling ML API (default `2`) |
+| `ENABLE_WAVE_GESTURE` | Re-enable wave gesture in backend inference |
 
 Important: the browser runs on your **host machine**, so `VITE_API_BASE_URL` should stay `http://127.0.0.1:8000` (mapped backend port), **not** `http://backend:8000`.
 
@@ -171,6 +177,24 @@ Embeddings are stored in `./storage/embeddings` (bind-mounted). Ensure `.npy` fi
 ### WebSocket chat errors
 
 Chat uses `ws://127.0.0.1:8000/ws/chat/...` derived from `VITE_API_BASE_URL`. If you change the backend port mapping, update `VITE_API_BASE_URL` and restart frontend.
+
+### ML intent unavailable (yellow banner)
+
+Expected when `smart-livestream-ml` is not running. Sales assistant uses rules fallback. To enable PhoBERT:
+
+```powershell
+# Terminal — smart-livestream-ml repo
+python scripts/serve_intent_api.py --model-dir artifacts/phobert_base_combined --port 8010
+```
+
+Verify: `curl http://127.0.0.1:8000/api/nlp/health`
+
+### Backend health
+
+```powershell
+curl http://127.0.0.1:8000/api/health
+docker compose ps
+```
 
 ## Useful commands
 
