@@ -1,0 +1,58 @@
+name: Docker Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-images:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          tags: smart-livestream-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend development image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          target: development
+          push: false
+          tags: smart-livestream-frontend-dev:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend production image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          target: production
+          build-args: |
+            VITE_API_BASE_URL=http://127.0.0.1:8000
+          push: false
+          tags: smart-livestream-frontend-prod:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Validate docker compose
+        run: docker compose config --quiet

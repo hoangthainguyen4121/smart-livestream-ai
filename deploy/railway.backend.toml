@@ -1,0 +1,23 @@
+# Railway — Backend service
+# Point this file in Railway: Service → Settings → Config-as-code → railway.toml path
+# Root directory for this service: / (repository root)
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "backend/Dockerfile"
+watchPatterns = [
+  "backend/**",
+  "config/**",
+  "face_recognition/**",
+  "gesture_detection/**",
+  "overlay_engine/**",
+  "utils/**",
+  "requirements.txt",
+  "storage/embeddings/users.json",
+]
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+numReplicas = 1

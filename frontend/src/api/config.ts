@@ -10,6 +10,11 @@ export function getBackendVideoFeedUrl(): string {
 }
 
 export function getWebSocketBaseUrl(): string {
+  const explicitWs = import.meta.env.VITE_WS_BASE_URL?.trim();
+  if (explicitWs) {
+    return explicitWs.replace(/\/$/, "");
+  }
+
   const httpBase = getApiBaseUrl();
   if (httpBase.startsWith("https://")) {
     return `wss://${httpBase.slice("https://".length)}`;

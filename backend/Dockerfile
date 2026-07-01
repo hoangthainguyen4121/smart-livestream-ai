@@ -3,7 +3,8 @@ FROM python:3.11-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    INSIGHTFACE_HOME=/root/.insightface
+    INSIGHTFACE_HOME=/root/.insightface \
+    PORT=8000
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
@@ -30,6 +31,9 @@ COPY storage/embeddings/users.json storage/embeddings/users.json
 
 WORKDIR /app/backend
 
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 8000
 
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway injects PORT at runtime.
+CMD ["./docker-entrypoint.sh"]

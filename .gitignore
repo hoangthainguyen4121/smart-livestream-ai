@@ -2,14 +2,19 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+backend/.pytest_cache/
 
 logs/
 *.log
+*.tmp
 
 .env
+.env.local
+
 .idea/
 .vscode/
 
+node_modules/
 frontend/node_modules/
 frontend/dist/
 
@@ -18,3 +23,17 @@ storage/embeddings/*.npy
 !storage/embeddings/.gitkeep
 !storage/embeddings/users.json
 !storage/users.json
+
+# Thesis / presentation outputs (keep locally, do not commit)
+Document/
+thesis_review_package/
+thesis_review_package.zip
+literature_review_export/
+literature_review_export.zip
+docs/thesis-screenshots/
+docs/thesis-figures/
+docs/literature_review_export/
+
+# Build / cache artifacts
+dist/
+build/

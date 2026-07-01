@@ -59,7 +59,9 @@ export function ChatPanel({
     socket.onclose = () => setStatus("disconnected");
     socket.onerror = () => {
       setStatus("error");
-      setErrorMessage("Chat connection error.");
+      setErrorMessage(
+        "Không kết nối được chat. Kiểm tra backend đang chạy tại cổng 8000.",
+      );
     };
     socket.onmessage = (event) => {
       try {

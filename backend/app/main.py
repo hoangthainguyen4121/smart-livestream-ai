@@ -21,7 +21,15 @@ DEFAULT_CORS_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
 ]
+
+# Matches localhost dev and Railway public HTTPS domains (PoC/demo).
+CORS_ORIGIN_REGEX = (
+    r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+    r"|https://([a-z0-9-]+\.)*(railway\.app|up\.railway\.app)"
+)
 
 
 def get_cors_origins() -> list[str]:
@@ -37,7 +45,7 @@ app = FastAPI(title="Smart Livestream AI Backend", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
