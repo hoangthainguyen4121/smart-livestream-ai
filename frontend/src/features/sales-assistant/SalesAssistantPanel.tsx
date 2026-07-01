@@ -1,6 +1,7 @@
 import { getActionLabel, getIntentLabel } from "./processSalesComment";
 import type { CommerceSuggestedAction } from "../commerce/commerceTypes";
 import { getProductById } from "../product-catalog/productCatalogService";
+import { PRODUCT_CONTEXT_SOURCE_LABELS } from "../sales-nlp/productContextResolver";
 import { generateSalesRecommendations } from "./salesRecommendations";
 import { AI_SALES_ASSISTANT_ACTOR } from "./salesAssistantTypes";
 import type { SalesAssistantAnalytics, SalesAssistantEvent } from "./salesAssistantTypes";
@@ -168,6 +169,14 @@ export function SalesAssistantPanel({
                   <div>
                     <dt>Resolution</dt>
                     <dd>{event.resolutionSource}</dd>
+                  </div>
+                  <div>
+                    <dt>Context source</dt>
+                    <dd>{PRODUCT_CONTEXT_SOURCE_LABELS[event.contextSource]}</dd>
+                  </div>
+                  <div className="salesEventDetailsWide">
+                    <dt>Context reason</dt>
+                    <dd>{event.contextExplanation}</dd>
                   </div>
                   <div className="salesEventDetailsWide">
                     <dt>Product resolution</dt>

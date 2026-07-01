@@ -4,6 +4,12 @@ import type { ProductSearchDiagnostics } from "../product-search/productSearchTy
 import type { IntentSource, MlIntentBridge } from "./mlIntentBridge";
 import type { CommerceSuggestedAction } from "../commerce/commerceTypes";
 
+export type ProductContextSource =
+  | "camera_context"
+  | "pinned_product"
+  | "catalog_match"
+  | "clarification";
+
 export type SalesNlpIntent =
   | "ASK_PRICE"
   | "ASK_STOCK"
@@ -36,6 +42,8 @@ export type SalesNlpPipelineInput = {
   comment: string;
   pinnedProduct: CatalogProduct;
   catalog: CatalogProduct[];
+  selectedCameraProductId?: string | null;
+  latestCameraProductId?: string | null;
   autoReplyInChat?: boolean;
   mlBridge?: MlIntentBridge | null;
 };
@@ -49,6 +57,8 @@ export type SalesNlpPipelineResult = {
   resolvedProduct: CatalogProduct;
   productResolution: ProductResolution;
   resolutionSource: ProductResolutionSource;
+  contextSource: ProductContextSource;
+  contextExplanation: string;
   matchedProducts: CatalogProduct[];
   selectedProductId: string;
   productConfidence: number;

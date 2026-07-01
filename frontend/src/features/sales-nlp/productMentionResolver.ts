@@ -1,4 +1,5 @@
 import type { CatalogProduct, ProductCategory } from "../product-catalog/productCatalogTypes";
+import type { ProductContextSource } from "./salesNlpTypes";
 import {
   buildSearchDiagnostics,
   isSemanticSearchMatch,
@@ -26,6 +27,8 @@ export type ProductResolution = {
   selectedProduct: CatalogProduct;
   selectedProductId: string;
   resolutionSource: ProductResolutionSource;
+  contextSource?: ProductContextSource;
+  explanation?: string;
   matchedProducts: CatalogProduct[];
   productConfidence: number;
   semanticSimilarity: number | null;
@@ -170,7 +173,8 @@ function computeProductConfidence(
   }
 }
 
-function isExplicitProductMention(match: ProductMentionMatch): boolean {
+function isExplicitProductMention(match: ProductMentionMatch, comment: string): boolean {
+  const text = normalizeText(comment);
   const productName = normalizeToken(match.product.name);
   if (match.matchedTerms.includes(productName)) {
     return true;
@@ -181,6 +185,19 @@ function isExplicitProductMention(match: ProductMentionMatch): boolean {
     .filter((tag) => tag.length >= 5);
   if (specificTags.some((tag) => match.matchedTerms.includes(tag))) {
     return true;
+  }
+
+  const matchedProductColor = match.product.colors
+    .map(normalizeToken)
+    .find((color) => color && containsTerm(text, color));
+  if (matchedProductColor) {
+    const categoryKeywords = CATEGORY_KEYWORDS[match.product.category] ?? [];
+    const hasCategoryHint = categoryKeywords.some((keyword) => containsTerm(text, keyword));
+    const hasShortCategoryToken =
+      match.product.category === "fashion" && containsTerm(text, "ao");
+    if (hasCategoryHint || hasShortCategoryToken) {
+      return true;
+    }
   }
 
   return match.score >= 5;
@@ -223,6 +240,33 @@ function buildSemanticResolution(
   };
 }
 
+export function findExplicitCatalogMatch(
+  comment: string,
+  catalog: CatalogProduct[],
+): ProductMentionMatch | null {
+  const ranked = rankProducts(comment, catalog);
+  return pickBestFromMatches(ranked.filter((entry) => isExplicitProductMention(entry, comment)));
+}
+
+export function findConfidentCatalogCandidate(
+  comment: string,
+  catalog: CatalogProduct[],
+  minimumScore = 3,
+): ProductMentionMatch | null {
+  const ranked = rankProducts(comment, catalog);
+  const best = pickBestFromMatches(ranked);
+  if (!best || best.score < minimumScore) {
+    return null;
+  }
+
+  const second = ranked.find((entry) => entry.product.id !== best.product.id);
+  if (second && areScoresClose(best, second)) {
+    return null;
+  }
+
+  return best;
+}
+
 export function resolveProductSelection(
   comment: string,
   catalog: CatalogProduct[],
@@ -231,7 +275,9 @@ export function resolveProductSelection(
   const text = normalizeText(comment);
   const ranked = rankProducts(comment, catalog);
   const mentionedCategories = detectMentionedCategories(text);
-  const explicitBest = pickBestFromMatches(ranked.filter(isExplicitProductMention));
+  const explicitBest = pickBestFromMatches(
+    ranked.filter((entry) => isExplicitProductMention(entry, comment)),
+  );
 
   if (explicitBest) {
     const second = ranked.find(

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "glasses-a",
+    "name": "Kính thời trang A",
+    "category": "glasses",
+    "tags": ["kính", "kinh", "glasses", "thoi trang a", "mat kinh"],
+    "colors": ["Đen", "Vàng"]
+  },
+  {
+    "id": "lipstick-ruby",
+    "name": "Son Ruby Đỏ",
+    "category": "lipstick",
+    "tags": ["son ruby", "son do", "lipstick", "ruby"],
+    "colors": ["Ruby Đỏ"]
+  },
+  {
+    "id": "oversize-tee",
+    "name": "Áo thun Oversize",
+    "category": "fashion",
+    "tags": ["ao thun", "oversize", "thun", "size"],
+    "colors": ["Trắng", "Đen"]
+  }
+]

@@ -22,6 +22,8 @@ type ProcessSalesCommentInput = {
   viewerAuthor: string;
   pinnedProduct?: CatalogProduct;
   catalog?: CatalogProduct[];
+  selectedCameraProductId?: string | null;
+  latestCameraProductId?: string | null;
   autoReplyInChat?: boolean;
   mlBridge?: MlIntentBridge | null;
 };
@@ -95,6 +97,8 @@ export function processSalesComment(
     comment: input.comment,
     pinnedProduct,
     catalog,
+    selectedCameraProductId: input.selectedCameraProductId ?? null,
+    latestCameraProductId: input.latestCameraProductId ?? null,
     autoReplyInChat: input.autoReplyInChat ?? true,
     mlBridge: input.mlBridge ?? null,
   });
@@ -121,6 +125,8 @@ export function processSalesComment(
     selectedProductId: nlp.selectedProductId,
     resolvedProductName: nlp.resolvedProduct.name,
     resolutionSource: nlp.resolutionSource,
+    contextSource: nlp.contextSource,
+    contextExplanation: nlp.contextExplanation,
     productConfidence: nlp.productConfidence,
     semanticSimilarity: nlp.semanticSimilarity,
     searchDiagnostics: nlp.searchDiagnostics,

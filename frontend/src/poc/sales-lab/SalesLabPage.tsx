@@ -20,6 +20,8 @@ import {
 } from "../../features/product-catalog";
 import { ProductCatalogPanel } from "../../features/product-catalog/components/ProductCatalogPanel";
 import { PinnedProductPanel } from "../../features/sales-assistant/PinnedProductPanel";
+import { ProductContextControl } from "../../features/sales-assistant/ProductContextControl";
+import type { ProductContextSource } from "../../features/sales-nlp/salesNlpTypes";
 import { SalesAssistantPanel } from "../../features/sales-assistant/SalesAssistantPanel";
 import {
   BROWSER_AR_EFFECT_LABELS,
@@ -39,6 +41,8 @@ type SimulatedChatMessage = {
 
 export function SalesLabPage() {
   const [pinnedProductId, setPinnedProductId] = useState(DEFAULT_PINNED_PRODUCT_ID);
+  const [cameraProductId, setCameraProductId] = useState<string | null>(null);
+  const [lastContextSource, setLastContextSource] = useState<ProductContextSource | null>(null);
   const [arEffect, setArEffect] = useState<BrowserArEffect>("glasses");
   const [isStreamLive, setIsStreamLive] = useState(false);
   const [chatMessages, setChatMessages] = useState<SimulatedChatMessage[]>([]);
@@ -65,6 +69,11 @@ export function SalesLabPage() {
   const pinnedProduct = useMemo(
     () => getProductById(pinnedProductId) ?? getAllProducts()[0],
     [pinnedProductId],
+  );
+
+  const cameraProduct = useMemo(
+    () => (cameraProductId ? getProductById(cameraProductId) ?? null : null),
+    [cameraProductId],
   );
 
   function handlePinProduct(productId: string) {
@@ -99,6 +108,7 @@ export function SalesLabPage() {
         viewerAuthor: author,
         pinnedProduct,
         catalog: getAllProducts(),
+        selectedCameraProductId: cameraProductId,
         autoReplyInChat: true,
       },
       salesAnalyticsRef.current,
@@ -114,6 +124,7 @@ export function SalesLabPage() {
     setSalesAnalytics(result.analytics);
 
     if (result.event) {
+      setLastContextSource(result.event.contextSource);
       setSalesEvents((events) => [result.event!, ...events]);
     }
 
@@ -156,6 +167,13 @@ export function SalesLabPage() {
       <section className="salesLabGrid">
         <div className="salesLabColumn salesLabColumnLeft">
           <PinnedProductPanel product={pinnedProduct} />
+          <ProductContextControl
+            pinnedProduct={pinnedProduct}
+            cameraProduct={cameraProduct}
+            lastContextSource={lastContextSource}
+            onMarkCameraProduct={() => setCameraProductId(pinnedProductId)}
+            onClearCameraProduct={() => setCameraProductId(null)}
+          />
           <ProductCatalogPanel
             pinnedProductId={pinnedProductId}
             onPinProduct={handlePinProduct}

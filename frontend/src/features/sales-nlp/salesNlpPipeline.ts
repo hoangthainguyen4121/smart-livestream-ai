@@ -5,9 +5,11 @@ import { classifyIntent, type IntentClassification } from "./intentClassifier";
 import { normalizeText } from "./normalizeText";
 import {
   resolveComparedProducts,
-  resolveProductSelection,
+  type ProductResolution,
+  type ProductResolutionSource,
 } from "./productMentionResolver";
-import type { ProductResolution } from "./productMentionResolver";
+import { resolveProductContext } from "./productContextResolver";
+import type { ProductContextResolution, ProductContextSource } from "./productContextResolver";
 import type { IntentSource, MlIntentBridge } from "./mlIntentBridge";
 import { buildCommerceSuggestedActions } from "../commerce/commerceIntentActions";
 import {
@@ -28,6 +30,41 @@ function boostConfidence(
   return Math.min(0.99, Number((baseConfidence + productBoost + entityBoost).toFixed(2)));
 }
 
+function mapContextSourceToLegacySource(
+  source: ProductContextSource,
+): ProductResolutionSource {
+  switch (source) {
+    case "catalog_match":
+      return "mentioned_product";
+    case "camera_context":
+    case "pinned_product":
+      return "pinned_product";
+    case "clarification":
+      return "ambiguous";
+  }
+}
+
+function buildProductResolutionFromContext(
+  contextResolution: ProductContextResolution,
+  fallbackProduct: ProductResolution["selectedProduct"],
+): ProductResolution {
+  const selectedProduct = contextResolution.product ?? fallbackProduct;
+  return {
+    selectedProduct,
+    selectedProductId: selectedProduct.id,
+    resolutionSource: mapContextSourceToLegacySource(contextResolution.source),
+    contextSource: contextResolution.source,
+    explanation: contextResolution.explanation,
+    matchedProducts: contextResolution.product ? [contextResolution.product] : [fallbackProduct],
+    productConfidence: contextResolution.confidence,
+    semanticSimilarity: null,
+    searchDiagnostics: null,
+    isAmbiguous: contextResolution.isClarification,
+    matchedTerms: [contextResolution.source],
+    clarificationQuestion: contextResolution.clarificationQuestion,
+  };
+}
+
 function inferIntentFromProductResolution(
   classification: IntentClassification,
   productResolution: ProductResolution,
@@ -37,17 +74,29 @@ function inferIntentFromProductResolution(
     return classification;
   }
 
+  if (productResolution.contextSource === "clarification") {
+    return classification;
+  }
+
   if (/\bmau\b/.test(normalizedText) || /\bco .+ (xanh|den|do|vang|trang)\b/.test(normalizedText)) {
     return classification;
   }
 
   const resolutionSource = productResolution.resolutionSource;
   if (resolutionSource === "pinned_product" || resolutionSource === "none") {
+    if (productResolution.contextSource === "camera_context") {
+      const intent: Exclude<SalesNlpIntent, "UNKNOWN"> = "ASK_PRODUCT_INFO";
+      return {
+        intent,
+        confidence: 0.76,
+        matchedPatterns: ["camera product context"],
+      };
+    }
     return classification;
   }
 
   const matchedTerms = productResolution.matchedTerms.filter(
-    (term) => term !== "pinned fallback",
+    (term) => term !== "pinned fallback" && term !== "pinned_product" && term !== "camera_context",
   );
   if (matchedTerms.length === 0 && resolutionSource !== "semantic_search") {
     return classification;
@@ -142,9 +191,15 @@ function applyMlIntentBridge(
 export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipelineResult {
   const normalizedText = normalizeText(input.comment);
   const autoReplyInChat = input.autoReplyInChat ?? true;
-  const productResolution = resolveProductSelection(
-    input.comment,
-    input.catalog,
+  const contextResolution = resolveProductContext({
+    comment: input.comment,
+    catalog: input.catalog,
+    pinnedProductId: input.pinnedProduct.id,
+    selectedCameraProductId: input.selectedCameraProductId ?? null,
+    latestCameraProductId: input.latestCameraProductId ?? null,
+  });
+  const productResolution = buildProductResolutionFromContext(
+    contextResolution,
     input.pinnedProduct,
   );
   const comparedProducts = resolveComparedProducts(
@@ -180,13 +235,20 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
     : 0;
 
   const action = mlApplied.actionOverride ?? decideAction(classification.intent, autoReplyInChat);
-  const commerceActions = isRecognizedNlpIntent(classification.intent)
-    ? buildCommerceSuggestedActions(classification.intent, productResolution.selectedProduct, entities)
-    : [];
+  const commerceActions =
+    isRecognizedNlpIntent(classification.intent) && !contextResolution.isClarification
+      ? buildCommerceSuggestedActions(
+          classification.intent,
+          productResolution.selectedProduct,
+          entities,
+        )
+      : [];
   let suggestedReply = "";
 
   if (mlApplied.suggestedReplyOverride) {
     suggestedReply = mlApplied.suggestedReplyOverride;
+  } else if (contextResolution.isClarification && contextResolution.clarificationQuestion) {
+    suggestedReply = contextResolution.clarificationQuestion;
   } else if (isRecognizedNlpIntent(classification.intent)) {
     if (productResolution.isAmbiguous && productResolution.clarificationQuestion) {
       suggestedReply = productResolution.clarificationQuestion;
@@ -206,12 +268,15 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
     confidence,
     matchedPatterns: [
       ...classification.matchedPatterns,
+      contextResolution.source,
       ...productResolution.matchedTerms.filter((term) => term !== "pinned fallback"),
     ],
     action,
     resolvedProduct: productResolution.selectedProduct,
     productResolution,
     resolutionSource: productResolution.resolutionSource,
+    contextSource: contextResolution.source,
+    contextExplanation: contextResolution.explanation,
     matchedProducts,
     selectedProductId: productResolution.selectedProductId,
     productConfidence: productResolution.productConfidence,

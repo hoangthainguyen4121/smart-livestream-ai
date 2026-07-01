@@ -22,9 +22,11 @@ import {
 } from "../features/product-catalog";
 import { ProductCatalogPanel } from "../features/product-catalog/components/ProductCatalogPanel";
 import { PinnedProductPanel } from "../features/sales-assistant/PinnedProductPanel";
+import { ProductContextControl } from "../features/sales-assistant/ProductContextControl";
 import { buildAssistantChatMessage } from "../features/sales-assistant/assistantChatMessages";
 import { processSalesCommentWithMl, shouldAutoReplyInChat } from "../features/sales-assistant/processSalesComment";
 import type { ChatMlIntentBadge } from "../features/sales-nlp/mlIntentBridge";
+import type { ProductContextSource } from "../features/sales-nlp/salesNlpTypes";
 import { SalesAssistantPanel } from "../features/sales-assistant/SalesAssistantPanel";
 import {
   createInitialAnalytics,
@@ -66,6 +68,8 @@ export function DemoPage() {
   const [isStreamLive, setIsStreamLive] = useState(false);
   const [streamDurationSeconds, setStreamDurationSeconds] = useState(0);
   const [pinnedProductId, setPinnedProductId] = useState(DEFAULT_PINNED_PRODUCT_ID);
+  const [cameraProductId, setCameraProductId] = useState<string | null>(null);
+  const [lastContextSource, setLastContextSource] = useState<ProductContextSource | null>(null);
   const [effect, setEffect] = useState<BrowserArEffect>("glasses");
   const [debugOverlay, setDebugOverlay] = useState(false);
   const [salesEvents, setSalesEvents] = useState<SalesAssistantEvent[]>([]);
@@ -92,6 +96,11 @@ export function DemoPage() {
   const pinnedProduct = useMemo(
     () => getProductById(pinnedProductId) ?? getAllProducts()[0],
     [pinnedProductId],
+  );
+
+  const cameraProduct = useMemo(
+    () => (cameraProductId ? getProductById(cameraProductId) ?? null : null),
+    [cameraProductId],
   );
 
   useEffect(() => {
@@ -125,6 +134,7 @@ export function DemoPage() {
           viewerAuthor: author,
           pinnedProduct,
           catalog: getAllProducts(),
+          selectedCameraProductId: cameraProductId,
           autoReplyInChat: true,
         },
         salesAnalyticsRef.current,
@@ -143,6 +153,7 @@ export function DemoPage() {
         return;
       }
 
+      setLastContextSource(result.event.contextSource);
       setSalesEvents((currentEvents) => [result.event!, ...currentEvents]);
 
       if (shouldAutoReplyInChat(result.event)) {
@@ -163,7 +174,7 @@ export function DemoPage() {
         });
       }
     },
-    [pinnedProduct],
+    [cameraProductId, pinnedProduct],
   );
 
   function handleRegisterFaceClick(event: { preventDefault: () => void }) {
@@ -247,6 +258,13 @@ export function DemoPage() {
             </div>
 
             <PinnedProductPanel product={pinnedProduct} />
+            <ProductContextControl
+              pinnedProduct={pinnedProduct}
+              cameraProduct={cameraProduct}
+              lastContextSource={lastContextSource}
+              onMarkCameraProduct={() => setCameraProductId(pinnedProductId)}
+              onClearCameraProduct={() => setCameraProductId(null)}
+            />
           </div>
 
           <ProductCatalogPanel

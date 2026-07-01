@@ -1,4 +1,4 @@
-import type { ExtractedEntities, SalesNlpAction, SalesNlpIntent } from "../sales-nlp/salesNlpTypes";
+import type { ExtractedEntities, SalesNlpAction, SalesNlpIntent, ProductContextSource } from "../sales-nlp/salesNlpTypes";
 import type { ProductResolutionSource } from "../sales-nlp/productMentionResolver";
 import type { ProductSearchDiagnostics } from "../product-search/productSearchTypes";
 import type { IntentSource } from "../sales-nlp/mlIntentBridge";
@@ -17,6 +17,8 @@ export type SalesAssistantEvent = {
   selectedProductId: string;
   resolvedProductName: string;
   resolutionSource: ProductResolutionSource;
+  contextSource: ProductContextSource;
+  contextExplanation: string;
   productConfidence: number;
   semanticSimilarity: number | null;
   searchDiagnostics: ProductSearchDiagnostics | null;
