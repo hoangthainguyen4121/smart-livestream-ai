@@ -74,6 +74,71 @@ def test_chat_websocket_broadcasts_between_two_clients() -> None:
     assert second_response["text"] == "Broadcast message"
 
 
+def test_chat_websocket_broadcasts_assistant_metadata() -> None:
+    room_id = unique_room_id()
+
+    with client.websocket_connect(f"/ws/chat/{room_id}") as first:
+        with client.websocket_connect(f"/ws/chat/{room_id}") as second:
+            first.receive_json()
+            second.receive_json()
+
+            first.send_json(
+                {
+                    "type": "chat_message",
+                    "id": "assistant-event-1",
+                    "author": "Trợ lý bán hàng",
+                    "text": "Cảm ơn bạn. Thêm vào giỏ hàng bên dưới.",
+                    "reply_to_message_id": "viewer-msg-1",
+                    "reply_to_author": "guest-a",
+                    "reply_to_text": "kem chống nắng",
+                    "commerce_actions": [
+                        {
+                            "id": "add-to-cart-1",
+                            "type": "add_to_cart",
+                            "label": "Thêm vào giỏ hàng",
+                            "product_id": "sunscreen-01",
+                            "quantity": 1,
+                        }
+                    ],
+                }
+            )
+            first_response = first.receive_json()
+            second_response = second.receive_json()
+
+    assert first_response["type"] == "chat_message"
+    assert second_response["type"] == "chat_message"
+    assert first_response["id"] == "assistant-event-1"
+    assert first_response["id"] == second_response["id"]
+    assert first_response["reply_to_message_id"] == "viewer-msg-1"
+    assert first_response["commerce_actions"][0]["product_id"] == "sunscreen-01"
+
+
+def test_chat_websocket_ignores_duplicate_assistant_id() -> None:
+    room_id = unique_room_id()
+
+    with client.websocket_connect(f"/ws/chat/{room_id}") as websocket:
+        websocket.receive_json()
+        payload = {
+            "type": "chat_message",
+            "id": "assistant-viewer-1",
+            "author": "Trợ lý bán hàng",
+            "text": "Reply once",
+            "reply_to_message_id": "viewer-1",
+            "reply_to_author": "guest-a",
+            "reply_to_text": "kem chống nắng",
+        }
+        websocket.send_json(payload)
+        websocket.receive_json()
+        websocket.send_json(payload)
+
+    with client.websocket_connect(f"/ws/chat/{room_id}") as websocket:
+        response = websocket.receive_json()
+
+    assert response["type"] == "chat_history"
+    assert len(response["messages"]) == 1
+    assert response["messages"][0]["id"] == "assistant-viewer-1"
+
+
 def test_chat_websocket_rejects_empty_text() -> None:
     with client.websocket_connect(f"/ws/chat/{unique_room_id()}") as websocket:
         websocket.receive_json()

@@ -58,12 +58,12 @@ Env mẫu: [`.env.railway.example`](../.env.railway.example)
 | `CORS_ORIGINS` | Khuyến nghị | `https://smart-livestream-web.up.railway.app` | URL frontend sau bước 3 |
 | `ML_INTENT_API_URL` | No | *(unset)* | Bỏ trống → rules fallback |
 | `ML_INTENT_TIMEOUT_SECONDS` | No | `2` | |
-| `ENABLE_WAVE_GESTURE` | No | `false` | |
-| `FACE_RECOGNITION_WARMUP` | No | `false` | **Bắt buộc false trên free tier** — tránh OOM lúc startup |
+| `VITE_ENABLE_CAMERA_PRODUCT_RECOGNITION` | No | `false` | Frontend-only; giữ false trên cloud |
+| `CAMERA_PRODUCT_RECOGNITION_ENABLED` | No | `false` | Reserved; recognition chạy trên frontend |
 
 ### 2.3 Deploy & lấy URL
 
-1. **Deploy** → đợi build (InsightFace pip + deps ~3–8 phút lần đầu).
+1. **Deploy** → đợi build backend (slim FastAPI stack, thường vài phút).
 2. **Settings → Networking → Generate Domain** → copy URL, ví dụ:
    `https://smart-livestream-api.up.railway.app`
 
@@ -103,6 +103,7 @@ Trong **Variables**, thêm và bật **Available at Build** ✅:
 |----------|-------|
 | `VITE_API_BASE_URL` | `https://YOUR-BACKEND.up.railway.app` |
 | `VITE_WS_BASE_URL` | `wss://YOUR-BACKEND.up.railway.app` |
+| `VITE_ENABLE_CAMERA_PRODUCT_RECOGNITION` | `false` | Giữ false trên cloud |
 
 > Nếu bỏ `VITE_WS_BASE_URL`, frontend tự suy ra `wss://` từ `VITE_API_BASE_URL` (cùng host).
 
@@ -191,16 +192,10 @@ Backend proxy `/api/nlp/*` — frontend không đổi.
 
 | Hạn chế | Chi tiết |
 |---------|----------|
-| Ephemeral disk | Face embeddings **mất** khi redeploy — không volume persistent trên free |
-| InsightFace memory | **Railway free/trial RAM thường không đủ** cho InsightFace (`buffalo_l`) ổn định. Backend mặc định **không** warmup model lúc startup (`FACE_RECOGNITION_WARMUP=false`). Face registration là **best-effort** trên cloud free tier; demo chính (Browser AR, chat) không phụ thuộc register. |
-| First capture | Model load **lazy** khi user chụp mẫu đầu tiên — có thể chậm hoặc OOM; không chặn `/api/health`. |
-| Cold start | Sau sleep, request đầu có thể chậm; không load InsightFace trừ khi dùng face registration |
+| Cold start | Sau sleep, request đầu có thể chậm |
 | ML model | PhoBERT ~400MB+ — không phù hợp free tier |
-| Legacy MJPEG | `/video-feed` không dùng trên cloud |
 | Sleep / quota | Free tier có giới hạn giờ chạy/tháng — kiểm tra Railway pricing |
 | 2 services | Mỗi service tính quota riêng |
-
-**Env khuyến nghị (backend):** `FACE_RECOGNITION_WARMUP=false` (mặc định). Chỉ bật `true` trên máy có đủ RAM (local Docker / paid Railway).
 
 ---
 
@@ -211,8 +206,6 @@ Backend proxy `/api/nlp/*` — frontend không đổi.
 | Frontend gọi `127.0.0.1:8000` | Build thiếu `VITE_*` | Set build vars + **Redeploy** frontend |
 | CORS error | `CORS_ORIGINS` sai | Set đúng frontend HTTPS URL |
 | Chat `error` / disconnected | WSS blocked or backend down | Kiểm tra backend health, `VITE_WS_BASE_URL` |
-| Build backend fail OOM | InsightFace deps lớn hoặc warmup bật | Giữ `FACE_RECOGNITION_WARMUP=false`; retry build; cân nhắc Railway paid RAM |
-| Backend OOM sau deploy | Startup warmup load `buffalo_l` | Set `FACE_RECOGNITION_WARMUP=false` (mặc định) và redeploy |
 | Camera không bật | HTTP not HTTPS | Dùng Railway domain HTTPS |
 
 ---

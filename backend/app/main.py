@@ -1,25 +1,10 @@
-import logging
 import os
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import (
-    chat,
-    face_profiles,
-    face_registration,
-    health,
-    inference,
-    interaction_events,
-    nlp,
-    realtime,
-    video_feed,
-)
-from app.services.web_face_registration import face_registration_service
+from app.api import chat, health, nlp
 
-
-logger = logging.getLogger(__name__)
 
 DEFAULT_CORS_ORIGINS = [
     "http://localhost:5173",
@@ -45,43 +30,9 @@ def get_cors_origins() -> list[str]:
     return [origin.strip() for origin in configured.split(",") if origin.strip()]
 
 
-def is_face_recognition_warmup_enabled() -> bool:
-    return os.getenv("FACE_RECOGNITION_WARMUP", "false").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    del app
-    if is_face_recognition_warmup_enabled():
-        logger.info("Warming up face registration recognizer (FACE_RECOGNITION_WARMUP=true)...")
-        try:
-            await run_face_registration_warmup()
-            logger.info("Face registration recognizer ready.")
-        except Exception as error:
-            logger.warning("Face recognizer warmup failed: %s", error)
-    else:
-        logger.info(
-            "Face recognizer warmup disabled (FACE_RECOGNITION_WARMUP=false). "
-            "InsightFace loads lazily on first face-registration capture."
-        )
-    yield
-
-
-async def run_face_registration_warmup() -> None:
-    import asyncio
-
-    await asyncio.to_thread(face_registration_service.warmup_recognizer)
-
-
 app = FastAPI(
     title="Smart Livestream AI Backend",
     version="0.1.0",
-    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -94,11 +45,5 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix="/api")
-app.include_router(face_profiles.router, prefix="/api")
-app.include_router(face_registration.router, prefix="/api")
-app.include_router(interaction_events.router, prefix="/api")
-app.include_router(inference.router, prefix="/api")
 app.include_router(nlp.router, prefix="/api")
-app.include_router(realtime.router)
-app.include_router(video_feed.router)
 app.include_router(chat.router)

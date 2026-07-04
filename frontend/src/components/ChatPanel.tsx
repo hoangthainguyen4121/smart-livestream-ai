@@ -1,52 +1,94 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 
 import {
+  appendUniqueChatMessage,
   createChatSocket,
+  createOutgoingAssistantChatMessage,
   createOutgoingChatMessage,
+  normalizeChatMessage,
   type ChatEvent,
   type ChatMessage,
 } from "../api/chat";
-import {
-  isAssistantChatMessage,
-  mergeChatWithAssistantReplies,
-} from "../features/sales-assistant/assistantChatMessages";
+import type { CommerceSuggestedAction } from "../features/commerce/commerceTypes";
+import { isAssistantChatMessage } from "../features/sales-assistant/assistantChatMessages";
+import { formatIntentLabel } from "../features/sales-nlp/formatChatIntentLabel";
 import type { ChatMlIntentBadge } from "../features/sales-nlp/mlIntentBridge";
+import { getProductById } from "../features/product-catalog";
+import { useI18n } from "../i18n/I18nProvider";
 
 
 type ChatPanelProps = {
   roomId: string;
   author: string;
-  initialMessages: ChatMessage[];
-  assistantRepliesByTriggerId?: Record<string, ChatMessage>;
+  sessionKey?: number;
   mlIntentBadgesByMessageId?: Record<string, ChatMlIntentBadge>;
   onViewerMessageSent?: (message: {
     messageId: string;
     author: string;
     text: string;
   }) => void;
+  onCommerceAction?: (action: CommerceSuggestedAction) => void;
 };
 
+export type ChatPanelHandle = {
+  sendAssistantMessage: (message: ChatMessage) => void;
+};
 
-export function ChatPanel({
-  roomId,
-  author,
-  initialMessages,
-  assistantRepliesByTriggerId = {},
-  mlIntentBadgesByMessageId = {},
-  onViewerMessageSent,
-}: ChatPanelProps) {
+export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function ChatPanel(
+  {
+    roomId,
+    author,
+    sessionKey = 0,
+    mlIntentBadgesByMessageId = {},
+    onViewerMessageSent,
+    onCommerceAction,
+  },
+  ref,
+) {
+  const { t } = useI18n();
   const socketRef = useRef<WebSocket | null>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const displayNameRef = useRef(author);
   const onViewerMessageSentRef = useRef(onViewerMessageSent);
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const skipNextHistoryRef = useRef(true);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [displayName, setDisplayName] = useState(author);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("disconnected");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cartFeedbackByMessageId, setCartFeedbackByMessageId] = useState<Record<string, string>>(
+    {},
+  );
 
   displayNameRef.current = displayName;
   onViewerMessageSentRef.current = onViewerMessageSent;
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      sendAssistantMessage(message: ChatMessage) {
+        const socket = socketRef.current;
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+
+        socket.send(JSON.stringify(createOutgoingAssistantChatMessage(message)));
+      },
+    }),
+    [],
+  );
+
+  useEffect(() => {
+    setMessages([]);
+    setCartFeedbackByMessageId({});
+    skipNextHistoryRef.current = true;
+  }, [sessionKey]);
 
   useEffect(() => {
     const socket = createChatSocket(roomId);
@@ -59,48 +101,51 @@ export function ChatPanel({
     socket.onclose = () => setStatus("disconnected");
     socket.onerror = () => {
       setStatus("error");
-      setErrorMessage(
-        "Không kết nối được chat. Kiểm tra backend đang chạy tại cổng 8000.",
-      );
+      setErrorMessage(t("chatErrorConnect"));
     };
     socket.onmessage = (event) => {
       try {
         handleChatEvent(JSON.parse(event.data) as ChatEvent);
       } catch {
-        setErrorMessage("Unable to read chat message.");
+        setErrorMessage(t("chatErrorRead"));
       }
     };
 
     return () => {
       socket.close();
     };
-  }, [roomId]);
+  }, [roomId, sessionKey, t]);
 
   useEffect(() => {
     messagesRef.current?.scrollTo({
       top: messagesRef.current.scrollHeight,
     });
-  }, [messages, assistantRepliesByTriggerId]);
-
-  const visibleMessages = mergeChatWithAssistantReplies(
-    messages,
-    assistantRepliesByTriggerId,
-  );
+  }, [messages, cartFeedbackByMessageId]);
 
   function handleChatEvent(event: ChatEvent) {
     if (event.type === "chat_history") {
-      setMessages(event.messages.length > 0 ? event.messages : initialMessages);
+      if (skipNextHistoryRef.current) {
+        skipNextHistoryRef.current = false;
+        return;
+      }
+
+      setMessages(
+        event.messages.map((message) =>
+          normalizeChatMessage(message as unknown as Record<string, unknown>),
+        ),
+      );
       return;
     }
 
     if (event.type === "chat_message") {
-      setMessages((currentMessages) => [...currentMessages, event]);
+      const normalized = normalizeChatMessage(event);
+      setMessages((currentMessages) => appendUniqueChatMessage(currentMessages, normalized));
 
-      if (event.author === displayNameRef.current.trim()) {
+      if (normalized.author === displayNameRef.current.trim()) {
         onViewerMessageSentRef.current?.({
-          messageId: event.id,
-          author: event.author,
-          text: event.text,
+          messageId: normalized.id,
+          author: normalized.author,
+          text: normalized.text,
         });
       }
       return;
@@ -122,26 +167,38 @@ export function ChatPanel({
     setInput("");
   }
 
+  function handleAddToCart(action: CommerceSuggestedAction, messageId: string) {
+    onCommerceAction?.(action);
+
+    const productName =
+      action.productId ? getProductById(action.productId)?.name ?? action.label : action.label;
+
+    setCartFeedbackByMessageId((current) => ({
+      ...current,
+      [messageId]: t("chatAddedToCart", { product: productName }),
+    }));
+  }
+
   return (
     <aside className="chatPanel">
       <div className="chatHeader">
         <div>
-          <h2>Live Chat</h2>
-          <span>{visibleMessages.length} messages</span>
+          <h2>{t("liveChat")}</h2>
+          <span>{t("chatMessages", { count: messages.length })}</span>
         </div>
-        <span className={`status ${status}`}>WS: {status}</span>
+        <span className={`status ${status}`}>{t("wsStatus", { status })}</span>
       </div>
       <label className="chatDisplayName">
-        <span>Display name</span>
+        <span>{t("displayName")}</span>
         <input
           value={displayName}
           onChange={(event) => setDisplayName(event.target.value)}
           maxLength={32}
-          placeholder="Display name"
+          placeholder={t("displayNamePlaceholder")}
         />
       </label>
       <div className="chatMessages" ref={messagesRef}>
-        {visibleMessages.map((message) => (
+        {messages.map((message) => (
           <div
             className={
               isAssistantChatMessage(message)
@@ -154,9 +211,28 @@ export function ChatPanel({
               <>
                 <strong>{message.author}</strong>
                 <span className="chatReplyContext">
-                  Replying to {message.replyToAuthor}: {message.replyToText}
+                  {t("replyingTo", {
+                    author: message.replyToAuthor ?? "",
+                    text: message.replyToText ?? "",
+                  })}
                 </span>
                 <span>{message.text}</span>
+                {message.commerceActions
+                  ?.filter((action) => action.type === "add_to_cart")
+                  .map((action) => (
+                    <div className="chatCommerceActions" key={action.id}>
+                      <button
+                        type="button"
+                        className="chatCommerceButton"
+                        onClick={() => handleAddToCart(action, message.id)}
+                      >
+                        {t("chatAddToCart")}
+                      </button>
+                    </div>
+                  ))}
+                {cartFeedbackByMessageId[message.id] ? (
+                  <span className="chatCommerceFeedback">{cartFeedbackByMessageId[message.id]}</span>
+                ) : null}
               </>
             ) : (
               <>
@@ -166,7 +242,7 @@ export function ChatPanel({
                   <span
                     className={`chatMlIntentBadge chatMlIntentBadge--${mlIntentBadgesByMessageId[message.id].intentSource}`}
                   >
-                    {formatMlIntentBadge(mlIntentBadgesByMessageId[message.id])}
+                    {formatMlIntentBadge(mlIntentBadgesByMessageId[message.id], t)}
                   </span>
                 ) : null}
               </>
@@ -185,26 +261,35 @@ export function ChatPanel({
             }
           }}
           maxLength={300}
-          placeholder="Hỏi về sản phẩm: giá?, còn màu đen không?, xin link..."
+          placeholder={t("chatPlaceholder")}
         />
         <button type="button" onClick={handleSendChatMessage}>
-          Send
+          {t("send")}
         </button>
       </div>
     </aside>
   );
-}
+});
 
-function formatMlIntentBadge(badge: ChatMlIntentBadge): string {
+function formatMlIntentBadge(
+  badge: ChatMlIntentBadge,
+  t: (key: import("../i18n/translations").TranslationKey, params?: Record<string, string | number>) => string,
+): string {
+  const primaryLabel =
+    badge.intentSource === "ml"
+      ? badge.label
+      : (badge.mappedIntent ?? badge.label);
+  const localizedIntent = formatIntentLabel(primaryLabel, t);
+
   if (badge.intentSource === "ml" && badge.confidence !== null) {
-    return `${badge.label} ${(badge.confidence * 100).toFixed(0)}%`;
+    return `${localizedIntent} ${(badge.confidence * 100).toFixed(0)}%`;
   }
 
   if (badge.intentSource === "regex_fallback") {
     const confidenceLabel =
       badge.confidence !== null ? ` ${(badge.confidence * 100).toFixed(0)}%` : "";
-    return `rules fallback · ${badge.mappedIntent ?? badge.label}${confidenceLabel}`;
+    return `${t("chatIntentRulesFallback", { intent: localizedIntent })}${confidenceLabel}`;
   }
 
-  return badge.label;
+  return localizedIntent;
 }

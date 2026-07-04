@@ -1,5 +1,6 @@
 import type { CatalogProduct } from "../product-catalog/productCatalogTypes";
 import { getTryOnLabel } from "../product-catalog/productCatalogTypes";
+import { useI18n } from "../../i18n/I18nProvider";
 import { formatVnd } from "../sales-nlp/answerGenerator";
 
 type PinnedProductPanelProps = {
@@ -7,20 +8,21 @@ type PinnedProductPanelProps = {
 };
 
 export function PinnedProductPanel({ product }: PinnedProductPanelProps) {
+  const { t } = useI18n();
   const stockClass =
     product.stock <= 0 ? "outOfStock" : product.stock <= 5 ? "lowStock" : "inStock";
   const stockLabel =
     product.stock <= 0 ? "Hết hàng" : product.stock <= 5 ? "Sắp hết hàng" : "Còn hàng";
 
   return (
-    <section className="pinnedProductPanel videoCard" aria-label="Pinned product">
+    <section className="pinnedProductPanel videoCard" aria-label={t("pinnedProductTitle")}>
       <div className="cardHeader">
-        <h2>Sản phẩm đang ghim</h2>
-        <span className="status">Live commerce</span>
+        <h2>{t("pinnedProductTitle")}</h2>
+        <span className="status">{t("liveCommerce")}</span>
       </div>
       <div className="pinnedProductBody">
         <div className="pinnedProductTopRow">
-          <span className="pinnedProductBadge">Đang giới thiệu</span>
+          <span className="pinnedProductBadge">{t("presenting")}</span>
           <span className="pinnedProductTryOnBadge">{getTryOnLabel(product.arEffectType)}</span>
         </div>
 
@@ -30,7 +32,7 @@ export function PinnedProductPanel({ product }: PinnedProductPanelProps) {
 
         <div className="pinnedProductStatusRow">
           <span className={`pinnedProductStockBadge ${stockClass}`}>{stockLabel}</span>
-          <span className="pinnedProductStockCount">Còn {product.stock} sp</span>
+          <span className="pinnedProductStockCount">{t("inStock", { count: product.stock })}</span>
         </div>
 
         {product.colors.length > 0 ? (
@@ -60,7 +62,7 @@ export function PinnedProductPanel({ product }: PinnedProductPanelProps) {
         ) : null}
 
         <a className="pinnedProductLinkButton" href={product.productUrl}>
-          Xem sản phẩm · {product.productUrl}
+          {t("viewProduct")} · {product.productUrl}
         </a>
       </div>
     </section>

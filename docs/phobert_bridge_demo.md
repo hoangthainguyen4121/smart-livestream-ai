@@ -2,13 +2,37 @@
 
 Connects the trained PhoBERT model in `smart-livestream-ml` to the Smart Livestream PoC demo via a backend proxy and frontend hybrid classifier.
 
+## Recommended model (2026-07)
+
+| Artifact | Role |
+|----------|------|
+| `artifacts/phobert_base_combined_hardcases_v2` | **Default for demo** — manual UI eval ~94%; stable commerce/product mentions |
+| `artifacts/phobert_base_combined_hardcases_v3` | Experimental — better greetings/chitchat held-out eval; **regresses** thanks, rep-help, short product names (reverted from default) |
+| `artifacts/phobert_base_combined_hardcases` | Baseline (v1 hardcases fine-tune) |
+| `artifacts/phobert_base_combined` | Original combined train |
+
+## Architecture separation
+
+```
+Comment
+  → ML intent API (Repo B) — "What does the viewer want?"
+  → mlIntentBridge (confidence + label mapping only)
+  → ProductContextResolver — "Which product?" (pin/camera/catalog/clarification)
+  → Action / reply templates / analytics
+```
+
+- **ML** classifies intent only. No pinned/session state in the model.
+- **Resolver** binds product context (explicit catalog match beats pin; pin is not used for unrelated generic mentions).
+- **Regex** is fallback when ML is unavailable or below confidence threshold.
+- No phrase-specific intent patches in the app (training data fixes mislabels).
+
 ## Startup order
 
 ### Terminal 1 — ML intent API (`smart-livestream-ml`)
 
 ```powershell
 cd path\to\smart-livestream-ml
-python scripts/serve_intent_api.py --model-dir artifacts/phobert_base_combined --port 8010
+python scripts/serve_intent_api.py --model-dir artifacts/phobert_base_combined_hardcases_v2 --port 8010
 ```
 
 Verify:

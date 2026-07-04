@@ -4,10 +4,12 @@ import {
   fetchServiceHealthSnapshot,
   type ServiceHealthSnapshot,
 } from "../api/systemHealth";
+import { useI18n } from "../i18n/I18nProvider";
 
 const REFRESH_INTERVAL_MS = 30_000;
 
 export function ServiceHealthBanner() {
+  const { t } = useI18n();
   const [health, setHealth] = useState<ServiceHealthSnapshot>({
     backend: "checking",
     mlOptional: "checking",
@@ -42,11 +44,8 @@ export function ServiceHealthBanner() {
   if (health.backend === "unavailable") {
     return (
       <div className="serviceHealthBanner serviceHealthBanner--error" role="alert">
-        <strong>Backend chưa sẵn sàng.</strong> Không thể kết nối{" "}
-        <code>{health.apiBaseUrl}</code>. Chat, đăng ký khuôn mặt và AI Event Feed sẽ không hoạt
-        động. Browser AR vẫn chạy cục bộ. Chạy{" "}
-        <code>docker compose up --build</code> hoặc{" "}
-        <code>.\scripts\start-backend.ps1</code>.
+        <strong>{t("backendUnavailable")}</strong>{" "}
+        <code>{health.apiBaseUrl}</code>
       </div>
     );
   }
@@ -54,10 +53,7 @@ export function ServiceHealthBanner() {
   if (health.mlOptional === "unavailable") {
     return (
       <div className="serviceHealthBanner serviceHealthBanner--warning" role="status">
-        <strong>PhoBERT ML service (tuỳ chọn) chưa chạy.</strong> Phân loại ý định dùng{" "}
-        <em>rules fallback</em>. Khởi động ML API từ repo{" "}
-        <code>smart-livestream-ml</code> cổng 8010 — xem{" "}
-        <code>docs/phobert_bridge_demo.md</code>.
+        <strong>{t("mlUnavailable")}</strong>
       </div>
     );
   }

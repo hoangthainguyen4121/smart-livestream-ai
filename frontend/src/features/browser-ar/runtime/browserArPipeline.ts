@@ -89,6 +89,23 @@ export class BrowserArPipeline {
     void this.syncEngine();
   }
 
+  captureFrame(): ImageData | null {
+    if (!this.video || !this.canvas) {
+      return null;
+    }
+
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = this.canvas.width;
+    tempCanvas.height = this.canvas.height;
+    const context = tempCanvas.getContext("2d");
+    if (!context) {
+      return null;
+    }
+
+    context.drawImage(this.video, 0, 0, tempCanvas.width, tempCanvas.height);
+    return context.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+  }
+
   private async syncEngine(): Promise<void> {
     if (!this.options) {
       return;

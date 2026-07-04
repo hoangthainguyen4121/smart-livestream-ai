@@ -138,17 +138,13 @@ During a successful demo:
 - AI Event Feed shows recent Raise Hand and Thumbs Up events.
 - Realtime chat works in one tab.
 - Realtime chat syncs across two tabs.
-- Existing face recognition and chat features continue working while the AI Event Feed is visible.
 
 ## 4. Known Limitations
 
-- Wave gesture is temporarily disabled (`ENABLE_WAVE_GESTURE=false`).
-- FPS depends on CPU speed, camera resolution, lighting, and current AI inference load.
+- FPS depends on CPU speed, camera resolution, and lighting.
 - Only one browser tab or app should capture the webcam at a time (Browser AR on `/`).
-- Legacy backend camera modes (`/video-feed`, `/api/inference/frame`) can conflict with Browser AR if used simultaneously.
-- The AI Event Feed is in-memory only. Events disappear when the backend restarts.
 - Chat is in-memory only. Chat history disappears when the backend restarts.
-- There is no auth, database, or cloud deployment in this MVP.
+- There is no auth or database in this MVP.
 
 ## 5. Troubleshooting
 

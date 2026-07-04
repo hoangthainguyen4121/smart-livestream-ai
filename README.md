@@ -1,6 +1,6 @@
-# Smart Livestream PoC
+# Smart Livestream PoC (Thesis V1)
 
-Proof of concept for a smart livestream sales-support system: Browser AR, face registration, gesture/face events, Vietnamese comment intent (PhoBERT bridge optional), and AI sales assistant.
+Proof of concept for a smart livestream sales-support demo: Browser AR, product catalog, host-in-the-loop product context, Vietnamese comment intent (PhoBERT bridge optional), sales assistant panel, chat auto-reply, and mock commerce.
 
 ## Quick start (Docker)
 
@@ -15,54 +15,31 @@ docker compose up --build
 
 See [docs/DOCKER.md](docs/DOCKER.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-## Scope
+## Scope (V1)
 
-- **Browser AR** demo (MediaPipe FaceLandmarker in browser — main path).
-- **Backend** FastAPI: chat WebSocket, face registration, NLP proxy, AI event feed.
+- **Browser AR** demo (MediaPipe FaceLandmarker in browser).
+- **Frontend** React demo: product catalog, pinned/manual camera context, sales NLP, assistant panel, chat, mock checkout.
+- **Backend** FastAPI: health, chat WebSocket, NLP proxy to optional ML service.
 - **Optional ML**: PhoBERT intent API in separate repo `smart-livestream-ml` (rules fallback when down).
-- **Legacy CLI** (`main.py`): local OpenCV webcam PoC — optional dev tool.
-- Local embeddings in `storage/embeddings/` — no database, no auth.
+- **Optional camera product recognition**: frontend-only, flag-gated (`VITE_ENABLE_CAMERA_PRODUCT_RECOGNITION`).
+
+Thesis architecture reference: [docs/SYSTEM_ARCHITECTURE.md](docs/SYSTEM_ARCHITECTURE.md), [docs/RESEARCH_MENTAL_MODEL.md](docs/RESEARCH_MENTAL_MODEL.md).
 
 ## Folder Structure
 
 ```text
 smart-livestream-poc/
 ├── backend/
-│   └── app/                 # FastAPI: chat, NLP proxy, face registration, events
+│   └── app/                 # FastAPI: health, chat, NLP proxy
 ├── frontend/
-│   └── src/                 # React demo: Browser AR, sales assistant, commerce
-├── face_recognition/
-├── gesture_detection/
-├── main.py                  # Original local OpenCV CLI (optional dev tool)
-├── requirements.txt
-├── config/
-│   └── settings.py
-├── face_registration/
-│   └── registrar.py
-├── face_recognition/
-│   ├── embedding_store.py
-│   └── recognizer.py
-├── gesture_detection/
-│   ├── gesture_detector.py
-│   └── gesture_state.py
-├── overlay_engine/
-│   └── overlay_renderer.py
-├── storage/
-│   ├── embeddings/
-│   │   └── users.json
-│   └── captured_faces/
-├── utils/
-│   ├── camera.py
-│   ├── fps_monitor.py
-│   ├── geometry.py
-│   └── logger.py
-├── logs/
-│   └── app.log
-└── docs/
-    ├── DOCKER.md
-    ├── DEPLOYMENT.md
-    ├── CI_CD.md
-    └── limitations.md
+│   └── src/                 # React DemoPage: Browser AR, sales assistant, commerce
+├── scripts/                 # Benchmarks (e.g. camera product recognition memory)
+├── docs/
+│   ├── SYSTEM_ARCHITECTURE.md
+│   ├── RESEARCH_MENTAL_MODEL.md
+│   ├── DOCKER.md
+│   └── DEPLOYMENT.md
+└── docker-compose.yml
 ```
 
 ## CI/CD
@@ -76,134 +53,60 @@ Details: [docs/CI_CD.md](docs/CI_CD.md)
 
 Cloud deploy: [docs/RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md)
 
-## Architecture
+## Local development (without Docker)
 
-`main.py` orchestrates the application. It wires together camera input, face recognition, gesture detection, overlays, and logging.
+**Backend**
 
-`face_registration` owns webcam-based user registration. It captures multiple face samples for one user, averages the embeddings, and saves the result.
-
-`face_recognition` owns InsightFace model loading, face detection, embedding generation, cosine similarity matching, and local embedding persistence.
-
-`gesture_detection` owns MediaPipe Hands inference and lightweight heuristic gesture classification. Gesture effects are global in this PoC and are not assigned to a specific recognized user.
-
-`overlay_engine` owns all OpenCV drawing logic, including face boxes, usernames, `Unknown`, gesture effects, and the FPS monitor.
-
-`storage` stores local user data. Each user has one `.npy` embedding file. `users.json` stores metadata and file names only.
-
-## Implementation Phases
-
-### Phase 1
-
-1. Open webcam stream.
-2. Register a user with multiple face samples.
-3. Generate InsightFace embeddings.
-4. Average and normalize embeddings.
-5. Save the embedding as `storage/embeddings/<username>.npy`.
-6. Save metadata in `storage/embeddings/users.json`.
-7. Recognize registered users from webcam frames.
-
-### Phase 2
-
-1. Run MediaPipe Hands on webcam frames.
-2. Detect `Raise Hand` based on hand landmark height.
-3. Detect `Raise Hand` and `Thumbs Up` with MediaPipe Hands.
-4. Wave gesture is temporarily disabled. Set `ENABLE_WAVE_GESTURE=true` to re-enable it.
-5. Render global gesture effects.
-6. Render username and FPS overlays.
-
-### Phase 3
-
-1. Improve multi-face throughput.
-2. Tune frame resolution and recognition thresholds.
-3. Add optional recognition throttling if needed.
-4. Improve gesture heuristics or train a dedicated gesture model in a future phase.
-
-## Setup
-
-Use Python 3.11 or newer.
-
-```bash
-cd smart-livestream-poc
+```powershell
+cd backend
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 ```
 
-InsightFace may download its model files on first use.
-
-## Run Locally
-
-Register a user:
-
-```bash
-python main.py register --username alice
-```
-
-Run real-time recognition and gesture detection:
-
-```bash
-python main.py run
-```
-
-List registered users:
-
-```bash
-python main.py list-users
-```
-
-Delete a user:
-
-```bash
-python main.py delete-user --username alice
-```
-
-Press `Q` or `ESC` to stop webcam windows.
-
-## Configuration
-
-Most tunable values live in `config/settings.py`, including:
-
-- Camera index and resolution.
-- InsightFace model name and recognition threshold.
-- Registration sample count.
-- MediaPipe confidence thresholds.
-- Gesture detection thresholds.
-- Overlay style.
-- Local storage and log paths.
-
-## Docker (Web Dashboard)
-
-Run the web dashboard/control plane with Docker Compose:
+**Frontend**
 
 ```powershell
-docker compose up --build
+cd frontend
+npm install
+npm run dev
 ```
 
-- Frontend dashboard: http://127.0.0.1:5173
-- Backend API: http://127.0.0.1:8000
+Open http://127.0.0.1:5173 — single DemoPage (Browser AR + sales assistant + chat).
 
-### Primary demo path: Browser AR (local FaceLandmarker)
+### Start all local services (Windows)
 
-The main demo at `/` runs **Browser AR** entirely in the browser:
+From the repo root, launch frontend, backend, and the sibling PhoBERT NLP service in separate PowerShell windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-local-full.ps1
+```
+
+| URL | Service |
+|-----|---------|
+| http://127.0.0.1:5173 | Frontend (Vite) |
+| http://127.0.0.1:8000/api/health | Backend (FastAPI) |
+| http://127.0.0.1:8010/health | NLP intent API (`../smart-livestream-ml`) |
+
+Optional flags: `-SkipFrontend`, `-SkipBackend`, `-SkipNlp` (rules fallback without ML).
+
+Requires `../smart-livestream-ml` with model artifact `artifacts/phobert_base_combined_hardcases_v2` unless `-SkipNlp` is used.
+
+Previous / experimental: `phobert_base_combined_hardcases_v3` (CHITCHAT experiment — not default; worse on product names / thanks in manual UI). Older baselines: `phobert_base_combined_hardcases`, `phobert_base_combined`.
+
+## Browser AR demo
+
+The demo runs **Browser AR** entirely in the browser:
 
 - Webcam via `getUserMedia()` on the host
 - Face landmarks and effects via MediaPipe **FaceLandmarker** (`@mediapipe/tasks-vision`)
 - Effect presets: None, Glasses, Makeup Lite, Full Filter
 - Optional debug overlay (FPS, inference timing)
 
-The backend is used for **dashboard services**: chat, AI Event Feed, face registration API, and future identity/events integration — not for rendering the main camera preview.
+The backend provides **health**, **chat WebSocket**, and **NLP proxy** only.
 
-Shared AR code lives in `frontend/src/features/browser-ar/`. Benchmark harness: `/poc/ar-lab`.
-
-### Optional legacy backend camera APIs
-
-These remain for tests and reference; the **main demo** uses Browser AR in the frontend:
-
-| Path | Status |
-|------|--------|
-| `POST /api/inference/frame` | Legacy — backend-inferred overlays in browser |
-| `GET /video-feed` | Legacy — MJPEG stream with backend OpenCV capture |
-| CLI `python main.py run` | Original local OpenCV PoC (not part of web demo) |
+Shared AR code lives in `frontend/src/features/browser-ar/`.
 
 See [docs/DOCKER.md](docs/DOCKER.md) for environment variables, ML optional service, production profile, and troubleshooting.
 

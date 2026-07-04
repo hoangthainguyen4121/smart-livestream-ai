@@ -16,6 +16,8 @@ import {
   type SalesAssistantAnalytics,
   type SalesAssistantEvent,
 } from "./salesAssistantTypes";
+import { resolveModelExplanation } from "./modelExplanationResolver";
+import type { PredictIntentApiResponse } from "../../api/nlpIntent";
 
 type ProcessSalesCommentInput = {
   comment: string;
@@ -24,8 +26,11 @@ type ProcessSalesCommentInput = {
   catalog?: CatalogProduct[];
   selectedCameraProductId?: string | null;
   latestCameraProductId?: string | null;
+  detectedCameraProductId?: string | null;
+  detectedCameraConfidence?: number | null;
   autoReplyInChat?: boolean;
   mlBridge?: MlIntentBridge | null;
+  mlResponse?: PredictIntentApiResponse | null;
 };
 
 export type ProcessSalesCommentResult = {
@@ -81,6 +86,9 @@ function updateAnalytics(
     purchaseIntentCount: analytics.purchaseIntentCount + (isPurchase ? 1 : 0),
     hotLeads: analytics.hotLeads + (isPurchase ? 1 : 0),
     unknownComments: analytics.unknownComments,
+    clarificationCount:
+      analytics.clarificationCount + (event.contextSource === "clarification" ? 1 : 0),
+    complaintCount: analytics.complaintCount + (event.isComplaintEscalation ? 1 : 0),
     questionsByIntent: incrementIntentCount(analytics, event.intent),
     productQuestionCounts,
     mostAskedProductId,
@@ -99,6 +107,8 @@ export function processSalesComment(
     catalog,
     selectedCameraProductId: input.selectedCameraProductId ?? null,
     latestCameraProductId: input.latestCameraProductId ?? null,
+    detectedCameraProductId: input.detectedCameraProductId ?? null,
+    detectedCameraConfidence: input.detectedCameraConfidence ?? null,
     autoReplyInChat: input.autoReplyInChat ?? true,
     mlBridge: input.mlBridge ?? null,
   });
@@ -144,6 +154,13 @@ export function processSalesComment(
     mlConfidence: nlp.mlConfidence,
     intentSource: nlp.intentSource,
     commerceActions: nlp.commerceActions,
+    explanation: nlp.explanation,
+    modelExplanation: resolveModelExplanation({
+      comment: input.comment,
+      normalizedText: nlp.normalizedText,
+      mlBridge: input.mlBridge ?? null,
+      mlResponse: input.mlResponse ?? null,
+    }) ?? undefined,
   };
 
   return {
@@ -161,7 +178,7 @@ export async function processSalesCommentWithMl(
   const regexClassification = classifyIntent(normalizedComment);
   const mlResponse = await predictIntent(input.comment);
   const mlBridge = buildMlIntentBridge(mlResponse, regexClassification, normalizedComment);
-  return processSalesComment({ ...input, mlBridge }, currentAnalytics);
+  return processSalesComment({ ...input, mlBridge, mlResponse }, currentAnalytics);
 }
 
 export function getIntentLabel(intent: SalesAssistantEvent["intent"] | "UNKNOWN"): string {

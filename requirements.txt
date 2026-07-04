@@ -1,5 +1,2 @@
-insightface
-mediapipe==0.10.14
-numpy
-onnxruntime
-opencv-python
+# Root requirements retained for Docker build compatibility.
+# V1 backend dependencies are defined in backend/requirements.txt.

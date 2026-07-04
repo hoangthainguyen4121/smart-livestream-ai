@@ -18,10 +18,12 @@ export const INTENT_RULES: IntentRule[] = [
       { regex: /\bchot\b/, label: "chốt" },
       { regex: /\bdat hang\b/, label: "đặt hàng" },
       { regex: /\bship cho minh\b/, label: "ship cho mình" },
+      { regex: /\blay 1 cai\b/, label: "lấy 1 cái" },
+      { regex: /\blay 1\b/, label: "lấy 1" },
       { regex: /\blay \d+ cai\b/, label: "lấy N cái" },
+      { regex: /\bdat \d+\b/, label: "đặt N" },
       { regex: /\bmuon mua \d+ cai\b/, label: "muốn mua N cái" },
       { regex: /\bminh mua\b/, label: "mình mua" },
-      { regex: /\blay 1 cai\b/, label: "lấy 1 cái" },
       { regex: /\bmuon mua\b/, label: "muốn mua" },
       { regex: /\bmua\b/, label: "mua" },
     ],
@@ -43,6 +45,8 @@ export const INTENT_RULES: IntentRule[] = [
     baseConfidence: 0.88,
     patterns: [
       { regex: /\bship\b/, label: "ship" },
+      { regex: /\bmien phi ship\b/, label: "miễn phí ship" },
+      { regex: /\bfreeship\b/, label: "freeship" },
       { regex: /\bgiao hang\b/, label: "giao hàng" },
       { regex: /\bvan chuyen\b/, label: "vận chuyển" },
       { regex: /\bha noi\b/, label: "Hà Nội" },
@@ -73,6 +77,20 @@ export const INTENT_RULES: IntentRule[] = [
     ],
   },
   {
+    intent: "ASK_STOCK",
+    baseConfidence: 0.86,
+    patterns: [
+      { regex: /\bcon hang khong\b/, label: "còn hàng không" },
+      { regex: /\bsize [smlx]{1,2} con khong\b/, label: "size còn không" },
+      { regex: /\bcon hang\b/, label: "còn hàng" },
+      { regex: /\bhet hang\b/, label: "hết hàng" },
+      { regex: /\bton kho\b/, label: "tồn kho" },
+      { regex: /\bcon bao nhieu\b/, label: "còn bao nhiêu" },
+      { regex: /\bcon khong\b/, label: "còn không" },
+      { regex: /\bco san\b/, label: "có sẵn" },
+    ],
+  },
+  {
     intent: "ASK_SIZE",
     baseConfidence: 0.87,
     patterns: [
@@ -88,24 +106,14 @@ export const INTENT_RULES: IntentRule[] = [
     patterns: [
       { regex: /\bcon mau\b/, label: "còn màu" },
       { regex: /\bco mau\b/, label: "có màu" },
-      { regex: new RegExp(`\\bco .+ (${COLOR_TOKENS})\\b`), label: "có màu cụ thể" },
-      { regex: new RegExp(`\\b(${COLOR_TOKENS}) .+ khong\\b`), label: "màu còn không" },
+      { regex: new RegExp(`\\bco mau (${COLOR_TOKENS})\\b`), label: "có màu cụ thể" },
+      { regex: new RegExp(`\\bcon mau (${COLOR_TOKENS})\\b`), label: "còn màu cụ thể" },
+      { regex: new RegExp(`\\bmau (${COLOR_TOKENS}) con khong\\b`), label: "màu X còn không" },
       { regex: /\bmau den\b/, label: "màu đen" },
       { regex: /\bmau do\b/, label: "màu đỏ" },
       { regex: /\bmau gi\b/, label: "màu gì" },
-      { regex: /\bmau\b/, label: "màu" },
-    ],
-  },
-  {
-    intent: "ASK_STOCK",
-    baseConfidence: 0.86,
-    patterns: [
-      { regex: /\bcon hang\b/, label: "còn hàng" },
-      { regex: /\bhet hang\b/, label: "hết hàng" },
-      { regex: /\bton kho\b/, label: "tồn kho" },
-      { regex: /\bcon bao nhieu\b/, label: "còn bao nhiêu" },
-      { regex: /\bcon khong\b/, label: "còn không" },
-      { regex: /\bco san\b/, label: "có sẵn" },
+      { regex: /\bmau nao\b/, label: "màu nào" },
+      { regex: /\bmau(?! nay\b)\b/, label: "màu" },
     ],
   },
   {
@@ -114,7 +122,6 @@ export const INTENT_RULES: IntentRule[] = [
     patterns: [
       { regex: /\bthong tin\b/, label: "thông tin" },
       { regex: /\bmo ta\b/, label: "mô tả" },
-      { regex: /\bsp nay\b/, label: "sp này" },
       { regex: /\bsan pham nay la gi\b/, label: "sản phẩm này là gì" },
       { regex: /\bco gi dac biet\b/, label: "có gì đặc biệt" },
     ],
@@ -127,6 +134,7 @@ export const INTENT_RULES: IntentRule[] = [
       { regex: /\bgia bao nhieu\b/, label: "giá bao nhiêu" },
       { regex: /\bkinh nay bao nhieu\b/, label: "kính này bao nhiêu" },
       { regex: /\bbao nhieu tien\b/, label: "bao nhiêu tiền" },
+      { regex: /\bnhieu tien\b/, label: "nhiu tiền" },
       { regex: /\bbao nhieu\b/, label: "bao nhiêu" },
       { regex: /\bgia\b/, label: "giá" },
     ],
@@ -155,6 +163,10 @@ export function classifyIntent(text: string): IntentClassification {
     }
 
     if (rule.intent === "ASK_STOCK" && /\bgia\b/.test(text)) {
+      continue;
+    }
+
+    if (rule.intent === "ASK_SHIPPING" && /\b(con mau|mau den|mau do)\b/.test(text)) {
       continue;
     }
 

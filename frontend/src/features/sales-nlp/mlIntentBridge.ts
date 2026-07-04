@@ -1,33 +1,9 @@
 import type { PredictIntentApiResponse } from "../../api/nlpIntent";
 import type { IntentClassification } from "./intentClassifier";
+import { resolveMlVariantIntent } from "./intentSignals";
 import type { SalesNlpAction, SalesNlpIntent } from "./salesNlpTypes";
 
 export const ML_INTENT_CONFIDENCE_THRESHOLD = 0.5;
-
-const COLOR_TOKENS =
-  "xanh|den|do|vang|trang|tim|hong|xam|nau|be|ruby|cam|xanh la|xanh duong";
-
-const COMMERCE_SIGNAL_PATTERN = new RegExp(
-  [
-    "\\bgia\\b",
-    "\\bbao nhieu\\b",
-    "\\bhang\\b",
-    "\\bton\\b",
-    "\\blink\\b",
-    "\\bship\\b",
-    "\\bmua\\b",
-    "\\bchot\\b",
-    "\\bkinh\\b",
-    "\\bson\\b",
-    "\\bmau\\b",
-    "\\bsize\\b",
-    "\\bco mau\\b",
-    "\\bcon mau\\b",
-    `\\b(${COLOR_TOKENS})\\b`,
-    "\\bsan pham\\b",
-    "\\bsp\\b",
-  ].join("|"),
-);
 
 export type IntentSource = "ml" | "regex" | "regex_fallback";
 
@@ -53,7 +29,6 @@ export type ChatMlIntentBadge = {
 
 const ML_INTENT_MAP: Record<string, { intent: SalesNlpIntent; action: SalesNlpAction }> = {
   ASK_PRICE: { intent: "ASK_PRICE", action: "AUTO_REPLY_SUGGESTED" },
-  ASK_VARIANT: { intent: "ASK_SIZE", action: "AUTO_REPLY_SUGGESTED" },
   ASK_STOCK: { intent: "ASK_STOCK", action: "AUTO_REPLY_SUGGESTED" },
   ASK_LINK: { intent: "ASK_LINK", action: "AUTO_REPLY_SUGGESTED" },
   ASK_SHIPPING: { intent: "ASK_SHIPPING", action: "AUTO_REPLY_SUGGESTED" },
@@ -65,20 +40,23 @@ const ML_INTENT_MAP: Record<string, { intent: SalesNlpIntent; action: SalesNlpAc
 function getMlConfidenceThreshold(mlIntent: string): number {
   switch (mlIntent.trim().toUpperCase()) {
     case "PRODUCT_INFO":
-      return 0.7;
+      return 0.55;
     case "CHITCHAT":
     case "SPAM_TOXIC":
       return 0.45;
+    case "PURCHASE_INTENT":
+      return 0.5;
+    case "COMPLAINT":
+      return 0.4;
     default:
       return ML_INTENT_CONFIDENCE_THRESHOLD;
   }
 }
 
-export function hasCommerceProductSignal(normalizedComment: string): boolean {
-  return COMMERCE_SIGNAL_PATTERN.test(normalizedComment);
-}
-
-export function mapMlIntentLabel(mlIntent: string): {
+export function mapMlIntentLabel(
+  mlIntent: string,
+  normalizedComment = "",
+): {
   mappedIntent: SalesNlpIntent;
   mappedAction: SalesNlpAction;
   suppressEvent: boolean;
@@ -117,6 +95,17 @@ export function mapMlIntentLabel(mlIntent: string): {
     };
   }
 
+  if (normalized === "ASK_VARIANT") {
+    const variantIntent = resolveMlVariantIntent(normalizedComment);
+    return {
+      mappedIntent: variantIntent,
+      mappedAction: "AUTO_REPLY_SUGGESTED",
+      suppressEvent: false,
+      isComplaintEscalation: false,
+      isSpamModeration: false,
+    };
+  }
+
   const mapped = ML_INTENT_MAP[normalized];
   if (!mapped) {
     return {
@@ -142,19 +131,11 @@ function shouldUseMlIntent(
   mlConfidence: number,
   mappedIntent: SalesNlpIntent,
   regexClassification: IntentClassification,
-  normalizedComment: string,
 ): boolean {
   const normalizedMlIntent = mlIntent.trim().toUpperCase();
   const threshold = getMlConfidenceThreshold(normalizedMlIntent);
 
   if (mlConfidence >= threshold) {
-    if (
-      normalizedMlIntent === "PRODUCT_INFO" &&
-      regexClassification.intent === "UNKNOWN" &&
-      !hasCommerceProductSignal(normalizedComment)
-    ) {
-      return false;
-    }
     return true;
   }
 
@@ -197,25 +178,23 @@ export function buildMlIntentBridge(
     };
   }
 
-  const mappedIntent = (response.mapped_intent as SalesNlpIntent | null) ?? "UNKNOWN";
-  const mappedAction = (response.mapped_action as SalesNlpAction | null) ?? "IGNORE";
+  const mapped = mapMlIntentLabel(response.intent, normalizedComment);
   const usedMl = shouldUseMlIntent(
     response.intent,
     response.confidence,
-    mappedIntent,
+    mapped.mappedIntent,
     regexClassification,
-    normalizedComment,
   );
 
   return {
     mlAvailable: true,
     mlIntent: response.intent,
     mlConfidence: response.confidence,
-    mappedIntent,
-    mappedAction,
-    suppressEvent: response.suppress_event,
-    isComplaintEscalation: response.is_complaint_escalation,
-    isSpamModeration: response.is_spam_moderation,
+    mappedIntent: mapped.mappedIntent,
+    mappedAction: mapped.mappedAction,
+    suppressEvent: mapped.suppressEvent,
+    isComplaintEscalation: mapped.isComplaintEscalation,
+    isSpamModeration: mapped.isSpamModeration,
     usedMl,
     intentSource: usedMl ? "ml" : "regex_fallback",
   };

@@ -5,7 +5,7 @@ Luồng demo giỏ hàng / checkout / thanh toán giả lập cho livestream PoC
 ## Chạy demo
 
 1. Backend: `uvicorn app.main:app --reload --port 8000` (từ thư mục `backend`)
-2. (Tuỳ chọn) PhoBERT bridge: `python scripts/serve_intent_api.py --model-dir artifacts/phobert_base_combined --port 8010`
+2. (Tuỳ chọn) PhoBERT bridge: `python scripts/serve_intent_api.py --model-dir artifacts/phobert_base_combined_hardcases_v2 --port 8010`
 3. Frontend: `npm run dev` → mở `/` hoặc `/poc/sales-lab`
 
 ## Thành phần UI

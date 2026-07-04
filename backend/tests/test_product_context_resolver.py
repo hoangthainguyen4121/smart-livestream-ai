@@ -92,3 +92,44 @@ def test_source_and_confidence_returned(catalog):
     assert resolution.source == "pinned_product"
     assert resolution.confidence == pytest.approx(0.65)
     assert "pinned product" in resolution.explanation.lower()
+
+
+def test_camera_vision_beats_pinned_for_generic_comment(catalog):
+    resolution = resolve_product_context(
+        comment="giá bao nhiêu?",
+        catalog=catalog,
+        pinned_product_id="lipstick-ruby",
+        detected_camera_product_id="glasses-a",
+        detected_camera_confidence=0.82,
+    )
+
+    assert resolution.product is not None
+    assert resolution.product["id"] == "glasses-a"
+    assert resolution.source == "camera_vision"
+
+
+def test_explicit_catalog_beats_camera_vision(catalog):
+    resolution = resolve_product_context(
+        comment="son ruby giá bao nhiêu?",
+        catalog=catalog,
+        detected_camera_product_id="glasses-a",
+        detected_camera_confidence=0.95,
+    )
+
+    assert resolution.product is not None
+    assert resolution.product["id"] == "lipstick-ruby"
+    assert resolution.source == "catalog_match"
+
+
+def test_low_confidence_vision_falls_back_to_manual_camera(catalog):
+    resolution = resolve_product_context(
+        comment="cái này bao nhiêu?",
+        catalog=catalog,
+        selected_camera_product_id="glasses-a",
+        detected_camera_product_id="oversize-tee",
+        detected_camera_confidence=0.4,
+    )
+
+    assert resolution.product is not None
+    assert resolution.product["id"] == "glasses-a"
+    assert resolution.source == "camera_context"

@@ -81,8 +81,7 @@ https://________________.up.railway.app/api/health
 | Chat WebSocket | ☐ | |
 | Sales Assistant (rules fallback) | ☐ | Comment: `giá bao nhiêu` |
 | Product context resolver | ☐ | Mark camera product + deictic comment `cái này bao nhiêu` |
-| AI Event Feed | ☐ | |
-| Face registration `/register-face` | ☐ | **Optional / local only** — high RAM; best-effort on Railway |
+| Camera product recognition (optional) | ☐ N/A | Disabled by default (`VITE_ENABLE_CAMERA_PRODUCT_RECOGNITION=false`) |
 | PhoBERT badge (if ML deployed) | ☐ N/A | |
 
 ---
@@ -90,9 +89,9 @@ https://________________.up.railway.app/api/health
 ## Known limitations observed
 
 - [ ] Cold start delay after idle: `____` seconds
-- [ ] Face registration is **local/high-memory optional** — cloud demo focuses on AR, chat, sales assistant, cart/checkout
+- [ ] Cloud demo focuses on AR, chat, sales assistant, cart/checkout
 - [ ] Product context resolver is lightweight (text + pinned/camera context) and suitable for Railway
-- [ ] Face embeddings lost after redeploy (expected on free tier)
+- [ ] Camera product recognition disabled by default (`VITE_ENABLE_CAMERA_PRODUCT_RECOGNITION=false`)
 - [ ] ML not deployed — rules fallback only
 - [ ] Future work: visual product recognition from camera frames (lightweight object detection / visual embeddings)
 - [ ] Other: `________________`

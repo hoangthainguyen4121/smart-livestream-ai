@@ -7,7 +7,7 @@ export function buildAssistantChatMessage(
   triggerMessage: Pick<ChatMessage, "id" | "author" | "text" | "room_id">,
 ): ChatMessage {
   return {
-    id: `assistant-${event.id}`,
+    id: `assistant-${triggerMessage.id}`,
     room_id: triggerMessage.room_id,
     author: AI_SALES_ASSISTANT_ACTOR,
     text: event.suggestedReply,
@@ -15,6 +15,8 @@ export function buildAssistantChatMessage(
     replyToMessageId: triggerMessage.id,
     replyToAuthor: triggerMessage.author,
     replyToText: triggerMessage.text,
+    commerceActions:
+      event.commerceActions.length > 0 ? [...event.commerceActions] : undefined,
   };
 }
 

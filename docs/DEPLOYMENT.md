@@ -7,12 +7,12 @@ Hướng dẫn triển khai demo Smart Livestream PoC phục vụ luận văn v�
 | Thành phần | Vai trò | Bắt buộc? |
 |------------|---------|-----------|
 | **Frontend** (Vite / nginx) | Browser AR, chat UI, sales assistant | ✅ |
-| **Backend** (FastAPI) | Chat WebSocket, face API, NLP proxy, events | ✅ |
+| **Backend** (FastAPI) | Chat WebSocket, NLP proxy, health | ✅ |
 | **ML Intent API** (repo `smart-livestream-ml`, cổng 8010) | PhoBERT intent classification | ⚠️ Tuỳ chọn — có rules fallback |
 
 Repo này **không** chứa mã ML PhoBERT. ML chạy riêng theo [`phobert_bridge_demo.md`](phobert_bridge_demo.md).
 
-**Cloud demo focus:** Browser AR, chat WebSocket, sales assistant (product context resolver), cart/checkout. **Face recognition** (InsightFace) is local/high-memory optional and best-effort on Railway. **Product context resolution** is lightweight text matching (camera context → pinned product → catalog) and runs fully in the frontend — suitable for Railway without extra RAM.
+**Cloud demo focus:** Browser AR, chat WebSocket, sales assistant (product context resolver), cart/checkout. **Product context resolution** is lightweight text matching (camera context → pinned product → catalog) and runs fully in the frontend — suitable for Railway without extra RAM.
 
 Measure resolver memory locally:
 
@@ -23,6 +23,8 @@ python scripts/measure_product_context_memory.py
 Report: [`PRODUCT_CONTEXT_MEMORY_REPORT.md`](PRODUCT_CONTEXT_MEMORY_REPORT.md)
 
 **Future work:** visual product recognition from camera frames using lightweight object detection or visual embeddings (not in current PoC).
+
+**Camera product recognition (optional):** catalog-scoped image matching against product `imageUrl` only. Disabled by default via `VITE_ENABLE_CAMERA_PRODUCT_RECOGNITION=false` and `CAMERA_PRODUCT_RECOGNITION_ENABLED=false`. Enable locally for experiments; keep disabled on Railway. Benchmark: `python scripts/measure_camera_product_recognition_memory.py` → [`CAMERA_PRODUCT_RECOGNITION_MEMORY_REPORT.md`](CAMERA_PRODUCT_RECOGNITION_MEMORY_REPORT.md).
 
 ---
 
@@ -55,7 +57,7 @@ Mở http://127.0.0.1:5173
 
 ```powershell
 cd path\to\smart-livestream-ml
-python scripts/serve_intent_api.py --model-dir artifacts/phobert_base_combined --port 8010
+python scripts/serve_intent_api.py --model-dir artifacts/phobert_base_combined_hardcases_v2 --port 8010
 ```
 
 Kiểm tra qua proxy:
@@ -178,8 +180,6 @@ Track results in [`docs/RAILWAY_DEPLOYMENT_STATUS.md`](RAILWAY_DEPLOYMENT_STATUS
 
 - WebSocket chat cần `wss://` qua HTTPS.
 - Browser AR cần HTTPS + quyền camera.
-- InsightFace tải model **lazy** khi dùng face registration (không warmup lúc startup mặc định). Local Docker: cold start capture đầu ~1–3 phút. **Railway free tier:** RAM thường không đủ InsightFace ổn định — giữ `FACE_RECOGNITION_WARMUP=false`; face registration best-effort.
-- Legacy MJPEG `/video-feed` **không** hoạt động tin cậy trong container cloud.
 
 ### GitHub Pages (chỉ frontend static)
 

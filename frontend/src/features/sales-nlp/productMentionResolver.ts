@@ -49,6 +49,35 @@ const CATEGORY_KEYWORDS: Record<ProductCategory, string[]> = {
 
 const SCORE_CLOSE_THRESHOLD = 1;
 
+const GENERIC_FAMILY_TERMS = new Set(
+  [...Object.values(CATEGORY_KEYWORDS).flat(), "son", "kinh", "ao", "tui", "mu", "makeup"].map(
+    normalizeToken,
+  ),
+);
+
+const WEAK_PRODUCT_FAMILY_TAGS = new Set(
+  [
+    "son matte",
+    "son mini",
+    "son velvet",
+    "son do",
+    "son cam",
+    "son ruby",
+    "son hong dat",
+    "son do dam",
+  ].map(normalizeToken),
+);
+
+function isFamilyAmbiguityTerm(term: string): boolean {
+  if (GENERIC_FAMILY_TERMS.has(term)) {
+    return false;
+  }
+  if (term.length >= 8) {
+    return true;
+  }
+  return term.split(" ").filter(Boolean).length >= 2 && term.length >= 6;
+}
+
 function tokenize(text: string): string[] {
   return text.split(" ").filter(Boolean);
 }
@@ -63,7 +92,7 @@ function containsTerm(text: string, term: string): boolean {
   return text.includes(term);
 }
 
-function detectMentionedCategories(text: string): ProductCategory[] {
+export function detectMentionedCategories(text: string): ProductCategory[] {
   const categories: ProductCategory[] = [];
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS) as Array<
     [ProductCategory, string[]]
@@ -150,6 +179,351 @@ function buildCategoryClarification(category: ProductCategory): string {
     default:
       return "Bạn có thể nêu rõ sản phẩm bạn muốn hỏi không?";
   }
+}
+
+export function buildCategoryListClarification(
+  category: ProductCategory,
+  categoryProducts: CatalogProduct[],
+): string {
+  const categoryLabel =
+    category === "lipstick" ? "son" : category === "glasses" ? "kính" : category === "fashion" ? "áo" : "sản phẩm";
+  if (categoryProducts.length >= 2) {
+    const names = categoryProducts
+      .slice(0, 5)
+      .map((product) => product.name)
+      .join(", ");
+    return `Shop đang có các mẫu ${categoryLabel}: ${names}. Bạn muốn hỏi mẫu nào ạ?`;
+  }
+  if (categoryProducts.length === 1) {
+    return `Shop đang có ${categoryProducts[0].name}. Bạn muốn hỏi giá, màu hay còn hàng ạ?`;
+  }
+  return `Shop có nhiều loại ${categoryLabel} trong catalog. Bạn có thể nêu tên hoặc màu cụ thể ạ?`;
+}
+
+export function buildNamedOptionsClarification(
+  products: CatalogProduct[],
+  familyHint?: string,
+): string {
+  const names = products.slice(0, 3).map((product) => product.name);
+  if (names.length === 0) {
+    return "Bạn có thể nêu rõ tên sản phẩm bạn muốn hỏi không?";
+  }
+  if (familyHint) {
+    return `Shop có nhiều loại ${familyHint}: ${names.join(", ")}. Bạn muốn hỏi loại nào?`;
+  }
+  if (names.length === 1) {
+    return `Bạn đang hỏi về ${names[0]} ạ? Bạn có thể nêu rõ tên sản phẩm.`;
+  }
+  if (names.length === 2) {
+    return `Bạn đang hỏi về ${names[0]} hay ${names[1]} ạ?`;
+  }
+  return `Bạn đang hỏi về ${names.slice(0, -1).join(", ")} hay ${names[names.length - 1]} ạ?`;
+}
+
+function extractFamilyHintFromProducts(products: CatalogProduct[]): string | undefined {
+  if (products.length < 2) {
+    return undefined;
+  }
+
+  const splitNames = products.map((product) => product.name.split(/\s+/));
+  const prefix: string[] = [];
+  for (let index = 0; index < splitNames[0].length; index += 1) {
+    const word = splitNames[0][index];
+    if (splitNames.every((parts) => parts[index] === word)) {
+      prefix.push(word);
+    } else {
+      break;
+    }
+  }
+
+  return prefix.length >= 2 ? prefix.join(" ") : undefined;
+}
+
+function findUniquelyIdentifiedMatch(
+  pool: ProductMentionMatch[],
+  comment: string,
+): ProductMentionMatch | null {
+  const text = normalizeText(comment);
+
+  const byFullName = pool.filter((entry) => {
+    const name = normalizeToken(entry.product.name);
+    return name.length >= 6 && text.includes(name);
+  });
+  if (byFullName.length === 1) {
+    return byFullName[0];
+  }
+
+  const byLongTag = pool.filter((entry) =>
+    entry.product.tags.some((tag) => {
+      const normalized = normalizeToken(tag);
+      return (
+        normalized.length >= 8 &&
+        !WEAK_PRODUCT_FAMILY_TAGS.has(normalized) &&
+        text.includes(normalized)
+      );
+    }),
+  );
+  if (byLongTag.length === 1) {
+    return byLongTag[0];
+  }
+
+  for (const entry of pool) {
+    const specificTags = entry.product.tags
+      .map(normalizeToken)
+      .filter(
+        (tag) =>
+          tag.length >= 8 &&
+          !WEAK_PRODUCT_FAMILY_TAGS.has(tag) &&
+          text.includes(tag),
+      );
+    if (specificTags.length === 0) {
+      continue;
+    }
+
+    const competitors = pool.filter(
+      (other) =>
+        other.product.id !== entry.product.id &&
+        other.product.tags.some((tag) => specificTags.includes(normalizeToken(tag))),
+    );
+    if (competitors.length === 0) {
+      return entry;
+    }
+  }
+
+  const mentionedCategories = detectMentionedCategories(text);
+  for (const category of mentionedCategories) {
+    const categoryPool = pool.filter((entry) => entry.product.category === category);
+    const colorMatches = categoryPool.filter((entry) =>
+      entry.product.colors.some((color) => {
+        const normalized = normalizeToken(color);
+        return normalized.length >= 3 && text.includes(normalized);
+      }),
+    );
+    if (colorMatches.length === 1) {
+      return colorMatches[0];
+    }
+  }
+
+  return null;
+}
+
+export type CatalogMatchResolution =
+  | { kind: "single"; match: ProductMentionMatch }
+  | {
+      kind: "ambiguous";
+      candidates: ProductMentionMatch[];
+      clarificationQuestion: string;
+    }
+  | { kind: "none" };
+
+export function isCategoryLevelQuestion(comment: string): boolean {
+  const text = normalizeText(comment);
+  const categories = detectMentionedCategories(text);
+  const tokens = text.split(" ").filter(Boolean);
+  if (tokens.includes("ao") && !categories.includes("fashion")) {
+    categories.push("fashion");
+  }
+  if (categories.length === 0) {
+    return false;
+  }
+
+  if (/\b(co|shop co)\s+(may|bao nhieu|nhung)\s+loai\b/.test(text)) {
+    return true;
+  }
+  if (/\bnhung\s+loai\b.*\bnao\b/.test(text) || /\bloai\s+nao\b/.test(text)) {
+    return true;
+  }
+  if (/\bnao\b.*\b(re nhat|dep nhat|tot nhat|ban chay nhat)\b/.test(text)) {
+    return true;
+  }
+  if (/\b(re nhat|dep nhat|tot nhat|ban chay nhat)\b.*\bnao\b/.test(text)) {
+    return true;
+  }
+  if (/\bnao\b.*\b(con hang|con khong)\b/.test(text)) {
+    return true;
+  }
+  if (/\b(con hang|con khong)\b.*\bnao\b/.test(text)) {
+    return true;
+  }
+
+  return false;
+}
+
+function inferFamilyHintLabel(term: string): string {
+  return term
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function findAmbiguousFamilyGroup(
+  comment: string,
+  ranked: ProductMentionMatch[],
+  catalog: CatalogProduct[],
+): { familyHint: string; matches: ProductMentionMatch[] } | null {
+  const text = normalizeText(comment);
+  const termGroups = new Map<string, ProductMentionMatch[]>();
+
+  const registerGroup = (term: string, entry: ProductMentionMatch) => {
+    if (!isFamilyAmbiguityTerm(term) || !text.includes(term)) {
+      return;
+    }
+    const group = termGroups.get(term) ?? [];
+    if (!group.some((candidate) => candidate.product.id === entry.product.id)) {
+      group.push(entry);
+      termGroups.set(term, group);
+    }
+  };
+
+  for (const entry of ranked) {
+    for (const term of entry.matchedTerms) {
+      registerGroup(term, entry);
+    }
+    for (const tag of entry.product.tags.map(normalizeToken)) {
+      registerGroup(tag, entry);
+    }
+  }
+
+  const mentionedCategories = detectMentionedCategories(text);
+  if (mentionedCategories.includes("lipstick")) {
+    const colorTerm = ["do", "cam", "hong dat", "do dam"].find((term) => text.includes(term));
+    if (colorTerm && text.includes("son")) {
+      const colorMatches = catalog
+        .filter(
+          (product) =>
+            product.category === "lipstick" &&
+            (product.colors.some((color) => normalizeToken(color).includes(colorTerm)) ||
+              product.tags.some((tag) => normalizeToken(tag).includes(colorTerm))),
+        )
+        .map((product) => scoreProduct(product, text));
+      if (colorMatches.length >= 2) {
+        termGroups.set(`son ${colorTerm}`, colorMatches);
+      }
+    }
+
+    for (const variantTerm of ["matte", "mini", "velvet"]) {
+      if (!text.includes(variantTerm) || !text.includes("son")) {
+        continue;
+      }
+      const variantMatches = catalog
+        .filter(
+          (product) =>
+            product.category === "lipstick" &&
+            (product.tags.some((tag) => normalizeToken(tag).includes(variantTerm)) ||
+              normalizeToken(product.name).includes(variantTerm)),
+        )
+        .map((product) => scoreProduct(product, text));
+      if (variantMatches.length >= 2) {
+        termGroups.set(`son ${variantTerm}`, variantMatches);
+      }
+    }
+  }
+  const sharedTerms = [...termGroups.entries()]
+    .map(([term, matches]) => {
+      if (mentionedCategories.length > 0) {
+        const inCategory = matches.filter((entry) =>
+          mentionedCategories.includes(entry.product.category),
+        );
+        if (inCategory.length >= 2) {
+          return [term, inCategory] as const;
+        }
+        return null;
+      }
+      return matches.length >= 2 ? ([term, matches] as const) : null;
+    })
+    .filter((entry): entry is readonly [string, ProductMentionMatch[]] => entry !== null)
+    .sort(
+      (left, right) =>
+        right[0].length - left[0].length || right[1].length - left[1].length,
+    );
+
+  if (sharedTerms.length === 0) {
+    return null;
+  }
+
+  const [term, matches] = sharedTerms[0];
+  const sortedMatches = [...matches].sort(
+    (left, right) =>
+      right.score - left.score ||
+      right.product.stock - left.product.stock ||
+      left.product.name.localeCompare(right.product.name, "vi"),
+  );
+
+  return {
+    familyHint:
+      extractFamilyHintFromProducts(sortedMatches.map((entry) => entry.product)) ??
+      inferFamilyHintLabel(term),
+    matches: sortedMatches,
+  };
+}
+
+export function resolveCatalogProductMatch(
+  comment: string,
+  catalog: CatalogProduct[],
+): CatalogMatchResolution {
+  const ranked = rankProducts(comment, catalog);
+  if (ranked.length === 0) {
+    return { kind: "none" };
+  }
+
+  const uniqueMatch = findUniquelyIdentifiedMatch(ranked, comment);
+  if (uniqueMatch) {
+    return { kind: "single", match: uniqueMatch };
+  }
+
+  const familyGroup = findAmbiguousFamilyGroup(comment, ranked, catalog);
+  if (familyGroup && familyGroup.matches.length >= 2) {
+    const topFamilyMatches = familyGroup.matches.slice(0, 5);
+    return {
+      kind: "ambiguous",
+      candidates: topFamilyMatches,
+      clarificationQuestion: buildNamedOptionsClarification(
+        topFamilyMatches.map((entry) => entry.product),
+        familyGroup.familyHint,
+      ),
+    };
+  }
+
+  const explicitMatches = ranked.filter((entry) => isExplicitProductMention(entry, comment));
+  const bestExplicit = pickBestFromMatches(explicitMatches);
+  if (bestExplicit) {
+    const closeExplicit = explicitMatches.filter((entry) => areScoresClose(bestExplicit, entry));
+    if (closeExplicit.length > 1) {
+      const familyHint = extractFamilyHintFromProducts(
+        closeExplicit.map((entry) => entry.product),
+      );
+      return {
+        kind: "ambiguous",
+        candidates: closeExplicit.slice(0, 5),
+        clarificationQuestion: buildNamedOptionsClarification(
+          closeExplicit.map((entry) => entry.product),
+          familyHint,
+        ),
+      };
+    }
+    return { kind: "single", match: bestExplicit };
+  }
+
+  const best = pickBestFromMatches(ranked);
+  if (!best || best.score < 3) {
+    return { kind: "none" };
+  }
+
+  const closeMatches = ranked.filter((entry) => areScoresClose(best, entry));
+  if (closeMatches.length > 1) {
+    const familyHint = extractFamilyHintFromProducts(closeMatches.map((entry) => entry.product));
+    return {
+      kind: "ambiguous",
+      candidates: closeMatches.slice(0, 5),
+      clarificationQuestion: buildNamedOptionsClarification(
+        closeMatches.map((entry) => entry.product),
+        familyHint,
+      ),
+    };
+  }
+
+  return { kind: "single", match: best };
 }
 
 function computeProductConfidence(
@@ -244,8 +618,8 @@ export function findExplicitCatalogMatch(
   comment: string,
   catalog: CatalogProduct[],
 ): ProductMentionMatch | null {
-  const ranked = rankProducts(comment, catalog);
-  return pickBestFromMatches(ranked.filter((entry) => isExplicitProductMention(entry, comment)));
+  const resolution = resolveCatalogProductMatch(comment, catalog);
+  return resolution.kind === "single" ? resolution.match : null;
 }
 
 export function findConfidentCatalogCandidate(
@@ -253,18 +627,11 @@ export function findConfidentCatalogCandidate(
   catalog: CatalogProduct[],
   minimumScore = 3,
 ): ProductMentionMatch | null {
-  const ranked = rankProducts(comment, catalog);
-  const best = pickBestFromMatches(ranked);
-  if (!best || best.score < minimumScore) {
+  const resolution = resolveCatalogProductMatch(comment, catalog);
+  if (resolution.kind !== "single" || resolution.match.score < minimumScore) {
     return null;
   }
-
-  const second = ranked.find((entry) => entry.product.id !== best.product.id);
-  if (second && areScoresClose(best, second)) {
-    return null;
-  }
-
-  return best;
+  return resolution.match;
 }
 
 export function resolveProductSelection(
@@ -584,4 +951,12 @@ export function resolveComparedProducts(
 
   void pinnedProduct;
   return [];
+}
+
+export function rankProductMentions(
+  comment: string,
+  catalog: CatalogProduct[],
+  limit = 5,
+): ProductMentionMatch[] {
+  return rankProducts(comment, catalog).slice(0, limit);
 }

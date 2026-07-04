@@ -5,10 +5,6 @@ export function getApiBaseUrl(): string {
   return configured || DEFAULT_API_BASE_URL;
 }
 
-export function getBackendVideoFeedUrl(): string {
-  return `${getApiBaseUrl()}/video-feed`;
-}
-
 export function getWebSocketBaseUrl(): string {
   const explicitWs = import.meta.env.VITE_WS_BASE_URL?.trim();
   if (explicitWs) {

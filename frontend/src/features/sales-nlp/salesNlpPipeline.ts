@@ -1,7 +1,8 @@
 import { generateAnswer } from "./answerGenerator";
+import { buildSalesNlpExplanation } from "./salesNlpExplanation";
 import { decideAction, shouldReplyInChat } from "./actionDecider";
 import { extractEntities } from "./entityExtractor";
-import { classifyIntent, type IntentClassification } from "./intentClassifier";
+import { classifyIntent } from "./intentClassifier";
 import { normalizeText } from "./normalizeText";
 import {
   resolveComparedProducts,
@@ -9,8 +10,19 @@ import {
   type ProductResolutionSource,
 } from "./productMentionResolver";
 import { resolveProductContext } from "./productContextResolver";
-import type { ProductContextResolution, ProductContextSource } from "./productContextResolver";
-import type { IntentSource, MlIntentBridge } from "./mlIntentBridge";
+import type { ProductContextSource } from "./productContextResolver";
+import {
+  buildDeicticIntentClarification,
+  buildPurchaseClarificationReply,
+  hasColorVariantQuestion,
+  isCategoryListingQuestion,
+  isDeicticOnlyComment,
+  isPinnedProductReference,
+  isSingleCategoryTokenOnly,
+} from "./intentSignals";
+import { isCategoryLevelQuestion } from "./productMentionResolver";
+import { type IntentSource, type MlIntentBridge } from "./mlIntentBridge";
+import { applyProductMentionIntentGuardrail } from "./productMentionIntentGuardrail";
 import { buildCommerceSuggestedActions } from "../commerce/commerceIntentActions";
 import {
   isRecognizedNlpIntent,
@@ -19,6 +31,7 @@ import {
   type SalesNlpPipelineInput,
   type SalesNlpPipelineResult,
 } from "./salesNlpTypes";
+import type { IntentClassification } from "./intentClassifier";
 
 function boostConfidence(
   baseConfidence: number,
@@ -36,6 +49,7 @@ function mapContextSourceToLegacySource(
   switch (source) {
     case "catalog_match":
       return "mentioned_product";
+    case "camera_vision":
     case "camera_context":
     case "pinned_product":
       return "pinned_product";
@@ -45,7 +59,7 @@ function mapContextSourceToLegacySource(
 }
 
 function buildProductResolutionFromContext(
-  contextResolution: ProductContextResolution,
+  contextResolution: ReturnType<typeof resolveProductContext>,
   fallbackProduct: ProductResolution["selectedProduct"],
 ): ProductResolution {
   const selectedProduct = contextResolution.product ?? fallbackProduct;
@@ -55,73 +69,13 @@ function buildProductResolutionFromContext(
     resolutionSource: mapContextSourceToLegacySource(contextResolution.source),
     contextSource: contextResolution.source,
     explanation: contextResolution.explanation,
-    matchedProducts: contextResolution.product ? [contextResolution.product] : [fallbackProduct],
+    matchedProducts: contextResolution.product ? [contextResolution.product] : [],
     productConfidence: contextResolution.confidence,
     semanticSimilarity: null,
     searchDiagnostics: null,
     isAmbiguous: contextResolution.isClarification,
     matchedTerms: [contextResolution.source],
     clarificationQuestion: contextResolution.clarificationQuestion,
-  };
-}
-
-function inferIntentFromProductResolution(
-  classification: IntentClassification,
-  productResolution: ProductResolution,
-  normalizedText: string,
-): IntentClassification {
-  if (classification.intent !== "UNKNOWN") {
-    return classification;
-  }
-
-  if (productResolution.contextSource === "clarification") {
-    return classification;
-  }
-
-  if (/\bmau\b/.test(normalizedText) || /\bco .+ (xanh|den|do|vang|trang)\b/.test(normalizedText)) {
-    return classification;
-  }
-
-  const resolutionSource = productResolution.resolutionSource;
-  if (resolutionSource === "pinned_product" || resolutionSource === "none") {
-    if (productResolution.contextSource === "camera_context") {
-      const intent: Exclude<SalesNlpIntent, "UNKNOWN"> = "ASK_PRODUCT_INFO";
-      return {
-        intent,
-        confidence: 0.76,
-        matchedPatterns: ["camera product context"],
-      };
-    }
-    return classification;
-  }
-
-  const matchedTerms = productResolution.matchedTerms.filter(
-    (term) => term !== "pinned fallback" && term !== "pinned_product" && term !== "camera_context",
-  );
-  if (matchedTerms.length === 0 && resolutionSource !== "semantic_search") {
-    return classification;
-  }
-
-  const baseConfidence =
-    resolutionSource === "semantic_search"
-      ? 0.8
-      : resolutionSource === "mentioned_product"
-        ? 0.78
-        : 0.74;
-
-  const intent: Exclude<SalesNlpIntent, "UNKNOWN"> = "ASK_PRODUCT_INFO";
-
-  return {
-    intent,
-    confidence: productResolution.isAmbiguous
-      ? Number((baseConfidence - 0.06).toFixed(2))
-      : baseConfidence,
-    matchedPatterns: [
-      resolutionSource === "semantic_search"
-        ? "semantic product search"
-        : "product resolution",
-      ...matchedTerms.slice(0, 3),
-    ],
   };
 }
 
@@ -188,45 +142,93 @@ function applyMlIntentBridge(
   };
 }
 
+function resolveEffectiveIntent(
+  intent: SalesNlpIntent,
+  normalizedText: string,
+  product: ProductResolution["selectedProduct"] | null,
+): SalesNlpIntent {
+  if (intent === "ASK_SIZE" && hasColorVariantQuestion(normalizedText)) {
+    return "ASK_COLOR";
+  }
+  if (
+    intent === "ASK_SIZE" &&
+    product &&
+    product.colors.length > 0 &&
+    product.sizes.length === 0 &&
+    /\bmau\b/.test(normalizedText)
+  ) {
+    return "ASK_COLOR";
+  }
+  return intent;
+}
+
+function buildPinnedProductInfoReply(productName: string): string {
+  return `Shop đang ghim ${productName}. Bạn muốn hỏi giá, còn hàng, màu hay thông tin gì về sản phẩm này ạ?`;
+}
+
 export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipelineResult {
   const normalizedText = normalizeText(input.comment);
   const autoReplyInChat = input.autoReplyInChat ?? true;
+
+  // 1) Intent: ML when available, else regex (no product-context intent patching).
+  const regexClassification = classifyIntent(normalizedText);
+  const mlBridge = input.mlBridge ?? null;
+  const mlApplied = applyMlIntentBridge(regexClassification, mlBridge);
+  const classification = mlApplied.classification;
+
+  // 2) Product context: resolver only (pin/camera/catalog/clarification).
   const contextResolution = resolveProductContext({
     comment: input.comment,
     catalog: input.catalog,
     pinnedProductId: input.pinnedProduct.id,
     selectedCameraProductId: input.selectedCameraProductId ?? null,
     latestCameraProductId: input.latestCameraProductId ?? null,
+    detectedCameraProductId: input.detectedCameraProductId ?? null,
+    detectedCameraConfidence: input.detectedCameraConfidence ?? null,
   });
   const productResolution = buildProductResolutionFromContext(
     contextResolution,
     input.pinnedProduct,
   );
+  const resolvedProduct = contextResolution.product;
+
   const comparedProducts = resolveComparedProducts(
     input.comment,
     input.catalog,
     input.pinnedProduct,
   );
-  const regexClassification = inferIntentFromProductResolution(
-    classifyIntent(normalizedText),
-    productResolution,
+  let effectiveIntent = resolveEffectiveIntent(
+    classification.intent,
     normalizedText,
+    resolvedProduct,
   );
-  const mlApplied = applyMlIntentBridge(regexClassification, input.mlBridge);
-  const classification = mlApplied.classification;
+  let isComplaintEscalation = mlApplied.isComplaintEscalation;
+
+  const productMentionGuardrail = applyProductMentionIntentGuardrail({
+    comment: input.comment,
+    normalizedText,
+    mlRawIntent: mlBridge?.mlIntent ?? null,
+    intent: effectiveIntent,
+    isComplaintEscalation,
+    contextResolution,
+  });
+  if (productMentionGuardrail.applied) {
+    effectiveIntent = productMentionGuardrail.intent;
+    isComplaintEscalation = false;
+  }
+
   const matchedProducts =
-    classification.intent === "COMPARE_PRODUCTS" && comparedProducts.length >= 2
+    effectiveIntent === "COMPARE_PRODUCTS" && comparedProducts.length >= 2
       ? comparedProducts
       : productResolution.matchedProducts;
-  const mentionedProductIds = matchedProducts.map((product) => product.id);
 
   const entities = extractEntities(
     input.comment,
-    productResolution.selectedProduct,
-    mentionedProductIds,
+    resolvedProduct ?? input.pinnedProduct,
+    matchedProducts.map((product) => product.id),
   );
 
-  const confidence = isRecognizedNlpIntent(classification.intent)
+  const confidence = isRecognizedNlpIntent(effectiveIntent)
     ? boostConfidence(
         classification.confidence,
         productResolution.productConfidence,
@@ -234,28 +236,60 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
       )
     : 0;
 
-  const action = mlApplied.actionOverride ?? decideAction(classification.intent, autoReplyInChat);
+  const action = productMentionGuardrail.applied
+    ? "AUTO_REPLY_SUGGESTED"
+    : mlApplied.actionOverride ??
+      (effectiveIntent === "UNKNOWN" &&
+      (contextResolution.isClarification ||
+        isDeicticOnlyComment(input.comment) ||
+        isPinnedProductReference(input.comment))
+        ? "AUTO_REPLY_SUGGESTED"
+        : decideAction(effectiveIntent, autoReplyInChat));
+
   const commerceActions =
-    isRecognizedNlpIntent(classification.intent) && !contextResolution.isClarification
-      ? buildCommerceSuggestedActions(
-          classification.intent,
-          productResolution.selectedProduct,
-          entities,
-        )
+    isRecognizedNlpIntent(effectiveIntent) &&
+    resolvedProduct &&
+    !contextResolution.isClarification
+      ? buildCommerceSuggestedActions(effectiveIntent, resolvedProduct, entities)
       : [];
+
   let suggestedReply = "";
 
-  if (mlApplied.suggestedReplyOverride) {
+  if (productMentionGuardrail.applied && mlApplied.suggestedReplyOverride) {
+    suggestedReply = "";
+  } else if (mlApplied.suggestedReplyOverride) {
     suggestedReply = mlApplied.suggestedReplyOverride;
+  } else if (
+    contextResolution.isClarification &&
+    contextResolution.clarificationQuestion &&
+    (isSingleCategoryTokenOnly(input.comment) ||
+      isCategoryListingQuestion(input.comment) ||
+      isCategoryLevelQuestion(normalizedText))
+  ) {
+    suggestedReply = contextResolution.clarificationQuestion;
+  } else if (effectiveIntent === "PURCHASE_INTENT") {
+    if (!resolvedProduct) {
+      suggestedReply = buildPurchaseClarificationReply();
+    } else {
+      suggestedReply = buildPurchaseClarificationReply(resolvedProduct.name);
+    }
   } else if (contextResolution.isClarification && contextResolution.clarificationQuestion) {
     suggestedReply = contextResolution.clarificationQuestion;
-  } else if (isRecognizedNlpIntent(classification.intent)) {
+  } else if (isPinnedProductReference(input.comment) && resolvedProduct) {
+    suggestedReply = buildPinnedProductInfoReply(resolvedProduct.name);
+  } else if (
+    isDeicticOnlyComment(input.comment) &&
+    resolvedProduct &&
+    (effectiveIntent === "UNKNOWN" || effectiveIntent === "ASK_PRODUCT_INFO")
+  ) {
+    suggestedReply = buildDeicticIntentClarification(resolvedProduct.name);
+  } else if (isRecognizedNlpIntent(effectiveIntent) && resolvedProduct) {
     if (productResolution.isAmbiguous && productResolution.clarificationQuestion) {
       suggestedReply = productResolution.clarificationQuestion;
     } else {
       suggestedReply = generateAnswer(
-        classification.intent,
-        productResolution.selectedProduct,
+        effectiveIntent,
+        resolvedProduct,
         entities,
         comparedProducts,
       );
@@ -264,7 +298,7 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
 
   return {
     normalizedText,
-    intent: classification.intent,
+    intent: effectiveIntent,
     confidence,
     matchedPatterns: [
       ...classification.matchedPatterns,
@@ -272,13 +306,13 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
       ...productResolution.matchedTerms.filter((term) => term !== "pinned fallback"),
     ],
     action,
-    resolvedProduct: productResolution.selectedProduct,
+    resolvedProduct: resolvedProduct ?? input.pinnedProduct,
     productResolution,
     resolutionSource: productResolution.resolutionSource,
     contextSource: contextResolution.source,
     contextExplanation: contextResolution.explanation,
     matchedProducts,
-    selectedProductId: productResolution.selectedProductId,
+    selectedProductId: resolvedProduct?.id ?? input.pinnedProduct.id,
     productConfidence: productResolution.productConfidence,
     semanticSimilarity: productResolution.semanticSimilarity,
     searchDiagnostics: productResolution.searchDiagnostics,
@@ -291,8 +325,23 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
     mlConfidence: input.mlBridge?.usedMl ? input.mlBridge.mlConfidence : null,
     intentSource: mlApplied.intentSource,
     suppressEvent: mlApplied.suppressEvent,
-    isComplaintEscalation: mlApplied.isComplaintEscalation,
+    isComplaintEscalation,
     isSpamModeration: mlApplied.isSpamModeration,
     commerceActions,
+    explanation: buildSalesNlpExplanation({
+      comment: input.comment,
+      normalizedText,
+      regexClassification,
+      mlApplied,
+      mlBridge: input.mlBridge,
+      contextResolution,
+      productResolution,
+      catalog: input.catalog,
+      intent: effectiveIntent,
+      confidence,
+      action,
+      suggestedReply,
+      autoReplyInChat,
+    }),
   };
 }

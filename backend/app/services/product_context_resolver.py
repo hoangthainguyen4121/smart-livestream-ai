@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 ProductContextSource = Literal[
+    "camera_vision",
     "camera_context",
     "pinned_product",
     "catalog_match",
@@ -34,6 +35,8 @@ CLARIFICATION_QUESTION = (
     "Bạn đang hỏi về sản phẩm nào ạ? "
     "Bạn có thể nêu tên sản phẩm hoặc host ghim sản phẩm trên livestream."
 )
+
+MIN_CAMERA_VISION_CONFIDENCE = 0.55
 
 
 @dataclass(frozen=True)
@@ -189,12 +192,66 @@ def find_product_by_id(
     return next((product for product in catalog if product["id"] == product_id), None)
 
 
+def resolve_implicit_product_context(
+    catalog: list[dict[str, Any]],
+    pinned_product_id: str | None,
+    selected_camera_product_id: str | None,
+    latest_camera_product_id: str | None,
+    detected_camera_product_id: str | None,
+    detected_camera_confidence: float | None,
+    minimum_vision_confidence: float = MIN_CAMERA_VISION_CONFIDENCE,
+) -> ProductContextResolution | None:
+    vision_product = find_product_by_id(catalog, detected_camera_product_id)
+    vision_confidence = detected_camera_confidence or 0.0
+    if vision_product and vision_confidence >= minimum_vision_confidence:
+        return ProductContextResolution(
+            product=vision_product,
+            source="camera_vision",
+            confidence=vision_confidence,
+            explanation=(
+                f'Camera vision detected "{vision_product["name"]}" '
+                f"({vision_confidence:.2f} confidence)."
+            ),
+            clarification_question=None,
+            is_clarification=False,
+        )
+
+    manual_camera = find_product_by_id(
+        catalog,
+        selected_camera_product_id or latest_camera_product_id,
+    )
+    if manual_camera:
+        return ProductContextResolution(
+            product=manual_camera,
+            source="camera_context",
+            confidence=0.88,
+            explanation=f'Manual camera context set to "{manual_camera["name"]}".',
+            clarification_question=None,
+            is_clarification=False,
+        )
+
+    pinned_product = find_product_by_id(catalog, pinned_product_id)
+    if pinned_product:
+        return ProductContextResolution(
+            product=pinned_product,
+            source="pinned_product",
+            confidence=0.65,
+            explanation=f'Using pinned product "{pinned_product["name"]}".',
+            clarification_question=None,
+            is_clarification=False,
+        )
+
+    return None
+
+
 def resolve_product_context(
     comment: str,
     catalog: list[dict[str, Any]],
     pinned_product_id: str | None = None,
     selected_camera_product_id: str | None = None,
     latest_camera_product_id: str | None = None,
+    detected_camera_product_id: str | None = None,
+    detected_camera_confidence: float | None = None,
 ) -> ProductContextResolution:
     explicit_match = find_explicit_catalog_match(comment, catalog)
     if explicit_match:
@@ -210,56 +267,30 @@ def resolve_product_context(
             is_clarification=False,
         )
 
-    if has_deictic_product_reference(comment):
-        camera_product = find_product_by_id(
-            catalog,
-            selected_camera_product_id or latest_camera_product_id,
-        )
-        if camera_product:
-            return ProductContextResolution(
-                product=camera_product,
-                source="camera_context",
-                confidence=0.88,
-                explanation=(
-                    f'Deictic reference resolved to camera product "{camera_product["name"]}".'
-                ),
-                clarification_question=None,
-                is_clarification=False,
-            )
+    implicit_context = resolve_implicit_product_context(
+        catalog,
+        pinned_product_id,
+        selected_camera_product_id,
+        latest_camera_product_id,
+        detected_camera_product_id,
+        detected_camera_confidence,
+    )
 
-        pinned_product = find_product_by_id(catalog, pinned_product_id)
-        if pinned_product:
-            return ProductContextResolution(
-                product=pinned_product,
-                source="pinned_product",
-                confidence=0.72,
-                explanation=(
-                    f'Deictic reference resolved to pinned product "{pinned_product["name"]}" '
-                    "(no camera product)."
-                ),
-                clarification_question=None,
-                is_clarification=False,
-            )
+    if has_deictic_product_reference(comment):
+        if implicit_context:
+            return implicit_context
 
         return ProductContextResolution(
             product=None,
             source="clarification",
             confidence=0.35,
-            explanation="Deictic reference without camera or pinned product context.",
+            explanation="Deictic reference without camera, vision, or pinned product context.",
             clarification_question=CLARIFICATION_QUESTION,
             is_clarification=True,
         )
 
-    pinned_product = find_product_by_id(catalog, pinned_product_id)
-    if pinned_product:
-        return ProductContextResolution(
-            product=pinned_product,
-            source="pinned_product",
-            confidence=0.65,
-            explanation=f'No explicit product mention; using pinned product "{pinned_product["name"]}".',
-            clarification_question=None,
-            is_clarification=False,
-        )
+    if implicit_context:
+        return implicit_context
 
     catalog_candidate = find_confident_catalog_candidate(comment, catalog)
     if catalog_candidate:

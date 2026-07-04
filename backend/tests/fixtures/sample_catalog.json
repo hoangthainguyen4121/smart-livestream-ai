@@ -3,6 +3,7 @@
     "id": "glasses-a",
     "name": "Kính thời trang A",
     "category": "glasses",
+    "imageUrl": "/products/images/glasses-a.svg",
     "tags": ["kính", "kinh", "glasses", "thoi trang a", "mat kinh"],
     "colors": ["Đen", "Vàng"]
   },
@@ -10,6 +11,7 @@
     "id": "lipstick-ruby",
     "name": "Son Ruby Đỏ",
     "category": "lipstick",
+    "imageUrl": "/products/images/lipstick-ruby.svg",
     "tags": ["son ruby", "son do", "lipstick", "ruby"],
     "colors": ["Ruby Đỏ"]
   },
@@ -17,6 +19,7 @@
     "id": "oversize-tee",
     "name": "Áo thun Oversize",
     "category": "fashion",
+    "imageUrl": "/products/images/oversize-tee.svg",
     "tags": ["ao thun", "oversize", "thun", "size"],
     "colors": ["Trắng", "Đen"]
   }

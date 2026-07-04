@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { useI18n } from "../../../i18n/I18nProvider";
 import { formatVnd } from "../../sales-nlp/answerGenerator";
 import { searchAndFilterProducts } from "../productCatalogService";
 import {
@@ -10,8 +11,10 @@ import {
 } from "../productCatalogTypes";
 
 type ProductCatalogPanelProps = {
-  pinnedProductId: string;
-  onPinProduct: (productId: string) => void;
+  pinnedProductId?: string;
+  onPinProduct?: (productId: string) => void;
+  onAddToCart?: (productId: string) => void;
+  variant?: "host" | "store";
   compact?: boolean;
 };
 
@@ -28,8 +31,11 @@ const CATEGORY_OPTIONS: Array<ProductCategory | "all"> = [
 export function ProductCatalogPanel({
   pinnedProductId,
   onPinProduct,
+  onAddToCart,
+  variant = "host",
   compact = false,
 }: ProductCatalogPanelProps) {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<ProductCategory | "all">("all");
 
@@ -38,18 +44,25 @@ export function ProductCatalogPanel({
     [query, category],
   );
 
+  const title =
+    variant === "store"
+      ? t("customerStore")
+      : compact
+        ? t("pinProduct")
+        : t("productCatalog");
+
   return (
     <section className={`productCatalogPanel videoCard ${compact ? "compact" : ""}`}>
       <div className="cardHeader">
-        <h2>{compact ? "Pin Product" : "Product Catalog"}</h2>
-        <span className="status">{products.length} items</span>
+        <h2>{title}</h2>
+        <span className="status">{t("items", { count: products.length })}</span>
       </div>
 
       <div className="productCatalogFilters">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search name, tag, color..."
+          placeholder={t("searchPlaceholder")}
         />
         <select
           value={category}
@@ -57,7 +70,7 @@ export function ProductCatalogPanel({
         >
           {CATEGORY_OPTIONS.map((entry) => (
             <option key={entry} value={entry}>
-              {entry === "all" ? "All categories" : PRODUCT_CATEGORY_LABELS[entry]}
+              {entry === "all" ? t("allCategories") : PRODUCT_CATEGORY_LABELS[entry]}
             </option>
           ))}
         </select>
@@ -68,8 +81,10 @@ export function ProductCatalogPanel({
           <ProductCard
             key={product.id}
             product={product}
-            isPinned={product.id === pinnedProductId}
-            onPin={() => onPinProduct(product.id)}
+            isPinned={variant === "host" && product.id === pinnedProductId}
+            variant={variant}
+            onPin={onPinProduct ? () => onPinProduct(product.id) : undefined}
+            onAddToCart={onAddToCart ? () => onAddToCart(product.id) : undefined}
           />
         ))}
       </div>
@@ -80,12 +95,18 @@ export function ProductCatalogPanel({
 function ProductCard({
   product,
   isPinned,
+  variant,
   onPin,
+  onAddToCart,
 }: {
   product: CatalogProduct;
   isPinned: boolean;
-  onPin: () => void;
+  variant: "host" | "store";
+  onPin?: () => void;
+  onAddToCart?: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <article className={`productCard ${isPinned ? "pinned" : ""}`}>
       <div className="productCardImage" aria-hidden="true">
@@ -101,12 +122,18 @@ function ProductCard({
         <p className="productCardPrice">{formatVnd(product.price)}</p>
         <p className="productCardDescription">{product.description}</p>
         <div className="productCardMeta">
-          <span>Còn {product.stock}</span>
+          <span>{t("inStock", { count: product.stock })}</span>
           <span>{getTryOnLabel(product.arEffectType)}</span>
         </div>
-        <button type="button" className={isPinned ? "active" : ""} onClick={onPin}>
-          {isPinned ? "Pinned" : "Pin product"}
-        </button>
+        {variant === "store" ? (
+          <button type="button" onClick={onAddToCart}>
+            {t("addToCart")}
+          </button>
+        ) : (
+          <button type="button" className={isPinned ? "active" : ""} onClick={onPin}>
+            {isPinned ? t("pinned") : t("pinProductAction")}
+          </button>
+        )}
       </div>
     </article>
   );

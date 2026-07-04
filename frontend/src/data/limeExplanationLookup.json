@@ -1,0 +1,107 @@
+{
+  "giá?": {
+    "predictedLabel": "ASK_PRICE",
+    "confidence": 0.9534,
+    "topLabels": [
+      { "label": "ASK_PRICE", "confidence": 0.9534 },
+      { "label": "SPAM_TOXIC", "confidence": 0.0139 },
+      { "label": "CHITCHAT", "confidence": 0.0119 }
+    ],
+    "positiveFeatures": [{ "token": "giá", "weight": 0.0059 }],
+    "negativeFeatures": []
+  },
+  "Son Ruby Đỏ giá?": {
+    "predictedLabel": "ASK_PRICE",
+    "confidence": 0.9124,
+    "topLabels": [
+      { "label": "ASK_PRICE", "confidence": 0.9124 },
+      { "label": "PRODUCT_INFO", "confidence": 0.0482 },
+      { "label": "ASK_VARIANT", "confidence": 0.0211 }
+    ],
+    "positiveFeatures": [
+      { "token": "giá", "weight": 0.142 },
+      { "token": "Son", "weight": 0.088 },
+      { "token": "Ruby", "weight": 0.051 }
+    ],
+    "negativeFeatures": [{ "token": "Đỏ", "weight": -0.012 }]
+  },
+  "chào buổi tối": {
+    "predictedLabel": "PURCHASE_INTENT",
+    "confidence": 0.7551,
+    "topLabels": [
+      { "label": "PURCHASE_INTENT", "confidence": 0.7551 },
+      { "label": "ASK_PRICE", "confidence": 0.1193 },
+      { "label": "CHITCHAT", "confidence": 0.0572 }
+    ],
+    "positiveFeatures": [
+      { "token": "buổi", "weight": 0.18 },
+      { "token": "tối", "weight": 0.12 }
+    ],
+    "negativeFeatures": [{ "token": "chào", "weight": -0.09 }]
+  },
+  "chào buổi sáng": {
+    "predictedLabel": "PURCHASE_INTENT",
+    "confidence": 0.8583,
+    "topLabels": [
+      { "label": "PURCHASE_INTENT", "confidence": 0.8583 },
+      { "label": "ASK_PRICE", "confidence": 0.0639 },
+      { "label": "CHITCHAT", "confidence": 0.0294 }
+    ],
+    "positiveFeatures": [
+      { "token": "buổi", "weight": 0.16 },
+      { "token": "sáng", "weight": 0.11 }
+    ],
+    "negativeFeatures": [{ "token": "chào", "weight": -0.07 }]
+  },
+  "shop ơi": {
+    "predictedLabel": "PRODUCT_INFO",
+    "confidence": 0.6463,
+    "topLabels": [
+      { "label": "PRODUCT_INFO", "confidence": 0.6463 },
+      { "label": "CHITCHAT", "confidence": 0.2997 },
+      { "label": "COMPLAINT", "confidence": 0.0108 }
+    ],
+    "positiveFeatures": [{ "token": "shop", "weight": 0.21 }],
+    "negativeFeatures": [{ "token": "ơi", "weight": -0.04 }]
+  },
+  "kem chống nắng": {
+    "predictedLabel": "PRODUCT_INFO",
+    "confidence": 0.7812,
+    "topLabels": [
+      { "label": "PRODUCT_INFO", "confidence": 0.7812 },
+      { "label": "ASK_PRICE", "confidence": 0.0921 },
+      { "label": "CHITCHAT", "confidence": 0.0412 }
+    ],
+    "positiveFeatures": [
+      { "token": "kem", "weight": 0.14 },
+      { "token": "chống", "weight": 0.09 },
+      { "token": "nắng", "weight": 0.07 }
+    ],
+    "negativeFeatures": []
+  },
+  "lừa đảo": {
+    "predictedLabel": "COMPLAINT",
+    "confidence": 0.6128,
+    "topLabels": [
+      { "label": "COMPLAINT", "confidence": 0.6128 },
+      { "label": "CHITCHAT", "confidence": 0.2145 },
+      { "label": "SPAM_TOXIC", "confidence": 0.0982 }
+    ],
+    "positiveFeatures": [
+      { "token": "lừa", "weight": 0.17 },
+      { "token": "đảo", "weight": 0.13 }
+    ],
+    "negativeFeatures": []
+  },
+  "chốt": {
+    "predictedLabel": "PURCHASE_INTENT",
+    "confidence": 0.9357,
+    "topLabels": [
+      { "label": "PURCHASE_INTENT", "confidence": 0.9357 },
+      { "label": "ASK_LINK", "confidence": 0.0214 },
+      { "label": "PRODUCT_INFO", "confidence": 0.0158 }
+    ],
+    "positiveFeatures": [{ "token": "chốt", "weight": 0.24 }],
+    "negativeFeatures": []
+  }
+}

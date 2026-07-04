@@ -7,16 +7,13 @@ services:
       - "8000:8000"
     environment:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
-      ENABLE_WAVE_GESTURE: ${ENABLE_WAVE_GESTURE:-false}
       # Optional PhoBERT bridge (separate smart-livestream-ml repo). When ML runs on the host:
       ML_INTENT_API_URL: ${ML_INTENT_API_URL:-http://host.docker.internal:8010}
       ML_INTENT_TIMEOUT_SECONDS: ${ML_INTENT_TIMEOUT_SECONDS:-2}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./storage/embeddings:/app/storage/embeddings
       - ./logs:/app/logs
-      - insightface_models:/root/.insightface
     healthcheck:
       test:
         [
@@ -62,5 +59,4 @@ services:
         condition: service_healthy
 
 volumes:
-  insightface_models:
   frontend_node_modules:

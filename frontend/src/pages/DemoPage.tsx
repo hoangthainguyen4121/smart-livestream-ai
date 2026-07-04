@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { type ChatMessage } from "../api/chat";
-import { AiEventFeedPanel } from "../components/AiEventFeedPanel";
-import { ChatPanel } from "../components/ChatPanel";
-import { BrowserArStream } from "../features/browser-ar/components/BrowserArStream";
-import {
-  BROWSER_AR_EFFECT_LABELS,
-  type BrowserArEffect,
-} from "../features/browser-ar/types";
+import { ChatPanel, type ChatPanelHandle } from "../components/ChatPanel";
+import { BrowserArStream, type BrowserArStreamHandle } from "../features/browser-ar/components/BrowserArStream";
+import { useCameraProductRecognition } from "../features/camera-product-recognition/useCameraProductRecognition";
+import { type BrowserArEffect } from "../features/browser-ar/types";
 import {
   CartPanel,
   CheckoutModal,
@@ -33,40 +29,21 @@ import {
   type SalesAssistantAnalytics,
   type SalesAssistantEvent,
 } from "../features/sales-assistant/salesAssistantTypes";
+import { useI18n } from "../i18n/I18nProvider";
 
 
 const HOST_USERNAME = "hoang";
 const DEMO_ROOM_ID = "demo";
-const MOCK_VIEWER_COUNT = 128;
-const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
-  {
-    id: "demo-initial-1",
-    room_id: DEMO_ROOM_ID,
-    author: "Minh",
-    text: "Hello!",
-    created_at: "",
-  },
-  {
-    id: "demo-initial-2",
-    room_id: DEMO_ROOM_ID,
-    author: "An",
-    text: "Nice stream!",
-    created_at: "",
-  },
-  {
-    id: "demo-initial-3",
-    room_id: DEMO_ROOM_ID,
-    author: "Khoa",
-    text: "Raise your hand!",
-    created_at: "",
-  },
-];
 
-const AR_EFFECTS = Object.keys(BROWSER_AR_EFFECT_LABELS) as BrowserArEffect[];
+const AR_EFFECTS: BrowserArEffect[] = ["none", "glasses", "makeup_lite", "full_filter"];
 
 export function DemoPage() {
+  const { t, locale, setLocale } = useI18n();
   const [isStreamLive, setIsStreamLive] = useState(false);
   const [streamDurationSeconds, setStreamDurationSeconds] = useState(0);
+  const [liveSessionKey, setLiveSessionKey] = useState(0);
+  const [sessionViewerCount, setSessionViewerCount] = useState(0);
+  const [sessionMessageCount, setSessionMessageCount] = useState(0);
   const [pinnedProductId, setPinnedProductId] = useState(DEFAULT_PINNED_PRODUCT_ID);
   const [cameraProductId, setCameraProductId] = useState<string | null>(null);
   const [lastContextSource, setLastContextSource] = useState<ProductContextSource | null>(null);
@@ -76,16 +53,28 @@ export function DemoPage() {
   const [salesAnalytics, setSalesAnalytics] = useState<SalesAssistantAnalytics>(
     createInitialAnalytics(),
   );
-  const [assistantRepliesByTriggerId, setAssistantRepliesByTriggerId] = useState<
-    Record<string, ChatMessage>
-  >({});
   const [mlIntentBadgesByMessageId, setMlIntentBadgesByMessageId] = useState<
     Record<string, ChatMlIntentBadge>
   >({});
   const salesAnalyticsRef = useRef(salesAnalytics);
+  const isStreamLiveRef = useRef(isStreamLive);
+  const sessionViewerAuthorsRef = useRef<Set<string>>(new Set());
   const cartPanelRef = useRef<HTMLElement>(null);
+  const browserArRef = useRef<BrowserArStreamHandle | null>(null);
+  const chatPanelRef = useRef<ChatPanelHandle | null>(null);
 
   salesAnalyticsRef.current = salesAnalytics;
+  isStreamLiveRef.current = isStreamLive;
+
+  const effectLabels = useMemo(
+    () => ({
+      none: t("effectNone"),
+      glasses: t("effectGlasses"),
+      makeup_lite: t("effectMakeupLite"),
+      full_filter: t("effectFullFilter"),
+    }),
+    [t],
+  );
 
   const scrollToCart = useCallback(() => {
     cartPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -102,6 +91,33 @@ export function DemoPage() {
     () => (cameraProductId ? getProductById(cameraProductId) ?? null : null),
     [cameraProductId],
   );
+
+  const captureFrame = useCallback(() => browserArRef.current?.captureFrame() ?? null, []);
+
+  const cameraRecognition = useCameraProductRecognition({
+    isLive: isStreamLive,
+    catalog: getAllProducts(),
+    captureFrame,
+  });
+
+  const activeVisionProduct = useMemo(
+    () =>
+      cameraRecognition.activeVisionProductId
+        ? getProductById(cameraRecognition.activeVisionProductId) ?? null
+        : null,
+    [cameraRecognition.activeVisionProductId],
+  );
+
+  const resetLiveSessionState = useCallback(() => {
+    sessionViewerAuthorsRef.current = new Set();
+    setSessionViewerCount(0);
+    setSessionMessageCount(0);
+    setSalesAnalytics(createInitialAnalytics());
+    setSalesEvents([]);
+    setMlIntentBadgesByMessageId({});
+    setLastContextSource(null);
+    setLiveSessionKey((value) => value + 1);
+  }, []);
 
   useEffect(() => {
     if (!isStreamLive) {
@@ -126,8 +142,28 @@ export function DemoPage() {
     }
   }
 
+  function handleStartStream() {
+    resetLiveSessionState();
+    setStreamDurationSeconds(0);
+    setIsStreamLive(true);
+  }
+
+  function handleStopStream() {
+    setIsStreamLive(false);
+    setStreamDurationSeconds(0);
+    resetLiveSessionState();
+  }
+
   const handleViewerMessageSent = useCallback(
     async ({ messageId, author, text }: { messageId: string; author: string; text: string }) => {
+      if (!isStreamLiveRef.current) {
+        return;
+      }
+
+      sessionViewerAuthorsRef.current.add(author);
+      setSessionViewerCount(sessionViewerAuthorsRef.current.size);
+      setSessionMessageCount((value) => value + 1);
+
       const result = await processSalesCommentWithMl(
         {
           comment: text,
@@ -135,6 +171,8 @@ export function DemoPage() {
           pinnedProduct,
           catalog: getAllProducts(),
           selectedCameraProductId: cameraProductId,
+          detectedCameraProductId: cameraRecognition.activeVisionProductId,
+          detectedCameraConfidence: cameraRecognition.detection.match?.confidence ?? null,
           autoReplyInChat: true,
         },
         salesAnalyticsRef.current,
@@ -157,37 +195,20 @@ export function DemoPage() {
       setSalesEvents((currentEvents) => [result.event!, ...currentEvents]);
 
       if (shouldAutoReplyInChat(result.event)) {
-        setAssistantRepliesByTriggerId((currentReplies) => {
-          if (currentReplies[messageId]) {
-            return currentReplies;
-          }
-
-          return {
-            ...currentReplies,
-            [messageId]: buildAssistantChatMessage(result.event!, {
-              id: messageId,
-              author,
-              text,
-              room_id: DEMO_ROOM_ID,
-            }),
-          };
+        const assistantMessage = buildAssistantChatMessage(result.event, {
+          id: messageId,
+          author,
+          text,
+          room_id: DEMO_ROOM_ID,
         });
+        chatPanelRef.current?.sendAssistantMessage(assistantMessage);
       }
     },
-    [cameraProductId, pinnedProduct],
+    [cameraProductId, cameraRecognition.activeVisionProductId, cameraRecognition.detection.match, pinnedProduct],
   );
 
-  function handleRegisterFaceClick(event: { preventDefault: () => void }) {
-    event.preventDefault();
-    setIsStreamLive(false);
-    window.setTimeout(() => {
-      window.location.href = "/register-face";
-    }, 500);
-  }
-
-  function handleStopStream() {
-    setIsStreamLive(false);
-    setStreamDurationSeconds(0);
+  function toggleLocale() {
+    setLocale(locale === "vi" ? "en" : "vi");
   }
 
   return (
@@ -195,19 +216,43 @@ export function DemoPage() {
       <section className="livestreamShell">
         <div className="streamMain">
           <header className="streamHeader">
-            <div>
-              <p className="eyebrow">Smart Livestream AI MVP</p>
-              <h1>AI Livestream Demo</h1>
+            <div className="streamHeaderMain">
+              <p className="eyebrow">{t("appEyebrow")}</p>
+              <h1>{t("appTitle")}</h1>
               <p className="streamMeta">
-                Hosted by <strong>@{HOST_USERNAME}</strong> · Browser AR · AI Sales Assistant
-                NLP POC
+                {t("appMeta", { host: HOST_USERNAME })}
               </p>
+              <div className="streamHeaderActions">
+                {!isStreamLive ? (
+                  <button
+                    type="button"
+                    className="streamControlButton streamControlButtonStart"
+                    onClick={handleStartStream}
+                  >
+                    <StartLiveIcon />
+                    {t("startStream")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="streamControlButton streamControlButtonStop"
+                    onClick={handleStopStream}
+                  >
+                    <StopLiveIcon />
+                    {t("stopStream")}
+                  </button>
+                )}
+                <button type="button" className="langToggleButton" onClick={toggleLocale}>
+                  {locale === "vi" ? t("langToggle") : t("langToggleVi")}
+                </button>
+              </div>
             </div>
             <div className="streamStats">
               <span className={isStreamLive ? "liveBadge" : "offlineBadge"}>
-                {isStreamLive ? "LIVE" : "OFFLINE"}
+                {isStreamLive ? t("live") : t("offline")}
               </span>
-              <span>{MOCK_VIEWER_COUNT} viewers</span>
+              <span>{t("viewers", { count: sessionViewerCount })}</span>
+              <span>{t("messages", { count: sessionMessageCount })}</span>
               <span>{formatDuration(streamDurationSeconds)}</span>
             </div>
           </header>
@@ -221,7 +266,7 @@ export function DemoPage() {
                 onClick={() => setEffect(entry)}
                 disabled={isStreamLive}
               >
-                {BROWSER_AR_EFFECT_LABELS[entry]}
+                {effectLabels[entry]}
               </button>
             ))}
             <button
@@ -229,27 +274,19 @@ export function DemoPage() {
               className={debugOverlay ? "active" : ""}
               onClick={() => setDebugOverlay((value) => !value)}
             >
-              Debug
+              {t("debugOverlay")}
             </button>
-            <a className="modeLink" href="/register-face" onClick={handleRegisterFaceClick}>
-              Register Face
-            </a>
-            <a className="modeLink" href="/poc/ar-lab">
-              AR Lab
-            </a>
-            <a className="modeLink" href="/poc/sales-lab">
-              Sales Lab
-            </a>
           </section>
 
           <div className="streamMediaRow">
             <div className="videoCard">
               <div className="cardHeader">
-                <h2>Browser AR Stream</h2>
-                <span className="status">{BROWSER_AR_EFFECT_LABELS[effect]}</span>
+                <h2>{t("browserArStream")}</h2>
+                <span className="status">{effectLabels[effect]}</span>
               </div>
 
               <BrowserArStream
+                ref={browserArRef}
                 isLive={isStreamLive}
                 effect={effect}
                 debugOverlay={debugOverlay}
@@ -262,29 +299,37 @@ export function DemoPage() {
               pinnedProduct={pinnedProduct}
               cameraProduct={cameraProduct}
               lastContextSource={lastContextSource}
+              visionEnabled={cameraRecognition.featureEnabled}
+              visionDetection={cameraRecognition.detection}
+              activeVisionProduct={activeVisionProduct}
               onMarkCameraProduct={() => setCameraProductId(pinnedProductId)}
               onClearCameraProduct={() => setCameraProductId(null)}
+              onRecognizeNow={() => {
+                void cameraRecognition.recognizeNow();
+              }}
+              onApplyVisionContext={cameraRecognition.applyDetectionAsContext}
+              onClearVisionContext={cameraRecognition.clearVisionContext}
             />
           </div>
 
           <ProductCatalogPanel
             compact
+            variant="host"
             pinnedProductId={pinnedProductId}
             onPinProduct={handlePinProduct}
           />
 
-          <section className="controlBar">
-            <button type="button" onClick={() => setIsStreamLive(true)}>
-              Start Stream
-            </button>
-            <button type="button" onClick={handleStopStream}>
-              Stop Stream
-            </button>
-          </section>
+          <ProductCatalogPanel
+            variant="store"
+            onAddToCart={(productId) => {
+              cart.addProductById(productId);
+            }}
+          />
 
           <SalesAssistantPanel
             events={salesEvents}
             analytics={salesAnalytics}
+            sessionCommentCount={sessionMessageCount}
             onCommerceAction={cart.applySuggestedAction}
           />
 
@@ -312,17 +357,17 @@ export function DemoPage() {
             onChange={cart.updateCheckoutField}
             onSubmit={cart.submitCheckout}
           />
-
-          <AiEventFeedPanel />
         </div>
 
         <ChatPanel
+          ref={chatPanelRef}
+          key={liveSessionKey}
           roomId={DEMO_ROOM_ID}
           author={HOST_USERNAME}
-          initialMessages={INITIAL_CHAT_MESSAGES}
-          assistantRepliesByTriggerId={assistantRepliesByTriggerId}
+          sessionKey={liveSessionKey}
           mlIntentBadgesByMessageId={mlIntentBadgesByMessageId}
           onViewerMessageSent={handleViewerMessageSent}
+          onCommerceAction={cart.applySuggestedAction}
         />
       </section>
     </main>
@@ -333,4 +378,23 @@ function formatDuration(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
   const seconds = (totalSeconds % 60).toString().padStart(2, "0");
   return `${minutes}:${seconds}`;
+}
+
+function StartLiveIcon() {
+  return (
+    <svg className="streamControlIcon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M17 10.5V7a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function StopLiveIcon() {
+  return (
+    <svg className="streamControlIcon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor" />
+    </svg>
+  );
 }
