@@ -1,9 +1,9 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+import { getSupabaseAnonKey, getSupabaseUrl } from "../config/runtimeConfig";
 
 let client: SupabaseClient | null = null;
+let clientKey: string | null = null;
 
 export type AuthUser = {
   id: string;
@@ -13,22 +13,25 @@ export type AuthUser = {
 };
 
 export function isAuthConfigured(): boolean {
-  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+  return Boolean(getSupabaseUrl() && getSupabaseAnonKey());
 }
 
 export function getSupabaseClient(): SupabaseClient | null {
-  if (!isAuthConfigured()) {
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseAnonKey = getSupabaseAnonKey();
+  if (!supabaseUrl || !supabaseAnonKey) {
     return null;
   }
 
-  if (!client) {
-    client = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+  if (!client || clientKey !== `${supabaseUrl}|${supabaseAnonKey}`) {
+    client = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
     });
+    clientKey = `${supabaseUrl}|${supabaseAnonKey}`;
   }
 
   return client;
