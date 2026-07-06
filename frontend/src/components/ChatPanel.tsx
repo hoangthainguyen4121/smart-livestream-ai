@@ -26,6 +26,7 @@ import { useI18n } from "../i18n/I18nProvider";
 type ChatPanelProps = {
   roomId: string;
   author: string;
+  displayNameLocked?: boolean;
   sessionKey?: number;
   mlIntentBadgesByMessageId?: Record<string, ChatMlIntentBadge>;
   onViewerMessageSent?: (message: {
@@ -44,6 +45,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   {
     roomId,
     author,
+    displayNameLocked = false,
     sessionKey = 0,
     mlIntentBadgesByMessageId = {},
     onViewerMessageSent,
@@ -89,6 +91,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     setCartFeedbackByMessageId({});
     skipNextHistoryRef.current = true;
   }, [sessionKey]);
+
+  useEffect(() => {
+    setDisplayName(author);
+  }, [author]);
 
   useEffect(() => {
     const socket = createChatSocket(roomId);
@@ -193,9 +199,11 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         <input
           value={displayName}
           onChange={(event) => setDisplayName(event.target.value)}
+          disabled={displayNameLocked}
           maxLength={32}
           placeholder={t("displayNamePlaceholder")}
         />
+        {displayNameLocked ? <small>{t("displayNameFromLogin")}</small> : null}
       </label>
       <div className="chatMessages" ref={messagesRef}>
         {messages.map((message) => (

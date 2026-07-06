@@ -91,9 +91,9 @@ powershell -ExecutionPolicy Bypass -File .\start-local-full.ps1
 
 Optional flags: `-SkipFrontend`, `-SkipBackend`, `-SkipNlp` (rules fallback without ML).
 
-Requires `../smart-livestream-ml` with model artifact `artifacts/phobert_base_combined_hardcases_v2` unless `-SkipNlp` is used.
+Requires `../smart-livestream-ml` with model artifact `artifacts/phobert_base_combined_hardcases_v3` (falls back to v2 if missing) unless `-SkipNlp` is used.
 
-Previous / experimental: `phobert_base_combined_hardcases_v3` (CHITCHAT experiment — not default; worse on product names / thanks in manual UI). Older baselines: `phobert_base_combined_hardcases`, `phobert_base_combined`.
+Local stack prefers **v3** (same as Hugging Face Space). Fallback **v2** if v3 artifact is absent. Older baselines: `phobert_base_combined_hardcases`, `phobert_base_combined`.
 
 ## Browser AR demo
 

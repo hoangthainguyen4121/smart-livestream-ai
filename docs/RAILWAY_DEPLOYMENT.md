@@ -158,19 +158,29 @@ Gửi comment: `giá bao nhiêu vậy` → Sales Assistant badge **`rules fallba
 
 ---
 
-## 5. ML PhoBERT (optional — không khuyến nghị free tier)
+## 5. ML PhoBERT (Hugging Face Spaces — khuyến nghị free)
+
+Railway Trial (0.5 GB/service) **không chạy được** PhoBERT. Deploy ML trên **HF Docker Space (CPU Basic, 16 GB RAM, free)**:
+
+| Bước | Chi tiết |
+|------|----------|
+| 1 | Trong repo `smart-livestream-ml`: `hf auth login` |
+| 2 | `.\deploy\hf-space\deploy.ps1 -HfUsername YOUR_HF_USERNAME` |
+| 3 | Đợi build Space (~5–10 phút), test `/health` |
+| 4 | Railway backend: set biến bên dưới → redeploy |
+
+```text
+ML_INTENT_API_URL=https://YOUR-HF-USERNAME-livestream-intent.hf.space
+ML_INTENT_TIMEOUT_SECONDS=60
+```
+
+Hướng dẫn đầy đủ: `smart-livestream-ml/docs/hf_space_deploy.md`
 
 | Option | Ghi chú |
 |--------|---------|
-| **Không deploy** | ✅ Demo luận văn vẫn OK với rules |
-| Deploy repo `smart-livestream-ml` | Service thứ 3, RAM cao, cold start lâu |
-| ML local + tunnel | Chỉ dev — không dùng production |
-
-Nếu có ML URL public:
-
-```text
-ML_INTENT_API_URL=https://your-ml.up.railway.app
-```
+| **HF Space (free)** | ✅ Khuyến nghị — đủ RAM, không tốn Railway quota |
+| Không deploy ML | Rules fallback — không demo được intent PhoBERT |
+| ML trên Railway | Cần Hobby+ (~2 GB RAM/service) — trả phí |
 
 Backend proxy `/api/nlp/*` — frontend không đổi.
 

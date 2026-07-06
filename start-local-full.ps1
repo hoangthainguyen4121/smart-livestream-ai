@@ -98,6 +98,7 @@ if (-not $SkipNlp) {
     Test-RequiredDirectory -Path $MlRepoDir -Label "NLP repo (smart-livestream-ml)"
 
     $modelCandidates = @(
+        "artifacts/phobert_base_combined_hardcases_v3",
         "artifacts/phobert_base_combined_hardcases_v2"
     )
 

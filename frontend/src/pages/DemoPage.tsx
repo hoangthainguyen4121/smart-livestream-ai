@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatPanel, type ChatPanelHandle } from "../components/ChatPanel";
+import { AuthStatusPanel } from "../features/auth/AuthStatusPanel";
+import { useOptionalAuth } from "../features/auth/useOptionalAuth";
 import { BrowserArStream, type BrowserArStreamHandle } from "../features/browser-ar/components/BrowserArStream";
 import { useCameraProductRecognition } from "../features/camera-product-recognition/useCameraProductRecognition";
 import { type BrowserArEffect } from "../features/browser-ar/types";
@@ -33,6 +35,7 @@ import { useI18n } from "../i18n/I18nProvider";
 
 
 const HOST_USERNAME = "hoang";
+const GUEST_DISPLAY_NAME = "guest";
 const DEMO_ROOM_ID = "demo";
 
 const AR_EFFECTS: BrowserArEffect[] = ["none", "glasses", "makeup_lite", "full_filter"];
@@ -56,6 +59,7 @@ export function DemoPage() {
   const [mlIntentBadgesByMessageId, setMlIntentBadgesByMessageId] = useState<
     Record<string, ChatMlIntentBadge>
   >({});
+  const auth = useOptionalAuth();
   const salesAnalyticsRef = useRef(salesAnalytics);
   const isStreamLiveRef = useRef(isStreamLive);
   const sessionViewerAuthorsRef = useRef<Set<string>>(new Set());
@@ -99,6 +103,8 @@ export function DemoPage() {
     catalog: getAllProducts(),
     captureFrame,
   });
+
+  const chatAuthor = auth.user?.displayName ?? GUEST_DISPLAY_NAME;
 
   const activeVisionProduct = useMemo(
     () =>
@@ -359,16 +365,31 @@ export function DemoPage() {
           />
         </div>
 
-        <ChatPanel
-          ref={chatPanelRef}
-          key={liveSessionKey}
-          roomId={DEMO_ROOM_ID}
-          author={HOST_USERNAME}
-          sessionKey={liveSessionKey}
-          mlIntentBadgesByMessageId={mlIntentBadgesByMessageId}
-          onViewerMessageSent={handleViewerMessageSent}
-          onCommerceAction={cart.applySuggestedAction}
-        />
+        <aside className="chatColumn">
+          <AuthStatusPanel
+            configured={auth.configured}
+            loading={auth.loading}
+            user={auth.user}
+            error={auth.error}
+            onLogin={() => {
+              void auth.loginWithGoogle();
+            }}
+            onLogout={() => {
+              void auth.logout();
+            }}
+          />
+          <ChatPanel
+            ref={chatPanelRef}
+            key={liveSessionKey}
+            roomId={DEMO_ROOM_ID}
+            author={chatAuthor}
+            displayNameLocked={Boolean(auth.user)}
+            sessionKey={liveSessionKey}
+            mlIntentBadgesByMessageId={mlIntentBadgesByMessageId}
+            onViewerMessageSent={handleViewerMessageSent}
+            onCommerceAction={cart.applySuggestedAction}
+          />
+        </aside>
       </section>
     </main>
   );

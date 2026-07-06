@@ -1176,7 +1176,8 @@ h1 {
 }
 
 .controlBar button,
-.chatInputRow button {
+.chatInputRow button,
+.authButton {
   padding: 10px 14px;
   border: 0;
   border-radius: 10px;
@@ -1186,13 +1187,63 @@ h1 {
   font-weight: 700;
 }
 
-.chatPanel {
+.chatColumn {
   display: flex;
   position: sticky;
   top: 24px;
   flex-direction: column;
+  gap: 12px;
   height: calc(100vh - 64px);
   min-height: 560px;
+}
+
+.chatPanel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.authStatusPanel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #d9e2ef;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 12px 40px rgba(23, 32, 51, 0.08);
+}
+
+.authStatusText {
+  display: grid;
+  gap: 4px;
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.authStatusTitle {
+  color: #172033;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.authStatusError {
+  color: #b42318;
+}
+
+.authButton {
+  width: 100%;
+}
+
+.authButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.authButtonSecondary {
+  background: #eef2f7;
+  color: #172033;
 }
 
 .chatHeader {
@@ -1224,6 +1275,16 @@ h1 {
   color: #172033;
   font: inherit;
   font-weight: 400;
+}
+
+.chatDisplayName input:disabled {
+  background: #eef2f7;
+  color: #46556a;
+}
+
+.chatDisplayName small {
+  color: #64748b;
+  font-weight: 500;
 }
 
 .chatMessages {
@@ -1681,9 +1742,13 @@ h1 {
     justify-content: flex-start;
   }
 
-  .chatPanel {
+  .chatColumn {
     position: static;
     height: auto;
+  }
+
+  .chatPanel {
+    min-height: 560px;
   }
 
 

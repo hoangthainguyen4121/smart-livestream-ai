@@ -36,6 +36,12 @@ docs/thesis-screenshots/
 docs/thesis-figures/
 docs/literature_review_export/
 
+*.docx
+*.pdf
+*.pptx
+~$*.docx
+~$*.pptx
+
 # Build / cache artifacts
 dist/
 build/
@@ -51,3 +57,30 @@ docs/CHAPTER3_ACADEMIC_POLISH.md
 docs/DEPLOYMENT_STATUS.md
 docs/chapter2/
 docs/chapter3/
+docs/thesis-condensation*.md
+docs/thesis-final-audit.md
+docs/thesis-reference-audit.md
+docs/.thesis_*.json
+docs/FINAL_FREEZE_REPORT.md
+frontend/artifacts/
+
+# Thesis / presentation build scripts (local tooling)
+scripts/build_thesis*.py
+scripts/build_tieuluan*.py
+scripts/generate_*docx*.py
+scripts/generate_*pptx*.py
+scripts/generate_presentation*.py
+scripts/thesis_*.py
+scripts/verify_thesis*.py
+scripts/verify_ch*_condensation.py
+scripts/verify_content_correction.py
+scripts/audit_thesis*.py
+scripts/normalize_tieuluan*.py
+scripts/finalize_tieuluan*.py
+scripts/apply_thesis*.py
+scripts/build_smartlivestream_presentation*.py
+scripts/export_presentation*.py
+scripts/presentation1_*.py
+scripts/extract_document_text.py
+scripts/_scan.py
+scripts/archive/
