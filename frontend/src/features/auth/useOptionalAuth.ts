@@ -5,6 +5,7 @@ import {
   isAuthConfigured,
   mapSupabaseUser,
   signInWithGoogle,
+  signUpWithGoogle,
   signOut,
   type AuthUser,
 } from "../../api/auth";
@@ -15,6 +16,7 @@ type OptionalAuthState = {
   user: AuthUser | null;
   error: string | null;
   loginWithGoogle: () => Promise<void>;
+  registerWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 };
@@ -74,6 +76,17 @@ export function useOptionalAuth(): OptionalAuthState {
     }
   }
 
+  async function registerWithGoogle() {
+    setError(null);
+    try {
+      await signUpWithGoogle();
+    } catch (registerError) {
+      setError(
+        registerError instanceof Error ? registerError.message : "Cannot sign up with Google.",
+      );
+    }
+  }
+
   async function logout() {
     setError(null);
     try {
@@ -90,6 +103,7 @@ export function useOptionalAuth(): OptionalAuthState {
     user,
     error,
     loginWithGoogle,
+    registerWithGoogle,
     logout,
     clearError: () => setError(null),
   };

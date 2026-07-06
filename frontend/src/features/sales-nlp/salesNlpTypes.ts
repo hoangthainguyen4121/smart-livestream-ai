@@ -41,7 +41,7 @@ export type ExtractedEntities = {
 
 export type SalesNlpPipelineInput = {
   comment: string;
-  pinnedProduct: CatalogProduct;
+  pinnedProduct: CatalogProduct | null;
   catalog: CatalogProduct[];
   selectedCameraProductId?: string | null;
   latestCameraProductId?: string | null;
@@ -57,7 +57,7 @@ export type SalesNlpPipelineResult = {
   confidence: number;
   matchedPatterns: string[];
   action: SalesNlpAction;
-  resolvedProduct: CatalogProduct;
+  resolvedProduct: CatalogProduct | null;
   productResolution: ProductResolution;
   resolutionSource: ProductResolutionSource;
   contextSource: ProductContextSource;

@@ -175,7 +175,70 @@ describe("manual UI regression pipeline", () => {
     expect(result.isComplaintEscalation).toBe(true);
   });
 
-  it('uses purchase-specific clarification for "chốt"', () => {
+  it('uses pinned product for ML color intent on token "color"', () => {
+    const result = runSalesNlpPipeline({
+      comment: "color",
+      catalog,
+      pinnedProduct,
+      mlBridge: mockMlBridge("ASK_VARIANT", 0.88, "color"),
+    });
+    expect(result.intent).toBe("ASK_COLOR");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.suggestedReply).toContain("Kính thời trang A");
+  });
+
+  it('uses pinned product for bare stock question "còn bao nhiêu cái"', () => {
+    const result = runSalesNlpPipeline({
+      comment: "còn bao nhiêu cái",
+      catalog,
+      pinnedProduct,
+      mlBridge: mockMlBridge("ASK_STOCK", 0.98, "còn bao nhiêu cái"),
+    });
+    expect(result.intent).toBe("ASK_STOCK");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.suggestedReply).toContain("Kính thời trang A");
+    expect(result.suggestedReply).toContain("25");
+  });
+
+  it('uses pinned product for bare color question "màu gì ?"', () => {
+    const result = runSalesNlpPipeline({
+      comment: "màu gì ?",
+      catalog,
+      pinnedProduct,
+      mlBridge: mockMlBridge("ASK_VARIANT", 0.64, "màu gì ?"),
+    });
+    expect(result.intent).toBe("ASK_COLOR");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.suggestedReply).toContain("Kính thời trang A");
+    expect(result.suggestedReply).toMatch(/Đen|Vàng/);
+  });
+
+  it('uses pinned product for bare link request "link"', () => {
+    const result = runSalesNlpPipeline({
+      comment: "link",
+      catalog,
+      pinnedProduct,
+      mlBridge: mockMlBridge("ASK_LINK", 0.99, "link"),
+    });
+    expect(result.intent).toBe("ASK_LINK");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.suggestedReply).toContain("/products/glasses-a");
+  });
+
+  it('asks which product to purchase for "chốt" when nothing is pinned', () => {
+    const result = runSalesNlpPipeline({
+      comment: "chốt",
+      catalog,
+      pinnedProduct: null,
+      mlBridge: mockMlBridge("PURCHASE_INTENT", 0.91, "chốt"),
+    });
+    expect(result.intent).toBe("PURCHASE_INTENT");
+    expect(result.contextSource).toBe("clarification");
+    expect(result.suggestedReply).toContain("chốt sản phẩm nào");
+    expect(result.resolvedProduct).toBeNull();
+  });
+
+  it('uses pinned product for bare purchase action "chốt"', () => {
     const result = runSalesNlpPipeline({
       comment: "chốt",
       catalog,
@@ -183,7 +246,10 @@ describe("manual UI regression pipeline", () => {
       mlBridge: mockMlBridge("PURCHASE_INTENT", 0.91, "chốt"),
     });
     expect(result.intent).toBe("PURCHASE_INTENT");
-    expect(result.suggestedReply).toContain("chốt sản phẩm nào");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.suggestedReply).toContain("KÍNH THỜI TRANG A");
+    expect(result.suggestedReply).not.toContain("chốt sản phẩm nào");
+    expect(result.suggestedReply).not.toContain("checkout");
   });
 
   it('uses purchase-specific confirmation for "lấy 1"', () => {
@@ -194,10 +260,11 @@ describe("manual UI regression pipeline", () => {
       mlBridge: mockMlBridge("PURCHASE_INTENT", 0.9, "lấy 1"),
     });
     expect(result.intent).toBe("PURCHASE_INTENT");
-    expect(result.suggestedReply).toContain("chốt");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.suggestedReply).toContain("KÍNH THỜI TRANG A");
   });
 
-  it('uses purchase-specific clarification for "đặt 1"', () => {
+  it('uses pinned product for bare purchase action "đặt 1"', () => {
     const result = runSalesNlpPipeline({
       comment: "đặt 1",
       catalog,
@@ -205,6 +272,9 @@ describe("manual UI regression pipeline", () => {
       mlBridge: mockMlBridge("PURCHASE_INTENT", 0.89, "đặt 1"),
     });
     expect(result.intent).toBe("PURCHASE_INTENT");
-    expect(result.suggestedReply).toContain("chốt sản phẩm nào");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.suggestedReply).toContain("KÍNH THỜI TRANG A");
+    expect(result.suggestedReply).not.toContain("chốt sản phẩm nào");
+    expect(result.suggestedReply).not.toContain("checkout");
   });
 });

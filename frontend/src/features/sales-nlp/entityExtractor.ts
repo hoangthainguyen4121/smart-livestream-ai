@@ -13,12 +13,12 @@ const LOCATION_PATTERNS: Array<{ regex: RegExp; label: string }> = [
 
 export function extractEntities(
   comment: string,
-  product: CatalogProduct,
+  product: CatalogProduct | null,
   mentionedProductIds: string[],
 ): ExtractedEntities {
   const text = normalizeText(comment);
-  const colors = extractColors(text, product);
-  const sizes = extractSizes(text, product);
+  const colors = product ? extractColors(text, product) : [];
+  const sizes = product ? extractSizes(text, product) : [];
   const quantity = extractQuantity(text);
   const shippingLocation = extractShippingLocation(text);
 

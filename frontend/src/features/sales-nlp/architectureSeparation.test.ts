@@ -103,14 +103,16 @@ describe("ML intent vs product context separation", () => {
 });
 
 describe("pinned product context policy", () => {
-  it('resolves bare "giá?" to pinned product', () => {
-    const resolution = resolveProductContext({
+  it('resolves bare "giá?" to pinned product via commerce intent', () => {
+    const result = runSalesNlpPipeline({
       comment: "giá?",
       catalog,
-      pinnedProductId: glassesA.id,
+      pinnedProduct: glassesA,
+      mlBridge: mockMlBridge("ASK_PRICE", 0.9, "giá?"),
     });
-    expect(resolution.product?.id).toBe(glassesA.id);
-    expect(resolution.source).toBe("pinned_product");
+    expect(result.intent).toBe("ASK_PRICE");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.resolvedProduct?.id).toBe(glassesA.id);
   });
 
   it("answers pinned price for bare giá with ML ASK_PRICE", () => {

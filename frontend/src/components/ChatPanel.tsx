@@ -17,6 +17,7 @@ import {
 } from "../api/chat";
 import type { CommerceSuggestedAction } from "../features/commerce/commerceTypes";
 import { isAssistantChatMessage } from "../features/sales-assistant/assistantChatMessages";
+import { renderAssistantReplyText } from "../features/sales-assistant/renderAssistantReplyText";
 import { formatIntentLabel } from "../features/sales-nlp/formatChatIntentLabel";
 import type { ChatMlIntentBadge } from "../features/sales-nlp/mlIntentBridge";
 import { getProductById } from "../features/product-catalog";
@@ -77,6 +78,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       sendAssistantMessage(message: ChatMessage) {
         const socket = socketRef.current;
         if (!socket || socket.readyState !== WebSocket.OPEN) {
+          return;
+        }
+
+        if (!message.text.trim()) {
           return;
         }
 
@@ -146,6 +151,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     if (event.type === "chat_message") {
       const normalized = normalizeChatMessage(event);
       setMessages((currentMessages) => appendUniqueChatMessage(currentMessages, normalized));
+      setErrorMessage(null);
 
       if (normalized.author === displayNameRef.current.trim()) {
         onViewerMessageSentRef.current?.({
@@ -160,10 +166,16 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     setErrorMessage(event.message);
   }
 
+  function clearChatError() {
+    setErrorMessage(null);
+  }
+
   function handleSendChatMessage() {
     const text = input.trim();
     const sender = displayName.trim();
     const socket = socketRef.current;
+
+    clearChatError();
 
     if (!text || !sender || !socket || socket.readyState !== WebSocket.OPEN) {
       return;
@@ -224,7 +236,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                     text: message.replyToText ?? "",
                   })}
                 </span>
-                <span>{message.text}</span>
+                <span className="chatReplyText">{renderAssistantReplyText(message.text)}</span>
                 {message.commerceActions
                   ?.filter((action) => action.type === "add_to_cart")
                   .map((action) => (
@@ -262,9 +274,13 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       <div className="chatInputRow">
         <input
           value={input}
-          onChange={(event) => setInput(event.target.value)}
+          onChange={(event) => {
+            clearChatError();
+            setInput(event.target.value);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
+              event.preventDefault();
               handleSendChatMessage();
             }
           }}

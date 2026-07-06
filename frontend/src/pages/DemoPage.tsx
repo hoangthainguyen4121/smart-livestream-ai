@@ -4,7 +4,9 @@ import { ChatPanel, type ChatPanelHandle } from "../components/ChatPanel";
 import { AuthStatusPanel } from "../features/auth/AuthStatusPanel";
 import { useOptionalAuth } from "../features/auth/useOptionalAuth";
 import { BrowserArStream, type BrowserArStreamHandle } from "../features/browser-ar/components/BrowserArStream";
-import { useCameraProductRecognition } from "../features/camera-product-recognition/useCameraProductRecognition";
+import { useProductVisionRecognition } from "../features/hand-held-vision/useProductVisionRecognition";
+import { ObjectDetectorOverlay } from "../features/object-detector/ObjectDetectorOverlay";
+import { useObjectDetectorOverlay } from "../features/object-detector/useObjectDetectorOverlay";
 import { type BrowserArEffect } from "../features/browser-ar/types";
 import {
   CartPanel,
@@ -47,11 +49,12 @@ export function DemoPage() {
   const [liveSessionKey, setLiveSessionKey] = useState(0);
   const [sessionViewerCount, setSessionViewerCount] = useState(0);
   const [sessionMessageCount, setSessionMessageCount] = useState(0);
-  const [pinnedProductId, setPinnedProductId] = useState(DEFAULT_PINNED_PRODUCT_ID);
+  const [pinnedProductId, setPinnedProductId] = useState<string | null>(DEFAULT_PINNED_PRODUCT_ID);
   const [cameraProductId, setCameraProductId] = useState<string | null>(null);
   const [lastContextSource, setLastContextSource] = useState<ProductContextSource | null>(null);
   const [effect, setEffect] = useState<BrowserArEffect>("glasses");
   const [debugOverlay, setDebugOverlay] = useState(false);
+  const [objectDetectorEnabled, setObjectDetectorEnabled] = useState(false);
   const [salesEvents, setSalesEvents] = useState<SalesAssistantEvent[]>([]);
   const [salesAnalytics, setSalesAnalytics] = useState<SalesAssistantAnalytics>(
     createInitialAnalytics(),
@@ -87,7 +90,7 @@ export function DemoPage() {
   const cart = useCommerceCart({ onOpenCart: scrollToCart });
 
   const pinnedProduct = useMemo(
-    () => getProductById(pinnedProductId) ?? getAllProducts()[0],
+    () => (pinnedProductId ? getProductById(pinnedProductId) ?? null : null),
     [pinnedProductId],
   );
 
@@ -97,11 +100,20 @@ export function DemoPage() {
   );
 
   const captureFrame = useCallback(() => browserArRef.current?.captureFrame() ?? null, []);
+  const getVideoElement = useCallback(() => browserArRef.current?.getVideoElement() ?? null, []);
+  const getCanvasElement = useCallback(() => browserArRef.current?.getCanvasElement() ?? null, []);
 
-  const cameraRecognition = useCameraProductRecognition({
+  const objectDetector = useObjectDetectorOverlay({
+    enabled: objectDetectorEnabled,
+    isLive: isStreamLive,
+    getCanvasElement,
+  });
+
+  const cameraRecognition = useProductVisionRecognition({
     isLive: isStreamLive,
     catalog: getAllProducts(),
     captureFrame,
+    getVideoElement,
   });
 
   const chatAuthor = auth.user?.displayName ?? GUEST_DISPLAY_NAME;
@@ -146,6 +158,10 @@ export function DemoPage() {
     if (!isStreamLive) {
       setEffect(mapArEffectTypeToBrowserAr(product.arEffectType));
     }
+  }
+
+  function handleUnpinProduct() {
+    setPinnedProductId(null);
   }
 
   function handleStartStream() {
@@ -270,7 +286,6 @@ export function DemoPage() {
                 type="button"
                 className={effect === entry ? "active" : ""}
                 onClick={() => setEffect(entry)}
-                disabled={isStreamLive}
               >
                 {effectLabels[entry]}
               </button>
@@ -282,6 +297,15 @@ export function DemoPage() {
             >
               {t("debugOverlay")}
             </button>
+            {isStreamLive ? (
+              <button
+                type="button"
+                className={objectDetectorEnabled ? "active" : ""}
+                onClick={() => setObjectDetectorEnabled((value) => !value)}
+              >
+                {t("objectDetectorOverlay")}
+              </button>
+            ) : null}
           </section>
 
           <div className="streamMediaRow">
@@ -291,37 +315,34 @@ export function DemoPage() {
                 <span className="status">{effectLabels[effect]}</span>
               </div>
 
-              <BrowserArStream
-                ref={browserArRef}
-                isLive={isStreamLive}
-                effect={effect}
-                debugOverlay={debugOverlay}
-                hostLabel={`@${HOST_USERNAME}`}
-              />
+              <div className="browserArStreamWrap">
+                <BrowserArStream
+                  ref={browserArRef}
+                  isLive={isStreamLive}
+                  effect={effect}
+                  debugOverlay={debugOverlay}
+                  hostLabel={`@${HOST_USERNAME}`}
+                />
+                <ObjectDetectorOverlay
+                  enabled={objectDetectorEnabled}
+                  snapshot={objectDetector.snapshot}
+                />
+              </div>
+              {objectDetectorEnabled && objectDetector.isLoading ? (
+                <p className="browserArHint">{t("objectDetectorLoading")}</p>
+              ) : null}
+              {objectDetector.errorMessage ? (
+                <p className="error">{objectDetector.errorMessage}</p>
+              ) : null}
             </div>
 
-            <PinnedProductPanel product={pinnedProduct} />
-            <ProductContextControl
-              pinnedProduct={pinnedProduct}
-              cameraProduct={cameraProduct}
-              lastContextSource={lastContextSource}
-              visionEnabled={cameraRecognition.featureEnabled}
-              visionDetection={cameraRecognition.detection}
-              activeVisionProduct={activeVisionProduct}
-              onMarkCameraProduct={() => setCameraProductId(pinnedProductId)}
-              onClearCameraProduct={() => setCameraProductId(null)}
-              onRecognizeNow={() => {
-                void cameraRecognition.recognizeNow();
-              }}
-              onApplyVisionContext={cameraRecognition.applyDetectionAsContext}
-              onClearVisionContext={cameraRecognition.clearVisionContext}
-            />
+            <PinnedProductPanel product={pinnedProduct} onUnpin={handleUnpinProduct} />
           </div>
 
           <ProductCatalogPanel
             compact
             variant="host"
-            pinnedProductId={pinnedProductId}
+            pinnedProductId={pinnedProductId ?? undefined}
             onPinProduct={handlePinProduct}
           />
 
@@ -344,8 +365,10 @@ export function DemoPage() {
               items={cart.items}
               itemCount={cart.itemCount}
               subtotal={cart.subtotal}
-              pinnedProductName={pinnedProduct.name}
-              onAddPinnedProduct={() => cart.addPinnedProduct(pinnedProduct)}
+              pinnedProductName={pinnedProduct?.name}
+              onAddPinnedProduct={
+                pinnedProduct ? () => cart.addPinnedProduct(pinnedProduct) : undefined
+              }
               onRemoveItem={cart.removeLine}
               onUpdateQuantity={cart.updateLineQuantity}
               onCheckout={cart.openCheckout}
@@ -353,6 +376,27 @@ export function DemoPage() {
             />
             <OrderSummary order={cart.order} isPaying={cart.isPaying} />
           </section>
+
+          <ProductContextControl
+            pinnedProduct={pinnedProduct}
+            cameraProduct={cameraProduct}
+            lastContextSource={lastContextSource}
+            visionEnabled={cameraRecognition.featureEnabled}
+            visionDetection={cameraRecognition.detection}
+            visionMode={cameraRecognition.detection.mode}
+            activeVisionProduct={activeVisionProduct}
+            onMarkCameraProduct={() => {
+              if (pinnedProductId) {
+                setCameraProductId(pinnedProductId);
+              }
+            }}
+            onClearCameraProduct={() => setCameraProductId(null)}
+            onRecognizeNow={() => {
+              void cameraRecognition.recognizeNow();
+            }}
+            onApplyVisionContext={cameraRecognition.applyDetectionAsContext}
+            onClearVisionContext={cameraRecognition.clearVisionContext}
+          />
 
           <CheckoutModal
             open={cart.checkoutOpen}
@@ -373,6 +417,9 @@ export function DemoPage() {
             error={auth.error}
             onLogin={() => {
               void auth.loginWithGoogle();
+            }}
+            onRegister={() => {
+              void auth.registerWithGoogle();
             }}
             onLogout={() => {
               void auth.logout();

@@ -74,12 +74,6 @@ export function isCategoryListingQuestion(comment: string): boolean {
   return false;
 }
 
-/** Bare price fragment in live context (e.g. "giá?", "bn") — product binding is resolver policy. */
-export function isBarePriceQuery(comment: string): boolean {
-  const text = normalizeText(comment);
-  return /^(gia|bao nhieu)$/.test(text);
-}
-
 export function hasColorVariantQuestion(comment: string): boolean {
   const text = normalizeText(comment);
   return /\b(mau gi|mau nao|co mau nao|con mau nao|co mau gi|mau gi do)\b/.test(text);
@@ -101,12 +95,7 @@ export function buildDeicticIntentClarification(productName: string): string {
   return `Bạn muốn hỏi gì về ${productName} ạ? (giá, còn hàng, màu, size...)`;
 }
 
-export function buildPurchaseClarificationReply(productName?: string): string {
-  if (productName) {
-    return `Bạn muốn chốt ${productName} phải không ạ? Bạn có thể thêm vào giỏ hàng bên dưới hoặc nhắn chốt đơn để checkout demo.`;
-  }
-  return "Bạn muốn chốt sản phẩm nào ạ? Bạn có thể nêu tên sản phẩm hoặc host ghim sản phẩm trên livestream.";
-}
+export { buildPurchaseClarificationReply } from "./commerceReplyPhrases";
 
 export function tokenMentionsCategory(text: string): ProductCategory[] {
   const categories = detectMentionedCategories(text);

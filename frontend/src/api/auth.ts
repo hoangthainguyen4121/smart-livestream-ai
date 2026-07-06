@@ -49,7 +49,19 @@ export function mapSupabaseUser(user: User): AuthUser {
   };
 }
 
+function getAuthRedirectUrl(): string {
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
 export async function signInWithGoogle(): Promise<void> {
+  await startGoogleOAuth("login");
+}
+
+export async function signUpWithGoogle(): Promise<void> {
+  await startGoogleOAuth("signup");
+}
+
+async function startGoogleOAuth(mode: "login" | "signup"): Promise<void> {
   const supabase = getSupabaseClient();
   if (!supabase) {
     throw new Error("Supabase auth is not configured.");
@@ -58,7 +70,11 @@ export async function signInWithGoogle(): Promise<void> {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: window.location.origin,
+      redirectTo: getAuthRedirectUrl(),
+      queryParams:
+        mode === "signup"
+          ? { prompt: "consent", access_type: "online" }
+          : { access_type: "online" },
     },
   });
 

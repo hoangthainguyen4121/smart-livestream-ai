@@ -349,6 +349,21 @@ h1 {
   font-size: 0.9rem;
 }
 
+.browserArStreamWrap {
+  position: relative;
+  display: grid;
+}
+
+.handVisionDebugCanvas,
+.objectDetectorCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  aspect-ratio: 4 / 3;
+}
+
 .browserArStream {
   display: grid;
   gap: 12px;
@@ -382,6 +397,55 @@ h1 {
 .pinnedProductBody {
   display: grid;
   gap: 12px;
+}
+
+.pinnedProductUnpinButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: #cbd5e1;
+}
+
+.pinnedProductUnpinButton:hover {
+  color: #334155;
+  text-decoration-color: #94a3b8;
+}
+
+.pinnedProductHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pinnedProductHeaderDivider {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.status.statusPinned {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.pinnedProductEmpty {
+  display: grid;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+.pinnedProductEmptyTitle {
+  margin: 0;
+  font-weight: 600;
+  color: #64748b;
 }
 
 .pinnedProductTopRow {
@@ -956,6 +1020,22 @@ h1 {
   font-style: italic;
 }
 
+.chatReplyText {
+  display: block;
+  line-height: 1.45;
+}
+
+.chatReplyHighlightProduct {
+  font-weight: 700;
+  color: #b45309;
+  letter-spacing: 0.02em;
+}
+
+.chatReplyHighlightAction {
+  font-weight: 600;
+  color: #047857;
+}
+
 .chatCommerceActions {
   margin-top: 8px;
 }
@@ -1134,6 +1214,146 @@ h1 {
   min-width: 0;
 }
 
+.handObjectLabPage {
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.handObjectLabHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.handObjectLabBackLink,
+.handObjectLabNavLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #eef2f7;
+  color: #172033;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.handObjectLabLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.handObjectLabVideoCard .browserArCanvas {
+  width: 100%;
+  height: auto;
+}
+
+.handObjectLabMethodList {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.handObjectLabMethod {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fbff;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.handObjectLabMethod strong {
+  color: #172033;
+}
+
+.handObjectLabMethod span {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.handObjectLabMethod.active {
+  border-color: #2f6fed;
+  box-shadow: 0 0 0 1px rgba(47, 111, 237, 0.15);
+  background: #eff6ff;
+}
+
+.handObjectLabMetrics,
+.handObjectLabDetections {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.handObjectLabMetrics h3,
+.handObjectLabDetections h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.handObjectLabMetrics dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.handObjectLabMetrics dl div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f4f7fb;
+}
+
+.handObjectLabMetrics dt {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.handObjectLabMetrics dd {
+  margin: 0;
+  color: #172033;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.handObjectLabDetections ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #334155;
+}
+
+.secondaryButton {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #172033;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondaryButton:hover {
+  background: #f8fafc;
+}
+
+.productContextHint {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
 .salesLabChatMessages {
   display: grid;
   gap: 10px;
@@ -1206,7 +1426,7 @@ h1 {
 
 .authStatusPanel {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   padding: 16px;
   border: 1px solid #d9e2ef;
   border-radius: 16px;
@@ -1214,22 +1434,24 @@ h1 {
   box-shadow: 0 12px 40px rgba(23, 32, 51, 0.08);
 }
 
-.authStatusText {
+.authStatusSignedIn {
   display: grid;
   gap: 4px;
-  color: #64748b;
-  font-size: 0.88rem;
-  line-height: 1.4;
-}
-
-.authStatusTitle {
-  color: #172033;
-  font-size: 0.95rem;
-  font-weight: 800;
+  color: #46556a;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .authStatusError {
   color: #b42318;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.authButtonRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .authButton {
@@ -1773,7 +1995,12 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .handObjectLabLayout {
+    grid-template-columns: 1fr;
+  }
+
   .productCatalogFilters {
     grid-template-columns: 1fr;
   }
 }
+

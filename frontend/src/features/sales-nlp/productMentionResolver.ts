@@ -24,7 +24,7 @@ export type ProductMentionMatch = {
 };
 
 export type ProductResolution = {
-  selectedProduct: CatalogProduct;
+  selectedProduct: CatalogProduct | null;
   selectedProductId: string;
   resolutionSource: ProductResolutionSource;
   contextSource?: ProductContextSource;
@@ -899,6 +899,9 @@ export function resolvePrimaryProduct(
   pinnedProduct: CatalogProduct,
 ): ProductMentionMatch {
   const resolution = resolveProductSelection(comment, catalog, pinnedProduct);
+  if (!resolution.selectedProduct) {
+    throw new Error("resolvePrimaryProduct requires a selected product");
+  }
   return {
     product: resolution.selectedProduct,
     score: Math.round(resolution.productConfidence * 10),
@@ -909,7 +912,7 @@ export function resolvePrimaryProduct(
 export function resolveComparedProducts(
   comment: string,
   catalog: CatalogProduct[],
-  pinnedProduct: CatalogProduct,
+  pinnedProduct: CatalogProduct | null,
 ): CatalogProduct[] {
   const text = normalizeText(comment);
   const ranked = rankProducts(comment, catalog).filter((entry) => entry.score > 0);

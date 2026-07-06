@@ -1,0 +1,4 @@
+# Optional — CLIP visual embeddings for hand-held product recognition.
+# Install after base requirements: pip install -r requirements-vision.txt
+open-clip-torch
+torch

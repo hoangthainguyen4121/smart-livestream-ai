@@ -9,7 +9,7 @@ import {
   type ProductResolution,
   type ProductResolutionSource,
 } from "./productMentionResolver";
-import { resolveProductContext } from "./productContextResolver";
+import { resolveProductContext, applyPinnedCommerceIntentFallback } from "./productContextResolver";
 import type { ProductContextSource } from "./productContextResolver";
 import {
   buildDeicticIntentClarification,
@@ -24,6 +24,7 @@ import { isCategoryLevelQuestion } from "./productMentionResolver";
 import { type IntentSource, type MlIntentBridge } from "./mlIntentBridge";
 import { applyProductMentionIntentGuardrail } from "./productMentionIntentGuardrail";
 import { buildCommerceSuggestedActions } from "../commerce/commerceIntentActions";
+import type { CatalogProduct } from "../product-catalog/productCatalogTypes";
 import {
   isRecognizedNlpIntent,
   type SalesNlpAction,
@@ -60,12 +61,12 @@ function mapContextSourceToLegacySource(
 
 function buildProductResolutionFromContext(
   contextResolution: ReturnType<typeof resolveProductContext>,
-  fallbackProduct: ProductResolution["selectedProduct"],
+  fallbackProduct: CatalogProduct | null,
 ): ProductResolution {
   const selectedProduct = contextResolution.product ?? fallbackProduct;
   return {
     selectedProduct,
-    selectedProductId: selectedProduct.id,
+    selectedProductId: selectedProduct?.id ?? "",
     resolutionSource: mapContextSourceToLegacySource(contextResolution.source),
     contextSource: contextResolution.source,
     explanation: contextResolution.explanation,
@@ -176,21 +177,18 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
   const mlApplied = applyMlIntentBridge(regexClassification, mlBridge);
   const classification = mlApplied.classification;
 
-  // 2) Product context: resolver only (pin/camera/catalog/clarification).
-  const contextResolution = resolveProductContext({
+  // 2) Product context: resolver (catalog/camera/clarification) — no phrase hardcoding.
+  let contextResolution = resolveProductContext({
     comment: input.comment,
     catalog: input.catalog,
-    pinnedProductId: input.pinnedProduct.id,
+    pinnedProductId: input.pinnedProduct?.id ?? null,
     selectedCameraProductId: input.selectedCameraProductId ?? null,
     latestCameraProductId: input.latestCameraProductId ?? null,
     detectedCameraProductId: input.detectedCameraProductId ?? null,
     detectedCameraConfidence: input.detectedCameraConfidence ?? null,
   });
-  const productResolution = buildProductResolutionFromContext(
-    contextResolution,
-    input.pinnedProduct,
-  );
-  const resolvedProduct = contextResolution.product;
+
+  let resolvedProduct = contextResolution.product;
 
   const comparedProducts = resolveComparedProducts(
     input.comment,
@@ -216,6 +214,20 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
     effectiveIntent = productMentionGuardrail.intent;
     isComplaintEscalation = false;
   }
+
+  contextResolution = applyPinnedCommerceIntentFallback({
+    comment: input.comment,
+    catalog: input.catalog,
+    pinnedProductId: input.pinnedProduct?.id ?? null,
+    intent: effectiveIntent,
+    resolution: contextResolution,
+  });
+  resolvedProduct = contextResolution.product;
+
+  const productResolution = buildProductResolutionFromContext(
+    contextResolution,
+    input.pinnedProduct,
+  );
 
   const matchedProducts =
     effectiveIntent === "COMPARE_PRODUCTS" && comparedProducts.length >= 2
@@ -255,9 +267,7 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
 
   let suggestedReply = "";
 
-  if (productMentionGuardrail.applied && mlApplied.suggestedReplyOverride) {
-    suggestedReply = "";
-  } else if (mlApplied.suggestedReplyOverride) {
+  if (mlApplied.suggestedReplyOverride && !productMentionGuardrail.applied) {
     suggestedReply = mlApplied.suggestedReplyOverride;
   } else if (
     contextResolution.isClarification &&
@@ -306,13 +316,13 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
       ...productResolution.matchedTerms.filter((term) => term !== "pinned fallback"),
     ],
     action,
-    resolvedProduct: resolvedProduct ?? input.pinnedProduct,
+    resolvedProduct,
     productResolution,
     resolutionSource: productResolution.resolutionSource,
     contextSource: contextResolution.source,
     contextExplanation: contextResolution.explanation,
     matchedProducts,
-    selectedProductId: resolvedProduct?.id ?? input.pinnedProduct.id,
+    selectedProductId: resolvedProduct?.id ?? input.pinnedProduct?.id ?? "",
     productConfidence: productResolution.productConfidence,
     semanticSimilarity: productResolution.semanticSimilarity,
     searchDiagnostics: productResolution.searchDiagnostics,

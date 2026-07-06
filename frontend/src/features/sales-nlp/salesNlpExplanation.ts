@@ -195,7 +195,7 @@ export function buildSalesNlpExplanation(input: BuildExplanationInput): SalesNlp
     mlRawIntent: input.mlBridge?.mlIntent ?? null,
     confidence: input.confidence,
     resolvedProductId: input.productResolution.selectedProductId,
-    resolvedProductName: input.productResolution.selectedProduct.name,
+    resolvedProductName: input.productResolution.selectedProduct?.name ?? "",
     contextSource: explainableContextSource,
     contextReason: input.contextResolution.explanation,
     productCandidates: ranked.map((entry) => ({

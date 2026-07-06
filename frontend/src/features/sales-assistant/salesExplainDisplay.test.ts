@@ -127,7 +127,7 @@ describe("explainable AI validation cases", () => {
     expect(timeline[2].detail).toContain("Son Ruby Đỏ");
   });
 
-  it('shows unresolved product for "chốt" clarification without pinned fallback', () => {
+  it('uses pinned product for bare purchase action "chốt"', () => {
     const { event } = processSalesComment({
       comment: "chốt",
       viewerAuthor: "Viewer",
@@ -137,14 +137,19 @@ describe("explainable AI validation cases", () => {
     });
 
     expect(event).not.toBeNull();
-    expect(event!.contextSource).toBe("clarification");
-    expect(needsProductClarification(event!)).toBe(true);
-    expect(getDisplayResolvedProduct(event!, t)).toBe("Chưa xác định");
-    expect(getClarificationQuestion(event!)).toContain("chốt sản phẩm nào");
+    expect(event!.intent).toBe("PURCHASE_INTENT");
+    expect(event!.contextSource).toBe("pinned_product");
+    expect(needsProductClarification(event!)).toBe(false);
+    expect(getDisplayResolvedProduct(event!, t)).toBe("Kính thời trang A");
+    expect(getClarificationQuestion(event!)).toBeNull();
+    expect(event!.suggestedReply).toContain("KÍNH THỜI TRANG A");
+    expect(event!.suggestedReply).not.toContain("chốt sản phẩm nào");
+    expect(event!.suggestedReply).toContain("thanh toán");
+    expect(event!.suggestedReply).not.toContain("checkout");
 
     const timeline = buildDecisionTimeline(event!, "vi", t);
-    expect(timeline[2].detail).toContain("Cần hỏi rõ sản phẩm");
-    expect(timeline[2].detail).not.toContain("Kính thời trang A");
+    expect(timeline[2].detail).toContain("Sản phẩm đang ghim");
+    expect(timeline[2].detail).toContain("Kính thời trang A");
   });
 
   it("shows LIME-unavailable message for unknown comments with ML bridge only", () => {

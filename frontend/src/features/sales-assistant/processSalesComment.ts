@@ -22,7 +22,7 @@ import type { PredictIntentApiResponse } from "../../api/nlpIntent";
 type ProcessSalesCommentInput = {
   comment: string;
   viewerAuthor: string;
-  pinnedProduct?: CatalogProduct;
+  pinnedProduct?: CatalogProduct | null;
   catalog?: CatalogProduct[];
   selectedCameraProductId?: string | null;
   latestCameraProductId?: string | null;
@@ -67,10 +67,12 @@ function updateAnalytics(
     };
   }
 
-  const productQuestionCounts = {
-    ...analytics.productQuestionCounts,
-    [event.productId]: (analytics.productQuestionCounts[event.productId] ?? 0) + 1,
-  };
+  const productQuestionCounts = event.productId
+    ? {
+        ...analytics.productQuestionCounts,
+        [event.productId]: (analytics.productQuestionCounts[event.productId] ?? 0) + 1,
+      }
+    : analytics.productQuestionCounts;
   const mostAskedProductId =
     Object.entries(productQuestionCounts).sort((left, right) => right[1] - left[1])[0]?.[0] ??
     null;
@@ -99,7 +101,8 @@ export function processSalesComment(
   input: ProcessSalesCommentInput,
   currentAnalytics: SalesAssistantAnalytics = createInitialAnalytics(),
 ): ProcessSalesCommentResult {
-  const pinnedProduct = input.pinnedProduct ?? getDefaultPinnedProduct();
+  const pinnedProduct =
+    input.pinnedProduct === undefined ? getDefaultPinnedProduct() : input.pinnedProduct;
   const catalog = input.catalog ?? getAllProducts();
   const nlp = runSalesNlpPipeline({
     comment: input.comment,
@@ -131,9 +134,9 @@ export function processSalesComment(
     intent: nlp.intent,
     confidence: nlp.confidence,
     matchedPatterns: nlp.matchedPatterns,
-    productId: nlp.resolvedProduct.id,
+    productId: nlp.resolvedProduct?.id ?? "",
     selectedProductId: nlp.selectedProductId,
-    resolvedProductName: nlp.resolvedProduct.name,
+    resolvedProductName: nlp.resolvedProduct?.name ?? "",
     resolutionSource: nlp.resolutionSource,
     contextSource: nlp.contextSource,
     contextExplanation: nlp.contextExplanation,
@@ -176,7 +179,7 @@ export async function processSalesCommentWithMl(
 ): Promise<ProcessSalesCommentResult> {
   const normalizedComment = normalizeText(input.comment);
   const regexClassification = classifyIntent(normalizedComment);
-  const mlResponse = await predictIntent(input.comment);
+  const mlResponse = await predictIntent(normalizedComment);
   const mlBridge = buildMlIntentBridge(mlResponse, regexClassification, normalizedComment);
   return processSalesComment({ ...input, mlBridge, mlResponse }, currentAnalytics);
 }
@@ -190,7 +193,10 @@ export function getActionLabel(action: SalesAssistantEvent["action"]): string {
 }
 
 export function shouldAutoReplyInChat(event: SalesAssistantEvent): boolean {
-  return event.action === "AUTO_REPLY_SUGGESTED" || event.action === "ESCALATE_TO_HOST";
+  return (
+    (event.action === "AUTO_REPLY_SUGGESTED" || event.action === "ESCALATE_TO_HOST") &&
+    event.suggestedReply.trim().length > 0
+  );
 }
 
 // Legacy exports for older imports

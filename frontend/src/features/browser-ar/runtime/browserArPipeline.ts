@@ -1,5 +1,10 @@
 import { FaceLandmarkerEngine } from "../engines/faceLandmarkerEngine";
 import { FpsMonitor } from "../metrics/fpsMonitor";
+import {
+  drawMirroredVideoFrame,
+  mirrorDetectionForCanvas,
+} from "./mirrorVideoFrame";
+import { waitForVideoReady } from "./waitForVideoReady";
 import { renderBrowserArEffect } from "../renderers/renderBrowserArEffect";
 import type { ArDetectionResult, BrowserArEffect, BrowserArStats } from "../types";
 import { CAPTURE_HEIGHT, CAPTURE_WIDTH } from "../types";
@@ -52,24 +57,27 @@ export class BrowserArPipeline {
     this.video = document.createElement("video");
     this.video.playsInline = true;
     this.video.muted = true;
+    this.video.autoplay = true;
     this.stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
+        facingMode: "user",
         width: { ideal: CAPTURE_WIDTH },
         height: { ideal: CAPTURE_HEIGHT },
-        frameRate: { ideal: 30, max: 30 },
       },
     });
     this.video.srcObject = this.stream;
     await this.video.play();
-
-    if (options.effect !== "none" || options.debugOverlay) {
-      this.engine = new FaceLandmarkerEngine();
-      await this.engine.init();
-    }
+    await waitForVideoReady(this.video);
 
     this.running = true;
     this.loop();
+
+    const needsEngine = options.effect !== "none" || options.debugOverlay;
+    if (needsEngine) {
+      this.engine = new FaceLandmarkerEngine();
+      await this.engine.init();
+    }
   }
 
   async setEffect(effect: BrowserArEffect): Promise<void> {
@@ -102,8 +110,16 @@ export class BrowserArPipeline {
       return null;
     }
 
-    context.drawImage(this.video, 0, 0, tempCanvas.width, tempCanvas.height);
+    drawMirroredVideoFrame(context, this.video, tempCanvas.width, tempCanvas.height);
     return context.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+  }
+
+  getVideoElement(): HTMLVideoElement | null {
+    return this.video;
+  }
+
+  getCanvasElement(): HTMLCanvasElement | null {
+    return this.canvas;
   }
 
   private async syncEngine(): Promise<void> {
@@ -156,10 +172,13 @@ export class BrowserArPipeline {
     let renderMs = 0;
     let processingFps = this.processingFps.averageFps;
 
-    this.context.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+    drawMirroredVideoFrame(this.context, this.video, this.canvas.width, this.canvas.height);
 
     const needsProcessing =
-      this.options.effect !== "none" || this.options.debugOverlay || this.engine !== null;
+      (this.options.effect !== "none" || this.options.debugOverlay) &&
+      this.engine !== null &&
+      this.video.videoWidth > 0 &&
+      this.video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
 
     if (needsProcessing && this.engine) {
       if (this.processing) {
@@ -198,10 +217,15 @@ export class BrowserArPipeline {
 
     const detection = await this.engine.detect(this.video, performance.now());
     if (detection) {
-      this.lastDetection = detection;
+      this.lastDetection = mirrorDetectionForCanvas(
+        detection,
+        this.video,
+        this.canvas.width,
+        this.canvas.height,
+      );
     }
 
-    this.context.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+    drawMirroredVideoFrame(this.context, this.video, this.canvas.width, this.canvas.height);
     const renderMs = renderBrowserArEffect(
       this.context,
       this.options.effect,

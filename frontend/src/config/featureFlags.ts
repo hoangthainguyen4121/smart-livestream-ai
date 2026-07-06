@@ -8,3 +8,7 @@ function parseBooleanFlag(value: string | undefined, defaultValue = false): bool
 export function isCameraProductRecognitionEnabled(): boolean {
   return parseBooleanFlag(import.meta.env.VITE_ENABLE_CAMERA_PRODUCT_RECOGNITION, false);
 }
+
+export function isHandHeldVisionEnabled(): boolean {
+  return parseBooleanFlag(import.meta.env.VITE_ENABLE_HAND_HELD_VISION, false);
+}

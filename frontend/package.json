@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "generate:catalog-images": "tsx scripts/generate-catalog-images.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:sales-nlp-load": "tsx scripts/sales-nlp-loadtest.ts"

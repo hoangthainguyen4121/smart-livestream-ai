@@ -2,5 +2,6 @@ fastapi
 httpx
 numpy
 opencv-python
+pillow
 pytest
 uvicorn[standard]

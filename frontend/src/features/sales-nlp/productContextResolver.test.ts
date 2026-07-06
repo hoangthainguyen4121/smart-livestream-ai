@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { generateLipstickHeavyCatalog } from "../../../scripts/fixtures/generateLipstickCatalog";
 import { getAllProducts } from "../product-catalog/productCatalogService";
-import { resolveProductContext } from "./productContextResolver";
+import { resolveProductContext, applyPinnedCommerceIntentFallback } from "./productContextResolver";
 
 const catalog = getAllProducts();
 const glassesA = catalog.find((product) => product.id === "glasses-a")!;
@@ -61,6 +61,141 @@ describe("resolveProductContext", () => {
 
     expect(resolution.product?.id).toBe(oversizeTee.id);
     expect(resolution.source).toBe("catalog_match");
+  });
+
+  it("binds pinned product via commerce intent fallback for stock question", () => {
+    const base = resolveProductContext({
+      comment: "còn bao nhiêu cái",
+      catalog,
+      pinnedProductId: glassesA.id,
+    });
+    expect(base.isClarification).toBe(true);
+
+    const resolution = applyPinnedCommerceIntentFallback({
+      comment: "còn bao nhiêu cái",
+      catalog,
+      pinnedProductId: glassesA.id,
+      intent: "ASK_STOCK",
+      resolution: base,
+    });
+
+    expect(resolution.product?.id).toBe(glassesA.id);
+    expect(resolution.source).toBe("pinned_product");
+    expect(resolution.isClarification).toBe(false);
+  });
+
+  it("binds pinned product via commerce intent fallback for color question", () => {
+    const base = resolveProductContext({
+      comment: "màu gì ?",
+      catalog,
+      pinnedProductId: glassesA.id,
+    });
+
+    const resolution = applyPinnedCommerceIntentFallback({
+      comment: "màu gì ?",
+      catalog,
+      pinnedProductId: glassesA.id,
+      intent: "ASK_COLOR",
+      resolution: base,
+    });
+
+    expect(resolution.product?.id).toBe(glassesA.id);
+    expect(resolution.source).toBe("pinned_product");
+  });
+
+  it("binds pinned product via commerce intent fallback for unrecognized color token", () => {
+    const base = resolveProductContext({
+      comment: "color",
+      catalog,
+      pinnedProductId: glassesA.id,
+    });
+
+    const resolution = applyPinnedCommerceIntentFallback({
+      comment: "color",
+      catalog,
+      pinnedProductId: glassesA.id,
+      intent: "ASK_COLOR",
+      resolution: base,
+    });
+
+    expect(resolution.product?.id).toBe(glassesA.id);
+  });
+
+  it("binds pinned product via commerce intent fallback for link request", () => {
+    const base = resolveProductContext({
+      comment: "link",
+      catalog,
+      pinnedProductId: glassesA.id,
+    });
+
+    const resolution = applyPinnedCommerceIntentFallback({
+      comment: "link",
+      catalog,
+      pinnedProductId: glassesA.id,
+      intent: "ASK_LINK",
+      resolution: base,
+    });
+
+    expect(resolution.product?.id).toBe(glassesA.id);
+    expect(resolution.source).toBe("pinned_product");
+  });
+
+  it("does not bind pinned product for link when nothing is pinned", () => {
+    const base = resolveProductContext({
+      comment: "link",
+      catalog,
+      pinnedProductId: null,
+    });
+
+    const resolution = applyPinnedCommerceIntentFallback({
+      comment: "link",
+      catalog,
+      pinnedProductId: null,
+      intent: "ASK_LINK",
+      resolution: base,
+    });
+
+    expect(resolution.product).toBeNull();
+    expect(resolution.isClarification).toBe(true);
+  });
+
+  it("binds pinned product via commerce intent fallback for purchase action chốt", () => {
+    const base = resolveProductContext({
+      comment: "chốt",
+      catalog,
+      pinnedProductId: glassesA.id,
+    });
+
+    const resolution = applyPinnedCommerceIntentFallback({
+      comment: "chốt",
+      catalog,
+      pinnedProductId: glassesA.id,
+      intent: "PURCHASE_INTENT",
+      resolution: base,
+    });
+
+    expect(resolution.product?.id).toBe(glassesA.id);
+    expect(resolution.source).toBe("pinned_product");
+    expect(resolution.isClarification).toBe(false);
+  });
+
+  it("asks for clarification for purchase chốt when nothing is pinned", () => {
+    const base = resolveProductContext({
+      comment: "chốt",
+      catalog,
+      pinnedProductId: null,
+    });
+
+    const resolution = applyPinnedCommerceIntentFallback({
+      comment: "chốt",
+      catalog,
+      pinnedProductId: null,
+      intent: "PURCHASE_INTENT",
+      resolution: base,
+    });
+
+    expect(resolution.product).toBeNull();
+    expect(resolution.isClarification).toBe(true);
   });
 
   it("asks for clarification when deictic comment has no camera or pinned context", () => {
@@ -132,11 +267,19 @@ describe("resolveProductContext", () => {
     expect(resolution.source).toBe("camera_context");
   });
 
-  it("uses pinned product for bare giá fragment", () => {
-    const resolution = resolveProductContext({
+  it("uses pinned product for bare giá fragment via intent fallback", () => {
+    const base = resolveProductContext({
       comment: "giá?",
       catalog,
       pinnedProductId: glassesA.id,
+    });
+
+    const resolution = applyPinnedCommerceIntentFallback({
+      comment: "giá?",
+      catalog,
+      pinnedProductId: glassesA.id,
+      intent: "ASK_PRICE",
+      resolution: base,
     });
 
     expect(resolution.product?.id).toBe(glassesA.id);

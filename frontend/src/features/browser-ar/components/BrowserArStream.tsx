@@ -6,6 +6,8 @@ import { CAPTURE_HEIGHT, CAPTURE_WIDTH } from "../types";
 
 export type BrowserArStreamHandle = {
   captureFrame: () => ImageData | null;
+  getVideoElement: () => HTMLVideoElement | null;
+  getCanvasElement: () => HTMLCanvasElement | null;
 };
 
 type BrowserArStreamProps = {
@@ -30,6 +32,8 @@ export const BrowserArStream = forwardRef<BrowserArStreamHandle, BrowserArStream
       ref,
       () => ({
         captureFrame: () => pipelineRef.current?.captureFrame() ?? null,
+        getVideoElement: () => pipelineRef.current?.getVideoElement() ?? null,
+        getCanvasElement: () => pipelineRef.current?.getCanvasElement() ?? null,
       }),
       [],
     );

@@ -8,13 +8,13 @@ import {
 } from "./productMentionResolver";
 import {
   hasDeicticProductReference,
-  isBarePriceQuery,
   isCategoryListingQuestion,
   isPinnedProductReference,
   isSingleCategoryTokenOnly,
   tokenMentionsCategory,
 } from "./intentSignals";
-import type { ProductContextSource } from "./salesNlpTypes";
+import { isPinnedBindableIntent } from "./pinnedContextPolicy";
+import type { ProductContextSource, SalesNlpIntent } from "./salesNlpTypes";
 export type { ProductContextSource } from "./salesNlpTypes";
 export { hasDeicticProductReference } from "./intentSignals";
 
@@ -239,25 +239,6 @@ export function resolveProductContext(input: ProductContextInput): ProductContex
     );
   }
 
-  if (isBarePriceQuery(input.comment)) {
-    const pinned = resolvePinnedContext(input);
-    if (pinned) {
-      return buildResolution(
-        pinned.product,
-        pinned.source,
-        pinned.confidence,
-        pinned.explanation,
-      );
-    }
-    return buildResolution(
-      null,
-      "clarification",
-      0.35,
-      "Bare price question without pinned or catalog product context.",
-      true,
-    );
-  }
-
   const isDeictic = hasDeicticProductReference(input.comment);
   const implicitContext = isDeictic
     ? resolveDeicticImplicitContext(input)
@@ -297,5 +278,56 @@ export function resolveProductContext(input: ProductContextInput): ProductContex
     0.35,
     "No product context and no confident catalog match.",
     true,
+  );
+}
+
+export type PinnedCommerceIntentFallbackInput = {
+  comment: string;
+  catalog: CatalogProduct[];
+  pinnedProductId?: string | null;
+  intent: SalesNlpIntent;
+  resolution: ProductContextResolution;
+};
+
+/**
+ * After ML/regex intent is known: bind pinned product when commerce intent needs a product
+ * anchor but the comment did not resolve one via catalog, camera, or deictic context.
+ */
+export function applyPinnedCommerceIntentFallback(
+  input: PinnedCommerceIntentFallbackInput,
+): ProductContextResolution {
+  if (!input.resolution.isClarification || !isPinnedBindableIntent(input.intent)) {
+    return input.resolution;
+  }
+
+  const catalogMatch = resolveCatalogProductMatch(input.comment, input.catalog);
+  if (catalogMatch.kind !== "none") {
+    return input.resolution;
+  }
+
+  if (
+    isSingleCategoryTokenOnly(input.comment) ||
+    isCategoryListingQuestion(input.comment) ||
+    isCategoryLevelQuestion(normalizeText(input.comment)) ||
+    hasDeicticProductReference(input.comment) ||
+    isPinnedProductReference(input.comment)
+  ) {
+    return input.resolution;
+  }
+
+  const pinned = resolvePinnedContext({
+    comment: input.comment,
+    catalog: input.catalog,
+    pinnedProductId: input.pinnedProductId,
+  });
+  if (!pinned) {
+    return input.resolution;
+  }
+
+  return buildResolution(
+    pinned.product,
+    pinned.source,
+    pinned.confidence,
+    `Commerce intent ${input.intent} bound to pinned product "${pinned.product.name}".`,
   );
 }

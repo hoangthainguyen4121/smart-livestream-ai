@@ -7,6 +7,7 @@ type AuthStatusPanelProps = {
   user: AuthUser | null;
   error: string | null;
   onLogin: () => void;
+  onRegister: () => void;
   onLogout: () => void;
 };
 
@@ -16,37 +17,46 @@ export function AuthStatusPanel({
   user,
   error,
   onLogin,
+  onRegister,
   onLogout,
 }: AuthStatusPanelProps) {
   const { t } = useI18n();
 
-  return (
-    <section className="authStatusPanel" aria-label={t("authPanelTitle")}>
-      <div className="authStatusText">
-        <span className="authStatusTitle">{t("authPanelTitle")}</span>
-        <span>
-          {user
-            ? t("signedInAs", { name: user.displayName })
-            : configured
-              ? t("guestModeActive")
-              : t("authNotConfigured")}
-        </span>
-        {error ? <span className="authStatusError">{error}</span> : null}
-      </div>
-      {user ? (
+  if (user) {
+    return (
+      <section className="authStatusPanel" aria-label={t("authPanelTitle")}>
+        <div className="authStatusSignedIn">
+          <span>{t("signedInAs", { name: user.displayName })}</span>
+          {error ? <span className="authStatusError">{error}</span> : null}
+        </div>
         <button type="button" className="authButton authButtonSecondary" onClick={onLogout}>
           {t("signOut")}
         </button>
-      ) : (
+      </section>
+    );
+  }
+
+  return (
+    <section className="authStatusPanel" aria-label={t("authPanelTitle")}>
+      {error ? <span className="authStatusError">{error}</span> : null}
+      <div className="authButtonRow">
         <button
           type="button"
           className="authButton"
           onClick={onLogin}
           disabled={!configured || loading}
         >
-          {loading ? t("authLoading") : t("signInWithGoogle")}
+          {loading ? t("authLoading") : t("signIn")}
         </button>
-      )}
+        <button
+          type="button"
+          className="authButton authButtonSecondary"
+          onClick={onRegister}
+          disabled={!configured || loading}
+        >
+          {t("signUp")}
+        </button>
+      </div>
     </section>
   );
 }

@@ -3,7 +3,27 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import chat, health, nlp
+from app.api import chat, health, nlp, product_vision
+
+
+def _load_backend_env_file() -> None:
+    env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env"))
+    if not os.path.exists(env_path):
+        return
+
+    with open(env_path, encoding="utf-8") as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
+_load_backend_env_file()
 
 
 DEFAULT_CORS_ORIGINS = [
@@ -46,4 +66,5 @@ app.add_middleware(
 
 app.include_router(health.router, prefix="/api")
 app.include_router(nlp.router, prefix="/api")
+app.include_router(product_vision.router, prefix="/api")
 app.include_router(chat.router)
