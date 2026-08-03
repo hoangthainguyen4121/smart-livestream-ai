@@ -93,34 +93,15 @@ Write-Host ""
 Test-RequiredDirectory -Path $FrontendDir -Label "Frontend folder"
 Test-RequiredDirectory -Path $BackendDir -Label "Backend folder"
 
-$selectedModelDir = $null
 if (-not $SkipNlp) {
     Test-RequiredDirectory -Path $MlRepoDir -Label "NLP repo (smart-livestream-ml)"
-
-    $modelCandidates = @(
-        "artifacts/phobert_base_combined_hardcases_v3",
-        "artifacts/phobert_base_combined_hardcases_v2"
-    )
-
-    foreach ($candidate in $modelCandidates) {
-        $candidatePath = Join-Path $MlRepoDir $candidate
-        if (Test-Path -LiteralPath $candidatePath -PathType Container) {
-            $selectedModelDir = $candidate
-            break
-        }
+    Write-Host "NLP model selection: Python registry (config/model_registry.yaml)" -ForegroundColor DarkGray
+    if ($env:INTENT_MODEL_DIR) {
+        Write-Host ("  INTENT_MODEL_DIR override: " + $env:INTENT_MODEL_DIR) -ForegroundColor DarkGray
     }
-
-    if (-not $selectedModelDir) {
-        $expected = ($modelCandidates | ForEach-Object { Join-Path $MlRepoDir $_ }) -join "`n  "
-        throw @"
-No NLP model directory found under smart-livestream-ml.
-Expected one of:
-  $expected
-Use -SkipNlp to start without the ML service.
-"@
+    if ($env:INTENT_ACTIVE_MODEL_ID) {
+        Write-Host ("  INTENT_ACTIVE_MODEL_ID override: " + $env:INTENT_ACTIVE_MODEL_ID) -ForegroundColor DarkGray
     }
-
-    Write-Host ("NLP model dir: " + $selectedModelDir) -ForegroundColor DarkGray
 }
 
 if (-not $SkipFrontend) {
@@ -156,10 +137,19 @@ if (-not $SkipNlp) {
 
     Write-Host ("Starting NLP service (port 8010) using " + $mlPython + "...") -ForegroundColor Green
 
-    $nlpCommand = @"
-Set-Location -LiteralPath '$MlRepoDir'
-& '$mlPython' '$serveScript' --model-dir '$selectedModelDir' --port 8010
-"@
+    $nlpEnvLines = @("Set-Location -LiteralPath '$MlRepoDir'")
+    if ($env:INTENT_MODEL_DIR) {
+        $nlpEnvLines += "`$env:INTENT_MODEL_DIR = '$($env:INTENT_MODEL_DIR)'"
+    }
+    if ($env:INTENT_ACTIVE_MODEL_ID) {
+        $nlpEnvLines += "`$env:INTENT_ACTIVE_MODEL_ID = '$($env:INTENT_ACTIVE_MODEL_ID)'"
+    }
+    if ($env:INTENT_MODEL_ID) {
+        $nlpEnvLines += "`$env:INTENT_MODEL_ID = '$($env:INTENT_MODEL_ID)'"
+    }
+    $nlpEnvLines += "& '$mlPython' '$serveScript' --port 8010"
+    $nlpCommand = ($nlpEnvLines -join "`n")
+
     Start-ServiceWindow -Title "Smart Livestream - NLP" -Command $nlpCommand
 }
 

@@ -13,7 +13,7 @@ import {
   isSingleCategoryTokenOnly,
   tokenMentionsCategory,
 } from "./intentSignals";
-import { isPinnedBindableIntent } from "./pinnedContextPolicy";
+import { isPinnedBindableIntent, shouldAnchorProductInfoOnPinnedProduct } from "./pinnedContextPolicy";
 import type { ProductContextSource, SalesNlpIntent } from "./salesNlpTypes";
 export type { ProductContextSource } from "./salesNlpTypes";
 export { hasDeicticProductReference } from "./intentSignals";
@@ -290,13 +290,20 @@ export type PinnedCommerceIntentFallbackInput = {
 };
 
 /**
- * After ML/regex intent is known: bind pinned product when commerce intent needs a product
+ * After ML/regex intent is known: bind pinned product when the intent needs a product
  * anchor but the comment did not resolve one via catalog, camera, or deictic context.
  */
 export function applyPinnedCommerceIntentFallback(
   input: PinnedCommerceIntentFallbackInput,
 ): ProductContextResolution {
   if (!input.resolution.isClarification || !isPinnedBindableIntent(input.intent)) {
+    return input.resolution;
+  }
+
+  if (
+    input.intent === "ASK_PRODUCT_INFO" &&
+    !shouldAnchorProductInfoOnPinnedProduct(input.comment)
+  ) {
     return input.resolution;
   }
 

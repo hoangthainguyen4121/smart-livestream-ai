@@ -1,9 +1,13 @@
+import logging
 import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import chat, health, nlp, product_vision
+from app.api import admin_dataset_export_batches, admin_intent_corrections, chat, comments, health, intent_corrections, internal_ml_retrain, nlp, product_vision, sessions
+from app.settings import ChatPersistenceMode, get_settings
+
+logger = logging.getLogger(__name__)
 
 
 def _load_backend_env_file() -> None:
@@ -67,4 +71,22 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api")
 app.include_router(nlp.router, prefix="/api")
 app.include_router(product_vision.router, prefix="/api")
+app.include_router(sessions.router, prefix="/api")
+app.include_router(comments.router, prefix="/api")
+app.include_router(intent_corrections.router, prefix="/api")
+app.include_router(admin_intent_corrections.router, prefix="/api")
+app.include_router(admin_dataset_export_batches.router, prefix="/api")
+app.include_router(internal_ml_retrain.router, prefix="/api")
 app.include_router(chat.router)
+
+
+@app.on_event("startup")
+def validate_and_log_settings() -> None:
+    settings = get_settings()
+    logger.info("chat_persistence_mode=%s", settings.chat_persistence_mode.value)
+    if settings.chat_persistence_mode == ChatPersistenceMode.SHORT_RETENTION:
+        logger.info("chat_retention_hours=%s", settings.chat_retention_hours)
+        logger.info(
+            "chat_retention_deletion_job=not_implemented policy_hours=%s",
+            settings.chat_retention_hours,
+        )

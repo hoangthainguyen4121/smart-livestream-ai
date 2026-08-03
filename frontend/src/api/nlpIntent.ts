@@ -17,6 +17,9 @@ export type PredictIntentApiResponse = {
   is_spam_moderation: boolean;
   source: "ml" | "unavailable";
   error?: string | null;
+  model_id?: string | null;
+  model_version?: string | null;
+  model_role?: string | null;
 };
 
 export type NlpHealthApiResponse = {

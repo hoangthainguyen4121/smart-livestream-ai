@@ -37,6 +37,7 @@ export type ProcessSalesCommentResult = {
   event: SalesAssistantEvent | null;
   analytics: SalesAssistantAnalytics;
   chatMlBadge: ChatMlIntentBadge | null;
+  mlResponse: PredictIntentApiResponse | null;
 };
 
 function createEventId(): string {
@@ -125,6 +126,7 @@ export function processSalesComment(
       event: null,
       analytics: updateAnalytics(currentAnalytics, null),
       chatMlBadge,
+      mlResponse: input.mlResponse ?? null,
     };
   }
 
@@ -170,6 +172,7 @@ export function processSalesComment(
     event,
     analytics: updateAnalytics(currentAnalytics, event),
     chatMlBadge,
+    mlResponse: input.mlResponse ?? null,
   };
 }
 

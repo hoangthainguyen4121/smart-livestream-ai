@@ -24,7 +24,7 @@ def get_ml_timeout_seconds() -> float:
         return DEFAULT_TIMEOUT_SECONDS
 
 
-async def fetch_ml_health() -> tuple[str, str | None]:
+async def fetch_ml_health() -> tuple[str, str | None, dict[str, str]]:
     url = f"{get_ml_intent_api_url()}/health"
     try:
         async with httpx.AsyncClient(timeout=get_ml_timeout_seconds()) as client:
@@ -32,10 +32,15 @@ async def fetch_ml_health() -> tuple[str, str | None]:
             response.raise_for_status()
             payload = response.json()
             detail = payload.get("status") or payload.get("model") or "ok"
-            return "ok", str(detail)
+            metadata = {
+                key: str(payload[key])
+                for key in ("model_id", "model_version", "model_role")
+                if payload.get(key) is not None
+            }
+            return "ok", str(detail), metadata
     except Exception as error:
         logger.warning("ML intent health check failed: %s", error)
-        return "unavailable", str(error)
+        return "unavailable", str(error), {}
 
 
 async def predict_ml_intent(text: str) -> dict[str, Any] | None:

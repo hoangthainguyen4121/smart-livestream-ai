@@ -1554,6 +1554,121 @@ h1 {
   color: #475569;
 }
 
+.chatCorrectionButton,
+.chatCorrectionForm button {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.chatCorrectionForm {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.chatCorrectionSummary {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.chatCorrectionField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.chatCorrectionActions {
+  display: flex;
+  gap: 8px;
+}
+
+.chatCorrectionSubmitted {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #15803d;
+}
+
+.adminExportPanel {
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #eff6ff;
+}
+
+.adminExportResult {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.adminIntentReviewPage {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.adminIntentReviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.adminIntentReviewList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.adminIntentReviewCard {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.adminIntentReviewComment {
+  margin: 0 0 8px;
+}
+
+.adminIntentReviewMeta {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.adminIntentReviewMeta dt {
+  font-weight: 600;
+  color: #475569;
+}
+
+.adminIntentReviewMeta dd {
+  margin: 0;
+}
+
+.adminIntentReviewField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.adminIntentReviewActions {
+  display: flex;
+  gap: 8px;
+}
+
 .chatInputRow {
   display: flex;
   gap: 8px;

@@ -22,4 +22,8 @@ def test_health_returns_ok() -> None:
     response = client.get("/api/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["chat_persistence_mode"] == "memory"
+    assert payload["durable_chat_history"] is False
+    assert payload["chat_retention_deletion_job"] == "not_implemented"

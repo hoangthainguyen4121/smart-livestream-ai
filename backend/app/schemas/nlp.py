@@ -26,6 +26,9 @@ class PredictIntentResponse(BaseModel):
     is_spam_moderation: bool = False
     source: str = "unavailable"
     error: Optional[str] = None
+    model_id: Optional[str] = None
+    model_version: Optional[str] = None
+    model_role: Optional[str] = None
 
 
 class NlpHealthResponse(BaseModel):
@@ -33,3 +36,6 @@ class NlpHealthResponse(BaseModel):
     ml_service_status: str
     ml_service_url: str
     ml_service_detail: Optional[str] = None
+    model_id: Optional[str] = None
+    model_version: Optional[str] = None
+    model_role: Optional[str] = None

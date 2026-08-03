@@ -232,3 +232,8 @@ Backend proxy `/api/nlp/*` — frontend không đổi.
 ## 10. GitHub Actions
 
 CI hiện tại **không** deploy Railway. Deploy thủ công qua dashboard. (CD Railway có thể thêm sau với `RAILWAY_TOKEN`.)
+
+**Feedback retrain cron** chạy trên repo `smart-livestream-ml` (không phải repo PoC). Xem:
+
+- [`docs/DEPLOYMENT_FEEDBACK_RETRAIN.md`](DEPLOYMENT_FEEDBACK_RETRAIN.md) — volume, migrations, secrets, smoke plan
+- `smart-livestream-ml/.github/workflows/periodic-feedback-retrain.yml` — weekly + `workflow_dispatch`

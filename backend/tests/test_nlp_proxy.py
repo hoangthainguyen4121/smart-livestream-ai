@@ -44,7 +44,7 @@ def test_map_ml_intent_complaint_escalates() -> None:
 
 @patch("app.api.nlp.fetch_ml_health", new_callable=AsyncMock)
 def test_nlp_health_reports_ml_unavailable(mock_fetch_health: AsyncMock) -> None:
-    mock_fetch_health.return_value = ("unavailable", "connection refused")
+    mock_fetch_health.return_value = ("unavailable", "connection refused", {})
 
     response = client.get("/api/nlp/health")
 
@@ -52,6 +52,27 @@ def test_nlp_health_reports_ml_unavailable(mock_fetch_health: AsyncMock) -> None
     payload = response.json()
     assert payload["proxy_status"] == "ok"
     assert payload["ml_service_status"] == "unavailable"
+
+
+@patch("app.api.nlp.fetch_ml_health", new_callable=AsyncMock)
+def test_nlp_health_forwards_model_metadata(mock_fetch_health: AsyncMock) -> None:
+    mock_fetch_health.return_value = (
+        "ok",
+        "ok",
+        {
+            "model_id": "phobert_base_combined_hardcases_v2",
+            "model_version": "phobert_base_combined_hardcases_v2@2026-07-04",
+            "model_role": "active",
+        },
+    )
+
+    response = client.get("/api/nlp/health")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["model_id"] == "phobert_base_combined_hardcases_v2"
+    assert payload["model_version"] == "phobert_base_combined_hardcases_v2@2026-07-04"
+    assert payload["model_role"] == "active"
 
 
 @patch("app.api.nlp.predict_ml_intent", new_callable=AsyncMock)
@@ -63,6 +84,9 @@ def test_predict_intent_proxy_returns_mapped_fields(mock_predict: AsyncMock) -> 
             {"intent": "ASK_VARIANT", "confidence": 0.5236},
             {"intent": "ASK_STOCK", "confidence": 0.12},
         ],
+        "model_id": "phobert_base_combined_hardcases_v2",
+        "model_version": "phobert_base_combined_hardcases_v2@2026-07-04",
+        "model_role": "active",
     }
 
     response = client.post(
@@ -77,6 +101,9 @@ def test_predict_intent_proxy_returns_mapped_fields(mock_predict: AsyncMock) -> 
     assert payload["mapped_intent"] == "ASK_SIZE"
     assert payload["confidence"] == pytest.approx(0.5236)
     assert payload["source"] == "ml"
+    assert payload["model_id"] == "phobert_base_combined_hardcases_v2"
+    assert payload["model_version"] == "phobert_base_combined_hardcases_v2@2026-07-04"
+    assert payload["model_role"] == "active"
 
 
 @patch("app.api.nlp.predict_ml_intent", new_callable=AsyncMock)

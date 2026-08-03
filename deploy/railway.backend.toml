@@ -21,3 +21,10 @@ healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 numReplicas = 1
+
+# Persistent export artifacts (feedback retrain flow):
+#   1. Railway dashboard → this service → Volumes → mount e.g. /data
+#   2. Set runtime env: DATASET_EXPORT_DIR=/data/dataset_exports
+# Without a volume, JSONL/manifest files are lost on redeploy/restart.
+#
+# Migrations: run once via backend/scripts/railway_migrate.sh (NOT in docker-entrypoint.sh).

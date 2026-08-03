@@ -201,6 +201,19 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
     resolvedProduct,
   );
   let isComplaintEscalation = mlApplied.isComplaintEscalation;
+  let actionOverride = mlApplied.actionOverride;
+  let suggestedReplyOverride = mlApplied.suggestedReplyOverride;
+
+  if (
+    isComplaintEscalation &&
+    isPinnedProductReference(input.comment) &&
+    contextResolution.product &&
+    contextResolution.source === "pinned_product"
+  ) {
+    isComplaintEscalation = false;
+    actionOverride = "AUTO_REPLY_SUGGESTED";
+    suggestedReplyOverride = null;
+  }
 
   const productMentionGuardrail = applyProductMentionIntentGuardrail({
     comment: input.comment,
@@ -250,7 +263,7 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
 
   const action = productMentionGuardrail.applied
     ? "AUTO_REPLY_SUGGESTED"
-    : mlApplied.actionOverride ??
+    : actionOverride ??
       (effectiveIntent === "UNKNOWN" &&
       (contextResolution.isClarification ||
         isDeicticOnlyComment(input.comment) ||
@@ -267,8 +280,8 @@ export function runSalesNlpPipeline(input: SalesNlpPipelineInput): SalesNlpPipel
 
   let suggestedReply = "";
 
-  if (mlApplied.suggestedReplyOverride && !productMentionGuardrail.applied) {
-    suggestedReply = mlApplied.suggestedReplyOverride;
+  if (suggestedReplyOverride && !productMentionGuardrail.applied) {
+    suggestedReply = suggestedReplyOverride;
   } else if (
     contextResolution.isClarification &&
     contextResolution.clarificationQuestion &&

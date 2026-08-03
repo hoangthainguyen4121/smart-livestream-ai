@@ -42,12 +42,15 @@ def _parse_top_k(raw_top_k: Optional[List[dict]]) -> List[IntentTopKItem]:
 
 @router.get("/health", response_model=NlpHealthResponse)
 async def nlp_health() -> NlpHealthResponse:
-    ml_status, detail = await fetch_ml_health()
+    ml_status, detail, ml_metadata = await fetch_ml_health()
     return NlpHealthResponse(
         proxy_status="ok",
         ml_service_status=ml_status,
         ml_service_url=get_ml_intent_api_url(),
         ml_service_detail=detail,
+        model_id=ml_metadata.get("model_id"),
+        model_version=ml_metadata.get("model_version"),
+        model_role=ml_metadata.get("model_role"),
     )
 
 
@@ -77,4 +80,7 @@ async def predict_intent(request: PredictIntentRequest) -> PredictIntentResponse
         is_complaint_escalation=mapped.is_complaint_escalation,
         is_spam_moderation=mapped.is_spam_moderation,
         source="ml",
+        model_id=ml_payload.get("model_id"),
+        model_version=ml_payload.get("model_version"),
+        model_role=ml_payload.get("model_role"),
     )

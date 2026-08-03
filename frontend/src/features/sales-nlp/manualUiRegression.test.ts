@@ -98,6 +98,18 @@ describe("manual UI regression pipeline", () => {
     expect(result.suggestedReply).toContain("ghim");
   });
 
+  it('handles bare "ghim" with pinned product and ML PRODUCT_INFO', () => {
+    const result = runSalesNlpPipeline({
+      comment: "ghim",
+      catalog,
+      pinnedProduct,
+      mlBridge: mockMlBridge("PRODUCT_INFO", 0.85, "ghim"),
+    });
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.resolvedProduct?.id).toBe(pinnedProduct.id);
+    expect(result.suggestedReply).toContain(pinnedProduct.name);
+  });
+
   it('handles "em này" as deictic clarification with pinned context', () => {
     const result = runSalesNlpPipeline({
       comment: "em này",

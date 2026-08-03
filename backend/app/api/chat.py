@@ -4,11 +4,17 @@ from typing import Any
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.services.chat_manager import ChatManager
+from app.services.chat_persistence import (
+    ChatPersistenceService,
+    CommentPersistenceError,
+    NoActiveSessionError,
+)
 
 
 router = APIRouter(tags=["chat"])
 logger = logging.getLogger(__name__)
 chat_manager = ChatManager()
+chat_persistence = ChatPersistenceService(chat_manager)
 
 
 @router.websocket("/ws/chat/{room_id}")
@@ -29,11 +35,30 @@ async def chat_socket(websocket: WebSocket, room_id: str) -> None:
                 continue
 
             try:
-                await chat_manager.broadcast_message(room_id, payload)
+                await chat_persistence.handle_chat_message(room_id, payload)
             except ValueError as error:
                 await websocket.send_json(
                     {
                         "type": "error",
+                        "message": str(error),
+                    }
+                )
+            except NoActiveSessionError:
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "code": "no_active_session",
+                        "message": (
+                            "No active livestream session for this room. "
+                            "Start a session before sending comments."
+                        ),
+                    }
+                )
+            except CommentPersistenceError as error:
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "code": "comment_persistence_failed",
                         "message": str(error),
                     }
                 )

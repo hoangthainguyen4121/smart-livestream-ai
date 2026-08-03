@@ -86,11 +86,23 @@ class ChatManager:
     ) -> ChatMessage:
         requested_id = payload.get("id")
         if isinstance(requested_id, str) and requested_id.strip():
-            for existing in self._history[room_id]:
-                if existing.id == requested_id.strip():
-                    return existing
+            existing = self.find_message_by_id(room_id, requested_id.strip())
+            if existing is not None:
+                return existing
 
-        message = self._create_message(room_id, payload)
+        message = self.build_message(room_id, payload)
+        return await self.broadcast_existing_message(room_id, message)
+
+    def find_message_by_id(self, room_id: str, message_id: str) -> ChatMessage | None:
+        for existing in self._history[room_id]:
+            if existing.id == message_id:
+                return existing
+        return None
+
+    def build_message(self, room_id: str, payload: dict[str, Any]) -> ChatMessage:
+        return self._create_message(room_id, payload)
+
+    async def broadcast_existing_message(self, room_id: str, message: ChatMessage) -> ChatMessage:
         self._history[room_id].append(message)
 
         event = {

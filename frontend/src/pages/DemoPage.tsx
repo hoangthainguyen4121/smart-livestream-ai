@@ -26,6 +26,8 @@ import { ProductContextControl } from "../features/sales-assistant/ProductContex
 import { buildAssistantChatMessage } from "../features/sales-assistant/assistantChatMessages";
 import { processSalesCommentWithMl, shouldAutoReplyInChat } from "../features/sales-assistant/processSalesComment";
 import type { ChatMlIntentBadge } from "../features/sales-nlp/mlIntentBridge";
+import { buildCommentCorrectionContext } from "../features/intent-correction/buildCommentCorrectionContext";
+import type { CommentCorrectionContext } from "../features/intent-correction/intentCorrectionTypes";
 import type { ProductContextSource } from "../features/sales-nlp/salesNlpTypes";
 import { SalesAssistantPanel } from "../features/sales-assistant/SalesAssistantPanel";
 import {
@@ -61,6 +63,12 @@ export function DemoPage() {
   );
   const [mlIntentBadgesByMessageId, setMlIntentBadgesByMessageId] = useState<
     Record<string, ChatMlIntentBadge>
+  >({});
+  const [correctionContextByMessageId, setCorrectionContextByMessageId] = useState<
+    Record<string, CommentCorrectionContext>
+  >({});
+  const [submittedCorrectionMessageIds, setSubmittedCorrectionMessageIds] = useState<
+    Record<string, boolean>
   >({});
   const auth = useOptionalAuth();
   const salesAnalyticsRef = useRef(salesAnalytics);
@@ -133,6 +141,8 @@ export function DemoPage() {
     setSalesAnalytics(createInitialAnalytics());
     setSalesEvents([]);
     setMlIntentBadgesByMessageId({});
+    setCorrectionContextByMessageId({});
+    setSubmittedCorrectionMessageIds({});
     setLastContextSource(null);
     setLiveSessionKey((value) => value + 1);
   }, []);
@@ -177,7 +187,17 @@ export function DemoPage() {
   }
 
   const handleViewerMessageSent = useCallback(
-    async ({ messageId, author, text }: { messageId: string; author: string; text: string }) => {
+    async ({
+      messageId,
+      author,
+      text,
+      createdAt,
+    }: {
+      messageId: string;
+      author: string;
+      text: string;
+      createdAt: string;
+    }) => {
       if (!isStreamLiveRef.current) {
         return;
       }
@@ -204,6 +224,23 @@ export function DemoPage() {
         setMlIntentBadgesByMessageId((current) => ({
           ...current,
           [messageId]: result.chatMlBadge!,
+        }));
+      }
+
+      const correctionContext = buildCommentCorrectionContext(
+        {
+          id: messageId,
+          room_id: DEMO_ROOM_ID,
+          author,
+          text,
+          created_at: createdAt,
+        },
+        result.mlResponse,
+      );
+      if (correctionContext) {
+        setCorrectionContextByMessageId((current) => ({
+          ...current,
+          [messageId]: correctionContext,
         }));
       }
 
@@ -433,6 +470,14 @@ export function DemoPage() {
             displayNameLocked={Boolean(auth.user)}
             sessionKey={liveSessionKey}
             mlIntentBadgesByMessageId={mlIntentBadgesByMessageId}
+            correctionContextByMessageId={correctionContextByMessageId}
+            submittedCorrectionMessageIds={submittedCorrectionMessageIds}
+            onCorrectionSubmitted={(messageId) => {
+              setSubmittedCorrectionMessageIds((current) => ({
+                ...current,
+                [messageId]: true,
+              }));
+            }}
             onViewerMessageSent={handleViewerMessageSent}
             onCommerceAction={cart.applySuggestedAction}
           />

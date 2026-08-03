@@ -17,6 +17,7 @@ import {
 } from "../api/chat";
 import type { CommerceSuggestedAction } from "../features/commerce/commerceTypes";
 import { isAssistantChatMessage } from "../features/sales-assistant/assistantChatMessages";
+import { IntentCorrectionPanel } from "../features/intent-correction/IntentCorrectionPanel";
 import { renderAssistantReplyText } from "../features/sales-assistant/renderAssistantReplyText";
 import { formatIntentLabel } from "../features/sales-nlp/formatChatIntentLabel";
 import type { ChatMlIntentBadge } from "../features/sales-nlp/mlIntentBridge";
@@ -34,7 +35,11 @@ type ChatPanelProps = {
     messageId: string;
     author: string;
     text: string;
+    createdAt: string;
   }) => void;
+  correctionContextByMessageId?: Record<string, import("../features/intent-correction/intentCorrectionTypes").CommentCorrectionContext>;
+  submittedCorrectionMessageIds?: Record<string, boolean>;
+  onCorrectionSubmitted?: (messageId: string) => void;
   onCommerceAction?: (action: CommerceSuggestedAction) => void;
 };
 
@@ -49,6 +54,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     displayNameLocked = false,
     sessionKey = 0,
     mlIntentBadgesByMessageId = {},
+    correctionContextByMessageId = {},
+    submittedCorrectionMessageIds = {},
+    onCorrectionSubmitted,
     onViewerMessageSent,
     onCommerceAction,
   },
@@ -158,6 +166,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           messageId: normalized.id,
           author: normalized.author,
           text: normalized.text,
+          createdAt: normalized.created_at,
         });
       }
       return;
@@ -264,6 +273,16 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                   >
                     {formatMlIntentBadge(mlIntentBadgesByMessageId[message.id], t)}
                   </span>
+                ) : null}
+                {correctionContextByMessageId[message.id] &&
+                !submittedCorrectionMessageIds[message.id] ? (
+                  <IntentCorrectionPanel
+                    context={correctionContextByMessageId[message.id]}
+                    onSubmitted={(commentId) => onCorrectionSubmitted?.(commentId)}
+                  />
+                ) : null}
+                {submittedCorrectionMessageIds[message.id] ? (
+                  <span className="chatCorrectionSubmitted">{t("intentCorrectionSubmitted")}</span>
                 ) : null}
               </>
             )}

@@ -196,4 +196,33 @@ describe("deictic and pinned reference via context only", () => {
     expect(result.contextSource).toBe("pinned_product");
     expect(result.suggestedReply).toContain("ghim");
   });
+
+  it('binds bare "ghim" to pinned product when ML predicts PRODUCT_INFO', () => {
+    const result = runSalesNlpPipeline({
+      comment: "ghim",
+      catalog,
+      pinnedProduct: glassesA,
+      mlBridge: mockMlBridge("PRODUCT_INFO", 0.85, "ghim"),
+    });
+    expect(result.intent).toBe("ASK_PRODUCT_INFO");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.resolvedProduct?.id).toBe(glassesA.id);
+    expect(result.suggestedReply).toContain(glassesA.name);
+    expect(result.suggestedReply).not.toContain("Bạn đang hỏi về sản phẩm nào");
+  });
+
+  it('does not escalate COMPLAINT when comment references pinned product', () => {
+    const result = runSalesNlpPipeline({
+      comment: "sản phẩm đang ghim",
+      catalog,
+      pinnedProduct: glassesA,
+      mlBridge: mockMlBridge("COMPLAINT", 0.73, "sản phẩm đang ghim"),
+    });
+    expect(result.isComplaintEscalation).toBe(false);
+    expect(result.action).toBe("AUTO_REPLY_SUGGESTED");
+    expect(result.contextSource).toBe("pinned_product");
+    expect(result.resolvedProduct?.id).toBe(glassesA.id);
+    expect(result.suggestedReply).toContain(glassesA.name);
+    expect(result.suggestedReply).not.toContain("Host sẽ kiểm tra");
+  });
 });
