@@ -1,8 +1,7 @@
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
+import { MEDIAPIPE_WASM_BASE } from "../../mediapipe/mediapipeWasmBase";
 import type { ArDetectionResult, NormalizedPoint } from "../types";
-
-const WASM_BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm";
 const MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 
@@ -10,7 +9,7 @@ export class FaceLandmarkerEngine {
   private landmarker: FaceLandmarker | null = null;
 
   async init(): Promise<void> {
-    const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
+    const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_BASE);
     const options = {
       baseOptions: {
         modelAssetPath: MODEL_URL,

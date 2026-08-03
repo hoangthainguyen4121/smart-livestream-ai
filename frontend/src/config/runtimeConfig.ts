@@ -36,3 +36,25 @@ export function getSupabaseAnonKey(): string | undefined {
     readNonEmpty(import.meta.env.VITE_SUPABASE_ANON_KEY)
   );
 }
+
+const SUPABASE_HOST_PATTERN = /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i;
+
+const SUPABASE_PLACEHOLDER_MARKERS = [
+  "YOUR-PROJECT-REF",
+  "your-supabase-anon-public-key",
+  "example.supabase.co",
+];
+
+export function isSupabaseRuntimeConfigured(): boolean {
+  const url = getSupabaseUrl();
+  const key = getSupabaseAnonKey();
+  if (!url || !key) {
+    return false;
+  }
+  if (!SUPABASE_HOST_PATTERN.test(url)) {
+    return false;
+  }
+  return !SUPABASE_PLACEHOLDER_MARKERS.some(
+    (marker) => url.includes(marker) || key.includes(marker),
+  );
+}

@@ -67,6 +67,8 @@ export const translations = {
     signedInAs: "Đã đăng nhập: {name}",
     signOut: "Đăng xuất",
     authLoading: "Đang kiểm tra...",
+    authUnreachable:
+      "Đăng nhập Google tạm không khả dụng (Supabase chưa cấu hình hoặc không truy cập được). Chat guest vẫn dùng được.",
     displayName: "Tên hiển thị",
     displayNameFromLogin: "Tên chat lấy từ tài khoản đăng nhập.",
     displayNamePlaceholder: "Tên của bạn",
@@ -278,6 +280,8 @@ export const translations = {
     signedInAs: "Signed in as {name}",
     signOut: "Sign out",
     authLoading: "Checking...",
+    authUnreachable:
+      "Google sign-in is unavailable (Supabase not configured or unreachable). Guest chat still works.",
     displayName: "Display name",
     displayNameFromLogin: "Chat name comes from the signed-in account.",
     displayNamePlaceholder: "Your name",

@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 
-import { getSupabaseAnonKey, getSupabaseUrl } from "../config/runtimeConfig";
+import { getSupabaseAnonKey, getSupabaseUrl, isSupabaseRuntimeConfigured } from "../config/runtimeConfig";
 
 let client: SupabaseClient | null = null;
 let clientKey: string | null = null;
@@ -13,7 +13,7 @@ export type AuthUser = {
 };
 
 export function isAuthConfigured(): boolean {
-  return Boolean(getSupabaseUrl() && getSupabaseAnonKey());
+  return isSupabaseRuntimeConfigured();
 }
 
 export function getSupabaseClient(): SupabaseClient | null {

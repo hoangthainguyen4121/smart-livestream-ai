@@ -1,6 +1,6 @@
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
 
-const WASM_BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm";
+import { MEDIAPIPE_WASM_BASE } from "../mediapipe/mediapipeWasmBase";
 const MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite";
 
@@ -17,7 +17,7 @@ export class ObjectDetectorEngine {
   private detector: ObjectDetector | null = null;
 
   async init(): Promise<void> {
-    const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
+    const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_BASE);
     const options = {
       baseOptions: {
         modelAssetPath: MODEL_URL,

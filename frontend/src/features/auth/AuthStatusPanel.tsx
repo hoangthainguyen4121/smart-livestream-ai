@@ -21,13 +21,15 @@ export function AuthStatusPanel({
   onLogout,
 }: AuthStatusPanelProps) {
   const { t } = useI18n();
+  const errorMessage =
+    error === "authUnreachable" ? t("authUnreachable") : error;
 
   if (user) {
     return (
       <section className="authStatusPanel" aria-label={t("authPanelTitle")}>
         <div className="authStatusSignedIn">
           <span>{t("signedInAs", { name: user.displayName })}</span>
-          {error ? <span className="authStatusError">{error}</span> : null}
+          {errorMessage ? <span className="authStatusError">{errorMessage}</span> : null}
         </div>
         <button type="button" className="authButton authButtonSecondary" onClick={onLogout}>
           {t("signOut")}
@@ -38,7 +40,7 @@ export function AuthStatusPanel({
 
   return (
     <section className="authStatusPanel" aria-label={t("authPanelTitle")}>
-      {error ? <span className="authStatusError">{error}</span> : null}
+      {errorMessage ? <span className="authStatusError">{errorMessage}</span> : null}
       <div className="authButtonRow">
         <button
           type="button"

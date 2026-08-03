@@ -1,6 +1,6 @@
 import { HandLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
-const WASM_BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm";
+import { MEDIAPIPE_WASM_BASE } from "../mediapipe/mediapipeWasmBase";
 const MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 
@@ -19,7 +19,7 @@ export class HandLandmarkerEngine {
   private landmarker: HandLandmarker | null = null;
 
   async init(): Promise<void> {
-    const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
+    const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_BASE);
     const options = {
       baseOptions: {
         modelAssetPath: MODEL_URL,
