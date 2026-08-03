@@ -20,12 +20,20 @@ def is_feedback_db_configured() -> bool:
     return get_settings().database_url is not None
 
 
+def _normalize_database_url(url: str) -> str:
+    if url.startswith("postgres://"):
+        return "postgresql+psycopg://" + url[len("postgres://") :]
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url[len("postgresql://") :]
+    return url
+
+
 @lru_cache(maxsize=1)
 def get_engine():
     database_url = get_database_url()
     if database_url is None:
         raise RuntimeError("DATABASE_URL is not configured.")
-    return create_engine(database_url, pool_pre_ping=True)
+    return create_engine(_normalize_database_url(database_url), pool_pre_ping=True)
 
 
 def get_session_factory():
