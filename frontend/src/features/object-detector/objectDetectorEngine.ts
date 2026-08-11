@@ -1,8 +1,18 @@
 import { FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
 
 import { MEDIAPIPE_WASM_BASE } from "../mediapipe/mediapipeWasmBase";
-const MODEL_URL =
+import {
+  DEFAULT_MAX_DETECTIONS,
+  DEFAULT_SCORE_THRESHOLD,
+} from "./productDetectionPolicy";
+
+export const OBJECT_DETECTOR_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite";
+
+export type ObjectDetectorEngineOptions = {
+  scoreThreshold?: number;
+  maxResults?: number;
+};
 
 export type RawObjectDetectionHit = {
   label: string;
@@ -15,17 +25,24 @@ export type RawObjectDetectionHit = {
 
 export class ObjectDetectorEngine {
   private detector: ObjectDetector | null = null;
+  private readonly scoreThreshold: number;
+  private readonly maxResults: number;
+
+  constructor(options: ObjectDetectorEngineOptions = {}) {
+    this.scoreThreshold = options.scoreThreshold ?? DEFAULT_SCORE_THRESHOLD;
+    this.maxResults = options.maxResults ?? DEFAULT_MAX_DETECTIONS;
+  }
 
   async init(): Promise<void> {
     const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_BASE);
     const options = {
       baseOptions: {
-        modelAssetPath: MODEL_URL,
+        modelAssetPath: OBJECT_DETECTOR_MODEL_URL,
         delegate: "GPU" as const,
       },
       runningMode: "IMAGE" as const,
-      scoreThreshold: 0.35,
-      maxResults: 5,
+      scoreThreshold: this.scoreThreshold,
+      maxResults: this.maxResults,
     };
 
     try {
@@ -34,7 +51,7 @@ export class ObjectDetectorEngine {
       this.detector = await ObjectDetector.createFromOptions(vision, {
         ...options,
         baseOptions: {
-          modelAssetPath: MODEL_URL,
+          modelAssetPath: OBJECT_DETECTOR_MODEL_URL,
           delegate: "CPU",
         },
       });

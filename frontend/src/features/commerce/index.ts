@@ -35,6 +35,6 @@ export {
 export { buildCommerceSuggestedActions } from "./commerceIntentActions";
 export { useCommerceCart } from "./useCommerceCart";
 export type { CommerceCartApi } from "./useCommerceCart";
-export { CartPanel } from "./components/CartPanel";
+export { CartDrawerButton, CartPanel } from "./components/CartPanel";
 export { CheckoutModal } from "./components/CheckoutModal";
 export { OrderSummary } from "./components/OrderSummary";

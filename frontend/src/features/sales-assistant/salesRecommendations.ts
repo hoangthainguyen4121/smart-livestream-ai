@@ -13,7 +13,7 @@ export function generateSalesRecommendations(
   if (analytics.complaintCount > 0) {
     recommendations.push(
       isVi
-        ? "Có khiếu nại từ khách. Nên xin lỗi và chuyển xử lý thủ công ngay."
+        ? "Có phàn nàn từ khách. Nên xin lỗi và chuyển xử lý thủ công ngay."
         : "Complaints detected. Apologize and handle manually immediately.",
     );
   }

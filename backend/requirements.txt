@@ -5,7 +5,10 @@ opencv-python
 pillow
 pytest
 uvicorn[standard]
-sqlmodel>=0.0.22
+# Python 3.9.0 + pydantic>=2.11 breaks OpenAPI (/docs): '_SpecialForm' has no attribute 'replace'.
+# Prefer Python 3.10+ (or 3.9.18+); until then keep pydantic on 2.10.x.
+pydantic>=2.10.0,<2.11
+sqlmodel>=0.0.22,<0.0.34
 alembic>=1.13
 psycopg[binary]>=3.1
 sqlalchemy>=2.0

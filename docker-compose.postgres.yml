@@ -1,0 +1,31 @@
+# Minimal local Postgres for intent-correction / admin / export feedback DB.
+# Does not change the main app docker-compose architecture.
+#
+# Start:
+#   docker compose -f docker-compose.postgres.yml up -d
+#
+# Connection (SQLAlchemy / Alembic):
+#   DATABASE_URL=postgresql+psycopg://postgres:postgres@127.0.0.1:5432/smart_livestream_local
+#
+# Chat can stay in-memory:
+#   CHAT_PERSISTENCE_MODE=memory
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: smart_livestream_local
+    volumes:
+      - smart_livestream_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d smart_livestream_local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  smart_livestream_pgdata:

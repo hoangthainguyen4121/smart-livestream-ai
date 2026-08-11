@@ -20,6 +20,15 @@ DATASET_EXPORT_FORMAT_VERSION = "intent-corrections-v1"
 DEFAULT_ML_RETRAIN_STALE_CLAIM_MINUTES = 120
 DEFAULT_ML_RETRAIN_MAX_CANDIDATE_BATCHES = 50
 ML_RETRAIN_CONSUMER = "ml_retrain"
+DEFAULT_COMMENT_SPAM_GUARD_ENABLED = True
+DEFAULT_COMMENT_RATE_LIMIT_COUNT = 5
+DEFAULT_COMMENT_RATE_LIMIT_WINDOW_SECONDS = 10
+DEFAULT_COMMENT_DUPLICATE_STREAK_LIMIT = 3
+DEFAULT_COMMENT_VIOLATION_WINDOW_SECONDS = 60
+DEFAULT_COMMENT_VIOLATIONS_BEFORE_BLOCK = 2
+DEFAULT_COMMENT_BLOCK_SECONDS = 120
+DEFAULT_COMMENT_SPAM_STATE_MAX_VIEWERS = 5000
+DEFAULT_HOST_LEASE_GRACE_SECONDS = 180
 
 
 class ChatPersistenceMode(str, Enum):
@@ -39,6 +48,15 @@ class AppSettings:
     ml_retrain_max_candidate_batches: int
     dataset_export_dir: str
     max_dataset_export_records: int
+    comment_spam_guard_enabled: bool
+    comment_rate_limit_count: int
+    comment_rate_limit_window_seconds: int
+    comment_duplicate_streak_limit: int
+    comment_violation_window_seconds: int
+    comment_violations_before_block: int
+    comment_block_seconds: int
+    comment_spam_state_max_viewers: int
+    host_lease_grace_seconds: int
 
     @property
     def durable_chat_history(self) -> bool:
@@ -89,6 +107,15 @@ def _parse_positive_int(raw: str, *, env_name: str, minimum: int = 1, maximum: O
     if maximum is not None and value > maximum:
         raise ValueError(f"{env_name} must be at most {maximum}.")
     return value
+
+
+def _parse_bool(raw: str, *, env_name: str) -> bool:
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"{env_name} must be a boolean (true/false).")
 
 
 def load_settings() -> AppSettings:
@@ -142,6 +169,76 @@ def load_settings() -> AppSettings:
         ),
         dataset_export_dir=dataset_export_dir,
         max_dataset_export_records=max_dataset_export_records,
+        comment_spam_guard_enabled=_parse_bool(
+            os.getenv("COMMENT_SPAM_GUARD_ENABLED", str(DEFAULT_COMMENT_SPAM_GUARD_ENABLED)),
+            env_name="COMMENT_SPAM_GUARD_ENABLED",
+        ),
+        comment_rate_limit_count=_parse_positive_int(
+            os.getenv("COMMENT_RATE_LIMIT_COUNT", str(DEFAULT_COMMENT_RATE_LIMIT_COUNT)),
+            env_name="COMMENT_RATE_LIMIT_COUNT",
+            minimum=1,
+            maximum=100,
+        ),
+        comment_rate_limit_window_seconds=_parse_positive_int(
+            os.getenv(
+                "COMMENT_RATE_LIMIT_WINDOW_SECONDS",
+                str(DEFAULT_COMMENT_RATE_LIMIT_WINDOW_SECONDS),
+            ),
+            env_name="COMMENT_RATE_LIMIT_WINDOW_SECONDS",
+            minimum=1,
+            maximum=3600,
+        ),
+        comment_duplicate_streak_limit=_parse_positive_int(
+            os.getenv(
+                "COMMENT_DUPLICATE_STREAK_LIMIT",
+                str(DEFAULT_COMMENT_DUPLICATE_STREAK_LIMIT),
+            ),
+            env_name="COMMENT_DUPLICATE_STREAK_LIMIT",
+            minimum=2,
+            maximum=20,
+        ),
+        comment_violation_window_seconds=_parse_positive_int(
+            os.getenv(
+                "COMMENT_VIOLATION_WINDOW_SECONDS",
+                str(DEFAULT_COMMENT_VIOLATION_WINDOW_SECONDS),
+            ),
+            env_name="COMMENT_VIOLATION_WINDOW_SECONDS",
+            minimum=1,
+            maximum=3600,
+        ),
+        comment_violations_before_block=_parse_positive_int(
+            os.getenv(
+                "COMMENT_VIOLATIONS_BEFORE_BLOCK",
+                str(DEFAULT_COMMENT_VIOLATIONS_BEFORE_BLOCK),
+            ),
+            env_name="COMMENT_VIOLATIONS_BEFORE_BLOCK",
+            minimum=1,
+            maximum=20,
+        ),
+        comment_block_seconds=_parse_positive_int(
+            os.getenv("COMMENT_BLOCK_SECONDS", str(DEFAULT_COMMENT_BLOCK_SECONDS)),
+            env_name="COMMENT_BLOCK_SECONDS",
+            minimum=1,
+            maximum=24 * 3600,
+        ),
+        comment_spam_state_max_viewers=_parse_positive_int(
+            os.getenv(
+                "COMMENT_SPAM_STATE_MAX_VIEWERS",
+                str(DEFAULT_COMMENT_SPAM_STATE_MAX_VIEWERS),
+            ),
+            env_name="COMMENT_SPAM_STATE_MAX_VIEWERS",
+            minimum=100,
+            maximum=100_000,
+        ),
+        host_lease_grace_seconds=_parse_positive_int(
+            os.getenv(
+                "HOST_LEASE_GRACE_SECONDS",
+                str(DEFAULT_HOST_LEASE_GRACE_SECONDS),
+            ),
+            env_name="HOST_LEASE_GRACE_SECONDS",
+            minimum=30,
+            maximum=3600,
+        ),
     )
 
 

@@ -4,7 +4,24 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin_dataset_export_batches, admin_intent_corrections, chat, comments, health, intent_corrections, internal_ml_retrain, nlp, product_vision, sessions
+from app.api import (
+    admin_dataset_export_batches,
+    admin_intent_corrections,
+    adult_moderation,
+    chat,
+    comments,
+    firearm_onnx,
+    firearm_yolox,
+    health,
+    intent_corrections,
+    internal_ml_retrain,
+    live_sessions,
+    nlp,
+    nsfw,
+    weapon,
+    product_vision,
+    sessions,
+)
 from app.settings import ChatPersistenceMode, get_settings
 
 logger = logging.getLogger(__name__)
@@ -71,7 +88,13 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api")
 app.include_router(nlp.router, prefix="/api")
 app.include_router(product_vision.router, prefix="/api")
+app.include_router(nsfw.router, prefix="/api")
+app.include_router(adult_moderation.router, prefix="/api")
+app.include_router(weapon.router, prefix="/api")
+app.include_router(firearm_onnx.router, prefix="/api")
+app.include_router(firearm_yolox.router, prefix="/api")
 app.include_router(sessions.router, prefix="/api")
+app.include_router(live_sessions.router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
 app.include_router(intent_corrections.router, prefix="/api")
 app.include_router(admin_intent_corrections.router, prefix="/api")

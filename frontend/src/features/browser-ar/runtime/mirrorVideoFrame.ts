@@ -1,5 +1,20 @@
 import type { ArDetectionResult } from "../types";
 
+export function drawVideoFrame(
+  context: CanvasRenderingContext2D,
+  video: HTMLVideoElement,
+  width: number,
+  height: number,
+  mirrored: boolean,
+): void {
+  if (mirrored) {
+    drawMirroredVideoFrame(context, video, width, height);
+    return;
+  }
+
+  context.drawImage(video, 0, 0, width, height);
+}
+
 /** Draw webcam frame mirrored horizontally (selfie preview). */
 export function drawMirroredVideoFrame(
   context: CanvasRenderingContext2D,

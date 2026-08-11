@@ -10,7 +10,7 @@ function t(key: TranslationKey, params?: Record<string, string | number>) {
 
 describe("formatChatIntentLabel", () => {
   it("maps ML intent labels to Vietnamese translations", () => {
-    expect(formatIntentLabel("COMPLAINT", t)).toBe("Khiếu nại");
+    expect(formatIntentLabel("COMPLAINT", t)).toBe("Phàn nàn");
     expect(formatIntentLabel("PURCHASE_INTENT", t)).toBe("Muốn mua");
     expect(formatIntentLabel("ASK_PRICE", t)).toBe("Hỏi giá");
     expect(formatIntentLabel("ASK_VARIANT", t)).toBe("Hỏi màu/biến thể");

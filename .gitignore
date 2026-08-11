@@ -11,6 +11,14 @@ logs/
 .env
 .env.local
 
+# Local demo orchestration state/logs (Start-LocalDemo.ps1)
+.local/
+
+# Generated export / audit payloads (never commit)
+backend/dataset_exports/
+docs/_dataset_audit_stats.json
+docs/_perf_baseline_raw.json
+
 .idea/
 .vscode/
 

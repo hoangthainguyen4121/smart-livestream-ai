@@ -26,14 +26,25 @@ export type ChatMessageEvent = ChatMessage & {
 export type ChatErrorEvent = {
   type: "error";
   message: string;
+  code?: string;
+  retry_after_seconds?: number;
 };
 
-export type ChatEvent = ChatHistoryEvent | ChatMessageEvent | ChatErrorEvent;
+export type LiveSessionEndedEvent = {
+  type: "live_session_ended";
+  reason: string;
+  session_id?: string;
+  room_id?: string;
+  ended_at?: string | null;
+};
+
+export type ChatEvent = ChatHistoryEvent | ChatMessageEvent | ChatErrorEvent | LiveSessionEndedEvent;
 
 export type OutgoingChatMessage = {
   type: "chat_message";
   author: string;
   text: string;
+  viewer_key?: string;
 };
 
 export type OutgoingAssistantChatMessage = {
@@ -59,12 +70,20 @@ export function createChatSocket(roomId: string) {
   return new WebSocket(`${getWebSocketBaseUrl()}/ws/chat/${encodeURIComponent(roomId)}`);
 }
 
-export function createOutgoingChatMessage(author: string, text: string): OutgoingChatMessage {
-  return {
+export function createOutgoingChatMessage(
+  author: string,
+  text: string,
+  viewerKey?: string,
+): OutgoingChatMessage {
+  const payload: OutgoingChatMessage = {
     type: "chat_message",
     author,
     text,
   };
+  if (viewerKey) {
+    payload.viewer_key = viewerKey;
+  }
+  return payload;
 }
 
 function parseCommerceActions(value: unknown): CommerceSuggestedAction[] | undefined {

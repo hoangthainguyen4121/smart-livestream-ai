@@ -1,0 +1,86 @@
+"""Firearm ONNX A/B spike API — warning-only, no auto-terminate."""
+
+from __future__ import annotations
+
+from typing import Any, List, Optional
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
+
+from app.services.firearm_onnx_detector_service import (
+    firearm_onnx_detector_service,
+    is_firearm_onnx_enabled,
+)
+
+router = APIRouter(prefix="/weapon/firearm-onnx", tags=["firearm-onnx-ab"])
+
+
+class FirearmDetectRequest(BaseModel):
+    imageBase64: str = Field(min_length=16, max_length=8_000_000)
+    clientTimestampMs: Optional[int] = Field(default=None, ge=0)
+
+
+class FirearmDetectionOut(BaseModel):
+    label: str
+    score: float
+    box: List[float]
+
+
+class FirearmDetectResponse(BaseModel):
+    detections: List[FirearmDetectionOut]
+    model_id: str
+    model_revision: str
+    inference_ms: float
+    detector: str = "firearm_onnx"
+    prompt: str = ""
+    top_score: float = 0.0
+    conf_threshold: float = 0.65
+    stores_violation_images: bool = False
+    auto_terminates_session: bool = False
+
+
+def _require_enabled() -> None:
+    if not is_firearm_onnx_enabled():
+        raise HTTPException(status_code=503, detail="firearm_onnx_disabled")
+
+
+@router.get("/status")
+def firearm_onnx_status() -> dict[str, Any]:
+    return firearm_onnx_detector_service.status()
+
+
+@router.post("/detect-frame", response_model=FirearmDetectResponse)
+async def detect_frame(request: FirearmDetectRequest) -> FirearmDetectResponse:
+    _require_enabled()
+    try:
+        result = await run_in_threadpool(
+            firearm_onnx_detector_service.detect_image_base64,
+            request.imageBase64,
+        )
+    except RuntimeError as exc:
+        detail = str(exc)
+        if detail.startswith("firearm_onnx_"):
+            raise HTTPException(status_code=503, detail=detail) from exc
+        raise HTTPException(status_code=500, detail=detail) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=400,
+            detail=f"firearm_onnx_detect_failed: {type(exc).__name__}: {exc}",
+        ) from exc
+
+    return FirearmDetectResponse(
+        detections=[
+            FirearmDetectionOut(label=item.label, score=item.score, box=item.box)
+            for item in result.detections
+        ],
+        model_id=result.model_id,
+        model_revision=result.model_revision,
+        inference_ms=result.inference_ms,
+        detector=result.detector,
+        prompt="",
+        top_score=result.top_score,
+        conf_threshold=result.conf_threshold,
+        stores_violation_images=False,
+        auto_terminates_session=False,
+    )

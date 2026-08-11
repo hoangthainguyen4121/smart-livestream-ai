@@ -1,0 +1,11 @@
+# Optional — Firearm ONNX A/B spike (Subh775/Firearm_Detection_Yolov8n → ONNX Runtime).
+# Inference does NOT import ultralytics (AGPL). One-time export may use ultralytics.
+#   pip install -r requirements-firearm-onnx.txt
+# Cache OUTSIDE the project:
+#   FIREARM_ONNX_CACHE_DIR=%USERPROFILE%\.cache\smart-livestream-firearm-onnx
+# Prepare ONNX once:
+#   python scripts/export_firearm_onnx.py
+onnxruntime>=1.16.0
+numpy
+pillow
+huggingface_hub

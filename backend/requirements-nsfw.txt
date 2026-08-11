@@ -1,0 +1,10 @@
+# Optional — Adult/NSFW frame-gate (Falconsai ViT).
+# Install after base requirements:
+#   pip install -r requirements-nsfw.txt
+# Model weights are NOT stored in this repo. Point cache outside the project:
+#   NSFW_MODEL_CACHE_DIR=C:\Users\<you>\.cache\smart-livestream-nsfw
+#   or HF_HOME / TRANSFORMERS_CACHE
+torch
+transformers>=4.31.0,<5
+safetensors
+pillow

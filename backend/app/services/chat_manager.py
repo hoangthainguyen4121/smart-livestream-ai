@@ -109,8 +109,20 @@ class ChatManager:
             "type": "chat_message",
             **message.to_dict(),
         }
+        await self.broadcast_event(room_id, event)
+        return message
+
+    async def broadcast_event(
+        self,
+        room_id: str,
+        event: dict[str, Any],
+        *,
+        exclude: WebSocket | None = None,
+    ) -> None:
         disconnected: list[WebSocket] = []
         for websocket in list(self._connections[room_id]):
+            if exclude is not None and websocket is exclude:
+                continue
             try:
                 await websocket.send_json(event)
             except RuntimeError:
@@ -119,7 +131,13 @@ class ChatManager:
         for websocket in disconnected:
             self.disconnect(room_id, websocket)
 
-        return message
+    async def send_to_websocket(self, room_id: str, websocket: WebSocket, event: dict[str, Any]) -> bool:
+        try:
+            await websocket.send_json(event)
+            return True
+        except RuntimeError:
+            self.disconnect(room_id, websocket)
+            return False
 
     def _create_message(self, room_id: str, payload: dict[str, Any]) -> ChatMessage:
         author = self._validate_text_field(

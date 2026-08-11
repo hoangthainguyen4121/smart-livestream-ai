@@ -1,14 +1,54 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatPanel, type ChatPanelHandle } from "../components/ChatPanel";
+import {
+  endLiveSession,
+  getCurrentLiveSession,
+  reclaimHost,
+  reportModerationViolation,
+  startLiveSession,
+} from "../api/liveSessions";
+import { navigateHash, roomsPath } from "../routing/hashRoute";
 import { AuthStatusPanel } from "../features/auth/AuthStatusPanel";
 import { useOptionalAuth } from "../features/auth/useOptionalAuth";
 import { BrowserArStream, type BrowserArStreamHandle } from "../features/browser-ar/components/BrowserArStream";
+import {
+  resolveStreamDisplayStatus,
+  type VideoCaptureSource,
+} from "../features/browser-ar/runtime/videoCaptureSource";
+import { isLocalHostForRoom, markRoomAsHosted } from "../features/live-rooms/hostedRooms";
+import {
+  clearHostResumeToken,
+  getHostResumeToken,
+} from "../features/live-rooms/hostResumeToken";
+import { useHostPresence } from "../features/live-rooms/useHostPresence";
+import {
+  resolveMediaIdlePlaceholder,
+  resolveMediaStatusPresentation,
+  resolveRoomSessionBadge,
+} from "../features/live-rooms/roomPresentation";
 import { useProductVisionRecognition } from "../features/hand-held-vision/useProductVisionRecognition";
+import { ObjectDetectorDetectionList } from "../features/object-detector/ObjectDetectorDetectionList";
 import { ObjectDetectorOverlay } from "../features/object-detector/ObjectDetectorOverlay";
 import { useObjectDetectorOverlay } from "../features/object-detector/useObjectDetectorOverlay";
+import { useSharpObjectEnforcement } from "../features/object-detector/useSharpObjectEnforcement";
+import { useVisualModeration } from "../features/object-detector/useVisualModeration";
+import { VisualModerationBanner } from "../features/object-detector/VisualModerationBanner";
+import {
+  VISUAL_VIOLATION_STRIKE_LIMIT,
+  applyVisualViolationChannels,
+  createVisualViolationStrikeState,
+  isAdultViolationActive,
+  isGunViolationActive,
+  isSharpViolationActive,
+  type VisualViolationStrikeState,
+} from "../features/object-detector/visualViolationStrikes";
+import { useAdultModeration } from "../features/adult-moderation/useAdultModeration";
+import { useDemoGunDetector } from "../features/weapon-frame-gate/useDemoGunDetector";
+import { WeaponDetectorOverlay } from "../features/weapon-frame-gate/WeaponDetectorOverlay";
 import { type BrowserArEffect } from "../features/browser-ar/types";
 import {
+  CartDrawerButton,
   CartPanel,
   CheckoutModal,
   OrderSummary,
@@ -22,13 +62,11 @@ import {
 } from "../features/product-catalog";
 import { ProductCatalogPanel } from "../features/product-catalog/components/ProductCatalogPanel";
 import { PinnedProductPanel } from "../features/sales-assistant/PinnedProductPanel";
-import { ProductContextControl } from "../features/sales-assistant/ProductContextControl";
 import { buildAssistantChatMessage } from "../features/sales-assistant/assistantChatMessages";
 import { processSalesCommentWithMl, shouldAutoReplyInChat } from "../features/sales-assistant/processSalesComment";
 import type { ChatMlIntentBadge } from "../features/sales-nlp/mlIntentBridge";
 import { buildCommentCorrectionContext } from "../features/intent-correction/buildCommentCorrectionContext";
 import type { CommentCorrectionContext } from "../features/intent-correction/intentCorrectionTypes";
-import type { ProductContextSource } from "../features/sales-nlp/salesNlpTypes";
 import { SalesAssistantPanel } from "../features/sales-assistant/SalesAssistantPanel";
 import {
   createInitialAnalytics,
@@ -36,27 +74,45 @@ import {
   type SalesAssistantEvent,
 } from "../features/sales-assistant/salesAssistantTypes";
 import { useI18n } from "../i18n/I18nProvider";
+import { RemoteLiveVideo } from "../features/webrtc/RemoteLiveVideo";
+import { useHostWebRtcPublisher } from "../features/webrtc/useHostWebRtcPublisher";
+import { useViewerWebRtcPlayer } from "../features/webrtc/useViewerWebRtcPlayer";
 
 
 const HOST_USERNAME = "hoang";
 const GUEST_DISPLAY_NAME = "guest";
-const DEMO_ROOM_ID = "demo";
 
 const AR_EFFECTS: BrowserArEffect[] = ["none", "glasses", "makeup_lite", "full_filter"];
 
-export function DemoPage() {
-  const { t, locale, setLocale } = useI18n();
+type DemoPageProps = {
+  roomId: string;
+};
+
+export function DemoPage({ roomId }: DemoPageProps) {
+  const { t, locale } = useI18n();
+  const [roomName, setRoomName] = useState(roomId);
+  const [roomLoadState, setRoomLoadState] = useState<"loading" | "ready" | "ended" | "error">(
+    "loading",
+  );
+  const [roomLoadError, setRoomLoadError] = useState<string | null>(null);
   const [isStreamLive, setIsStreamLive] = useState(false);
+  const [videoSource, setVideoSource] = useState<VideoCaptureSource>("camera");
   const [streamDurationSeconds, setStreamDurationSeconds] = useState(0);
   const [liveSessionKey, setLiveSessionKey] = useState(0);
+  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
+  const [sessionTerminated, setSessionTerminated] = useState(false);
+  const [sessionStartError, setSessionStartError] = useState<string | null>(null);
   const [sessionViewerCount, setSessionViewerCount] = useState(0);
   const [sessionMessageCount, setSessionMessageCount] = useState(0);
   const [pinnedProductId, setPinnedProductId] = useState<string | null>(DEFAULT_PINNED_PRODUCT_ID);
-  const [cameraProductId, setCameraProductId] = useState<string | null>(null);
-  const [lastContextSource, setLastContextSource] = useState<ProductContextSource | null>(null);
-  const [effect, setEffect] = useState<BrowserArEffect>("glasses");
+  const [effect, setEffect] = useState<BrowserArEffect>("none");
   const [debugOverlay, setDebugOverlay] = useState(false);
   const [objectDetectorEnabled, setObjectDetectorEnabled] = useState(false);
+  const [violationStrikes, setViolationStrikes] = useState<VisualViolationStrikeState>(
+    createVisualViolationStrikeState,
+  );
+  const [violationModalOpen, setViolationModalOpen] = useState(false);
+  const violationEndRequestedRef = useRef(false);
   const [salesEvents, setSalesEvents] = useState<SalesAssistantEvent[]>([]);
   const [salesAnalytics, setSalesAnalytics] = useState<SalesAssistantAnalytics>(
     createInitialAnalytics(),
@@ -71,15 +127,20 @@ export function DemoPage() {
     Record<string, boolean>
   >({});
   const auth = useOptionalAuth();
+  const [isHost, setIsHost] = useState(
+    () => isLocalHostForRoom(roomId) || Boolean(getHostResumeToken(roomId)),
+  );
   const salesAnalyticsRef = useRef(salesAnalytics);
   const isStreamLiveRef = useRef(isStreamLive);
+  const sessionTerminatedRef = useRef(sessionTerminated);
   const sessionViewerAuthorsRef = useRef<Set<string>>(new Set());
-  const cartPanelRef = useRef<HTMLElement>(null);
+  const [cartOpen, setCartOpen] = useState(false);
   const browserArRef = useRef<BrowserArStreamHandle | null>(null);
   const chatPanelRef = useRef<ChatPanelHandle | null>(null);
 
   salesAnalyticsRef.current = salesAnalytics;
   isStreamLiveRef.current = isStreamLive;
+  sessionTerminatedRef.current = sessionTerminated;
 
   const effectLabels = useMemo(
     () => ({
@@ -91,20 +152,116 @@ export function DemoPage() {
     [t],
   );
 
-  const scrollToCart = useCallback(() => {
-    cartPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  const streamDisplayStatus = resolveStreamDisplayStatus(isStreamLive, videoSource);
+  const roomBadge = resolveRoomSessionBadge(sessionTerminated ? "ended" : "active");
+  const mediaIdlePlaceholder = t(resolveMediaIdlePlaceholder(isHost));
+
+  useHostWebRtcPublisher({
+    roomId,
+    isHost: isHost && roomLoadState === "ready" && !sessionTerminated,
+    mediaEnabled: isStreamLive,
+    getCanvas: () => browserArRef.current?.getCanvasElement() ?? null,
+    getSourceStream: () => browserArRef.current?.getSourceMediaStream() ?? null,
+  });
+
+  useHostPresence({
+    roomId,
+    sessionId: liveSessionId,
+    enabled: isHost && roomLoadState === "ready" && !sessionTerminated,
+    mediaLive: isStreamLive,
+  });
+
+  const viewerLive = useViewerWebRtcPlayer({
+    roomId,
+    enabled: !isHost && roomLoadState === "ready" && !sessionTerminated,
+  });
+
+  const mediaStatusLabel = isHost
+    ? t(resolveMediaStatusPresentation(streamDisplayStatus).labelKey)
+    : viewerLive.mediaState === "live"
+      ? t("streamStatusCamera")
+      : viewerLive.mediaState === "host_stopped"
+        ? t("mediaHostStoppedPlaceholder")
+        : t("mediaStatusIdle");
+
+  const viewerPlaceholder = sessionTerminated
+    ? t("roomsRoomEnded")
+    : viewerLive.mediaState === "host_stopped"
+      ? t("mediaHostStoppedPlaceholder")
+      : t("mediaIdlePlaceholderViewer");
+
+  const openCart = useCallback(() => {
+    setCartOpen(true);
   }, []);
 
-  const cart = useCommerceCart({ onOpenCart: scrollToCart });
+  const closeCart = useCallback(() => {
+    setCartOpen(false);
+  }, []);
+
+  const cart = useCommerceCart({ onOpenCart: openCart });
+
+  useEffect(() => {
+    let cancelled = false;
+    setRoomLoadState("loading");
+    setRoomLoadError(null);
+
+    void (async () => {
+      try {
+        const token = getHostResumeToken(roomId);
+        if (token) {
+          try {
+            const reclaimed = await reclaimHost(roomId, token);
+            if (cancelled) {
+              return;
+            }
+            markRoomAsHosted(roomId);
+            setIsHost(true);
+            setLiveSessionId(reclaimed.id);
+            setRoomName(reclaimed.name?.trim() || roomId);
+            setSessionTerminated(false);
+            setRoomLoadState("ready");
+            return;
+          } catch {
+            // Token invalid or lease expired — fall through as viewer/ended.
+            clearHostResumeToken(roomId);
+            setIsHost(false);
+          }
+        } else {
+          setIsHost(isLocalHostForRoom(roomId));
+        }
+
+        const session = await getCurrentLiveSession(roomId);
+        if (cancelled) {
+          return;
+        }
+        if (!session) {
+          setRoomLoadState("ended");
+          setLiveSessionId(null);
+          return;
+        }
+        setLiveSessionId(session.id);
+        setRoomName(session.name?.trim() || roomId);
+        setSessionTerminated(false);
+        setRoomLoadState("ready");
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        setRoomLoadState("error");
+        setRoomLoadError(
+          error instanceof Error ? error.message : t("roomsRoomLoadError"),
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, t]);
 
   const pinnedProduct = useMemo(
     () => (pinnedProductId ? getProductById(pinnedProductId) ?? null : null),
     [pinnedProductId],
-  );
-
-  const cameraProduct = useMemo(
-    () => (cameraProductId ? getProductById(cameraProductId) ?? null : null),
-    [cameraProductId],
   );
 
   const captureFrame = useCallback(() => browserArRef.current?.captureFrame() ?? null, []);
@@ -112,27 +269,125 @@ export function DemoPage() {
   const getCanvasElement = useCallback(() => browserArRef.current?.getCanvasElement() ?? null, []);
 
   const objectDetector = useObjectDetectorOverlay({
-    enabled: objectDetectorEnabled,
-    isLive: isStreamLive,
+    enabled: objectDetectorEnabled && !sessionTerminated,
+    isLive: isStreamLive && !sessionTerminated,
+    videoSource,
     getCanvasElement,
   });
 
+  const visualModeration = useVisualModeration({
+    enabled: objectDetectorEnabled && !sessionTerminated,
+    isActive: objectDetector.isActive && !sessionTerminated,
+    detections: objectDetector.snapshot.allDetections,
+  });
+
+  const applyBackendSessionEnded = useCallback((reason: string) => {
+    setSessionTerminated(true);
+    setIsStreamLive(false);
+    setVideoSource("camera");
+    setStreamDurationSeconds(0);
+    setObjectDetectorEnabled(false);
+    setLiveSessionId(null);
+    setRoomLoadState("ended");
+    setSessionStartError(
+      reason === "visual_moderation_violation" ? null : reason,
+    );
+  }, []);
+
+  const handleSharpObjectTerminate = useCallback(
+    async (payload: {
+      label: "knife" | "scissors";
+      confidence: number;
+      evidenceCount: number;
+      windowMs: number;
+    }) => {
+      if (!liveSessionId) {
+        return;
+      }
+      try {
+        const ended = await reportModerationViolation(liveSessionId, {
+          code: "sharp_object_detected",
+          label: payload.label,
+          confidence: payload.confidence,
+          evidence_count: payload.evidenceCount,
+          window_ms: payload.windowMs,
+          detected_at: new Date().toISOString(),
+        });
+        applyBackendSessionEnded(ended.ended_reason ?? "visual_moderation_violation");
+      } catch (error) {
+        setSessionStartError(
+          error instanceof Error ? error.message : t("visualModerationTerminateFailed"),
+        );
+      }
+    },
+    [applyBackendSessionEnded, liveSessionId, t],
+  );
+
+  const sharpObjectEnforcement = useSharpObjectEnforcement({
+    enabled: objectDetectorEnabled && !sessionTerminated,
+    isActive: objectDetector.isActive && !sessionTerminated,
+    detections: objectDetector.snapshot.allDetections,
+    snapshotUpdatedAt: objectDetector.snapshot.updatedAt,
+    sessionId: liveSessionId,
+    terminated: sessionTerminated,
+    onTerminate: (payload) => {
+      void handleSharpObjectTerminate(payload);
+    },
+  });
+
+  // Adult moderation: suggestive (viddexa) + Falconsai explicit — warning only.
+  const adultGate = useAdultModeration({
+    enabled: objectDetectorEnabled && !sessionTerminated,
+    isLive: isStreamLive && !sessionTerminated,
+    getCanvasElement,
+  });
+
+  // Gun: Subh775 ONNX → YOLOX → DINO (local/thesis). YOLOX A/B only — live boxes noisy @0.02.
+  const weaponGate = useDemoGunDetector({
+    enabled: objectDetectorEnabled && !sessionTerminated,
+    isLive: isStreamLive && !sessionTerminated,
+    getCanvasElement,
+  });
+
+  useEffect(() => {
+    if (!objectDetectorEnabled || sessionTerminated) {
+      setViolationStrikes(createVisualViolationStrikeState());
+      violationEndRequestedRef.current = false;
+      return undefined;
+    }
+
+    const readChannels = () => ({
+      adult: isAdultViolationActive(adultGate.result.state),
+      gun: isGunViolationActive(weaponGate.result.state),
+      sharp: isSharpViolationActive(sharpObjectEnforcement.result.action),
+    });
+
+    const tick = () => {
+      const nextChannels = readChannels();
+      setViolationStrikes((previous) =>
+        applyVisualViolationChannels(previous, nextChannels, Date.now()),
+      );
+    };
+
+    tick();
+    const intervalId = window.setInterval(tick, 500);
+    return () => window.clearInterval(intervalId);
+  }, [
+    objectDetectorEnabled,
+    sessionTerminated,
+    adultGate.result.state,
+    weaponGate.result.state,
+    sharpObjectEnforcement.result.action,
+  ]);
+
   const cameraRecognition = useProductVisionRecognition({
-    isLive: isStreamLive,
+    isLive: isStreamLive && videoSource === "camera",
     catalog: getAllProducts(),
     captureFrame,
     getVideoElement,
   });
 
   const chatAuthor = auth.user?.displayName ?? GUEST_DISPLAY_NAME;
-
-  const activeVisionProduct = useMemo(
-    () =>
-      cameraRecognition.activeVisionProductId
-        ? getProductById(cameraRecognition.activeVisionProductId) ?? null
-        : null,
-    [cameraRecognition.activeVisionProductId],
-  );
 
   const resetLiveSessionState = useCallback(() => {
     sessionViewerAuthorsRef.current = new Set();
@@ -143,7 +398,6 @@ export function DemoPage() {
     setMlIntentBadgesByMessageId({});
     setCorrectionContextByMessageId({});
     setSubmittedCorrectionMessageIds({});
-    setLastContextSource(null);
     setLiveSessionKey((value) => value + 1);
   }, []);
 
@@ -174,17 +428,164 @@ export function DemoPage() {
     setPinnedProductId(null);
   }
 
-  function handleStartStream() {
-    resetLiveSessionState();
-    setStreamDurationSeconds(0);
-    setIsStreamLive(true);
+  async function ensureLiveSessionStarted() {
+    if (liveSessionId && !sessionTerminated) {
+      return liveSessionId;
+    }
+    const session = await startLiveSession(roomId);
+    if (session.status !== "active") {
+      throw new Error(t("visualModerationSessionNotActive"));
+    }
+    setLiveSessionId(session.id);
+    setSessionTerminated(false);
+    setSessionStartError(null);
+    return session.id;
   }
 
-  function handleStopStream() {
-    setIsStreamLive(false);
-    setStreamDurationSeconds(0);
-    resetLiveSessionState();
+  async function handleStartCamera() {
+    if (!isHost || sessionTerminated) {
+      return;
+    }
+    if (!isStreamLive) {
+      resetLiveSessionState();
+      setStreamDurationSeconds(0);
+    }
+    try {
+      await ensureLiveSessionStarted();
+      setVideoSource("camera");
+      setIsStreamLive(true);
+      setSessionTerminated(false);
+    } catch (error) {
+      setSessionStartError(
+        error instanceof Error ? error.message : t("visualModerationSessionStartFailed"),
+      );
+    }
   }
+
+  async function handleShareScreen() {
+    if (!isHost || sessionTerminated) {
+      return;
+    }
+    if (!isStreamLive) {
+      resetLiveSessionState();
+      setStreamDurationSeconds(0);
+    }
+    try {
+      await ensureLiveSessionStarted();
+      setVideoSource("screen");
+      setIsStreamLive(true);
+      setSessionTerminated(false);
+    } catch (error) {
+      setSessionStartError(
+        error instanceof Error ? error.message : t("visualModerationSessionStartFailed"),
+      );
+    }
+  }
+
+  function handleStopSharing() {
+    if (sessionTerminated || !isHost) {
+      return;
+    }
+    if (isStreamLive && videoSource === "screen") {
+      setVideoSource("camera");
+    }
+  }
+
+  /** Stops local MediaStream only. Room/session stays ACTIVE. */
+  function handleStopMedia() {
+    if (sessionTerminated || !isHost) {
+      return;
+    }
+    setIsStreamLive(false);
+    setVideoSource("camera");
+    setStreamDurationSeconds(0);
+    setObjectDetectorEnabled(false);
+  }
+
+  /** Explicitly ends backend livestream session. */
+  const handleEndLivestream = useCallback(
+    (options?: { deferEndedUi?: boolean }) => {
+      if (!isHost || sessionTerminated) {
+        return;
+      }
+      const deferEndedUi = options?.deferEndedUi === true;
+      const sessionId = liveSessionId;
+      setIsStreamLive(false);
+      setVideoSource("camera");
+      setStreamDurationSeconds(0);
+      setObjectDetectorEnabled(false);
+      if (!sessionId) {
+        setSessionTerminated(true);
+        if (!deferEndedUi) {
+          setRoomLoadState("ended");
+        }
+        return;
+      }
+      void endLiveSession(sessionId)
+        .then(() => {
+          clearHostResumeToken(roomId);
+          setLiveSessionId(null);
+          setSessionTerminated(true);
+          if (!deferEndedUi) {
+            setRoomLoadState("ended");
+          }
+          resetLiveSessionState();
+        })
+        .catch((error) => {
+          setSessionStartError(
+            error instanceof Error ? error.message : t("visualModerationTerminateFailed"),
+          );
+        });
+    },
+    [isHost, sessionTerminated, liveSessionId, roomId, resetLiveSessionState, t],
+  );
+
+  const dismissViolationModal = useCallback(() => {
+    setViolationModalOpen(false);
+    // After 5/5 popup, switch to the ended-room screen (stream already stopped).
+    setRoomLoadState("ended");
+  }, []);
+
+  useEffect(() => {
+    if (
+      !violationStrikes.limitReached ||
+      violationEndRequestedRef.current ||
+      sessionTerminated ||
+      !isHost
+    ) {
+      return;
+    }
+    violationEndRequestedRef.current = true;
+    setViolationModalOpen(true);
+    // Keep room UI mounted so the violation modal is visible until dismissed.
+    handleEndLivestream({ deferEndedUi: true });
+  }, [violationStrikes.limitReached, sessionTerminated, isHost, handleEndLivestream]);
+
+  function handleBackToRooms() {
+    setIsStreamLive(false);
+    setVideoSource("camera");
+    setObjectDetectorEnabled(false);
+    navigateHash(roomsPath());
+  }
+
+  const handleLiveSessionEnded = useCallback(
+    (payload: { reason: string; sessionId?: string }) => {
+      applyBackendSessionEnded(payload.reason);
+    },
+    [applyBackendSessionEnded],
+  );
+
+  const handleScreenShareEnded = useCallback(() => {
+    if (isStreamLiveRef.current) {
+      setVideoSource("camera");
+    }
+  }, []);
+
+  const handleStreamStartFailed = useCallback(() => {
+    setIsStreamLive(false);
+    setVideoSource("camera");
+    setStreamDurationSeconds(0);
+  }, []);
 
   const handleViewerMessageSent = useCallback(
     async ({
@@ -198,7 +599,8 @@ export function DemoPage() {
       text: string;
       createdAt: string;
     }) => {
-      if (!isStreamLiveRef.current) {
+      // Chat/NLP follow room session, not local camera media state.
+      if (sessionTerminatedRef.current) {
         return;
       }
 
@@ -212,7 +614,7 @@ export function DemoPage() {
           viewerAuthor: author,
           pinnedProduct,
           catalog: getAllProducts(),
-          selectedCameraProductId: cameraProductId,
+          selectedCameraProductId: null,
           detectedCameraProductId: cameraRecognition.activeVisionProductId,
           detectedCameraConfidence: cameraRecognition.detection.match?.confidence ?? null,
           autoReplyInChat: true,
@@ -230,7 +632,7 @@ export function DemoPage() {
       const correctionContext = buildCommentCorrectionContext(
         {
           id: messageId,
-          room_id: DEMO_ROOM_ID,
+          room_id: roomId,
           author,
           text,
           created_at: createdAt,
@@ -250,7 +652,6 @@ export function DemoPage() {
         return;
       }
 
-      setLastContextSource(result.event.contextSource);
       setSalesEvents((currentEvents) => [result.event!, ...currentEvents]);
 
       if (shouldAutoReplyInChat(result.event)) {
@@ -258,16 +659,62 @@ export function DemoPage() {
           id: messageId,
           author,
           text,
-          room_id: DEMO_ROOM_ID,
+          room_id: roomId,
         });
         chatPanelRef.current?.sendAssistantMessage(assistantMessage);
       }
     },
-    [cameraProductId, cameraRecognition.activeVisionProductId, cameraRecognition.detection.match, pinnedProduct],
+    [cameraRecognition.activeVisionProductId, cameraRecognition.detection.match, pinnedProduct, roomId],
   );
 
-  function toggleLocale() {
-    setLocale(locale === "vi" ? "en" : "vi");
+  if (roomLoadState === "loading") {
+    return (
+      <main className="page">
+        <div className="liveRoomsState">
+          <p>{t("roomsRoomLoading")}</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (roomLoadState === "ended" || roomLoadState === "error") {
+    return (
+      <main className="page">
+        <div className="liveRoomsState">
+          <h1>{roomName}</h1>
+          <p>{roomLoadState === "ended" ? t("roomsRoomEnded") : roomLoadError}</p>
+          <button type="button" className="liveRoomsCreateButton" onClick={handleBackToRooms}>
+            {t("roomsBackToList")}
+          </button>
+        </div>
+        {violationModalOpen ? (
+          <div className="liveRoomsModalBackdrop" role="presentation">
+            <div
+              className="liveRoomsModal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="visual-violation-modal-title"
+            >
+              <h2 id="visual-violation-modal-title">{t("visualViolationModalTitle")}</h2>
+              <p>
+                {t("visualViolationModalBody", {
+                  limit: VISUAL_VIOLATION_STRIKE_LIMIT,
+                })}
+              </p>
+              <div className="liveRoomsModalActions">
+                <button
+                  type="button"
+                  className="liveRoomsCreateButton"
+                  onClick={dismissViolationModal}
+                >
+                  {t("visualViolationModalConfirm")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </main>
+    );
   }
 
   return (
@@ -277,73 +724,110 @@ export function DemoPage() {
           <header className="streamHeader">
             <div className="streamHeaderMain">
               <p className="eyebrow">{t("appEyebrow")}</p>
-              <h1>{t("appTitle")}</h1>
+              <h1>{roomName}</h1>
               <p className="streamMeta">
-                {t("appMeta", { host: HOST_USERNAME })}
+                {t("appMeta", { host: HOST_USERNAME })} · {roomId}
               </p>
               <div className="streamHeaderActions">
-                {!isStreamLive ? (
-                  <button
-                    type="button"
-                    className="streamControlButton streamControlButtonStart"
-                    onClick={handleStartStream}
-                  >
-                    <StartLiveIcon />
-                    {t("startStream")}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="streamControlButton streamControlButtonStop"
-                    onClick={handleStopStream}
-                  >
-                    <StopLiveIcon />
-                    {t("stopStream")}
-                  </button>
-                )}
-                <button type="button" className="langToggleButton" onClick={toggleLocale}>
-                  {locale === "vi" ? t("langToggle") : t("langToggleVi")}
+                <button type="button" className="streamControlButton" onClick={handleBackToRooms}>
+                  <RoomsListIcon />
+                  {t("roomsBackToList")}
                 </button>
+                {isHost ? (
+                  <>
+                    <div className="streamControlGroup" role="group" aria-label={t("startCamera")}>
+                      <button
+                        type="button"
+                        className="streamControlButton streamControlButtonPrimary"
+                        onClick={() => {
+                          void handleStartCamera();
+                        }}
+                        disabled={sessionTerminated || (isStreamLive && videoSource === "camera")}
+                      >
+                        <StartLiveIcon />
+                        {t("startCamera")}
+                      </button>
+                      <button
+                        type="button"
+                        className="streamControlButton"
+                        onClick={handleStopMedia}
+                        disabled={sessionTerminated || !isStreamLive}
+                      >
+                        {t("stopMedia")}
+                      </button>
+                    </div>
+                    <div className="streamControlGroup" role="group" aria-label={t("shareScreen")}>
+                      <button
+                        type="button"
+                        className="streamControlButton"
+                        onClick={() => {
+                          void handleShareScreen();
+                        }}
+                        disabled={sessionTerminated || (isStreamLive && videoSource === "screen")}
+                      >
+                        {t("shareScreen")}
+                      </button>
+                      <button
+                        type="button"
+                        className="streamControlButton"
+                        onClick={handleStopSharing}
+                        disabled={sessionTerminated || !isStreamLive || videoSource !== "screen"}
+                      >
+                        {t("stopSharing")}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="streamControlButton streamControlButtonStop"
+                      onClick={() => handleEndLivestream()}
+                      disabled={sessionTerminated}
+                    >
+                      <StopLiveIcon />
+                      {t("stopStream")}
+                    </button>
+                  </>
+                ) : null}
               </div>
+              <p className="streamRoleHint">{isHost ? t("hostControlsHint") : t("viewerControlsHint")}</p>
             </div>
             <div className="streamStats">
-              <span className={isStreamLive ? "liveBadge" : "offlineBadge"}>
-                {isStreamLive ? t("live") : t("offline")}
-              </span>
+              <span className={roomBadge.className}>{t(roomBadge.labelKey)}</span>
+              <span className="streamSourceStatus">{mediaStatusLabel}</span>
               <span>{t("viewers", { count: sessionViewerCount })}</span>
               <span>{t("messages", { count: sessionMessageCount })}</span>
               <span>{formatDuration(streamDurationSeconds)}</span>
             </div>
           </header>
 
-          <section className="modeToggle" aria-label="Stream actions">
-            {AR_EFFECTS.map((entry) => (
+          {isHost ? (
+            <section className="modeToggle" aria-label="Stream actions">
+              {AR_EFFECTS.map((entry) => (
+                <button
+                  key={entry}
+                  type="button"
+                  className={effect === entry ? "active" : ""}
+                  onClick={() => setEffect(entry)}
+                >
+                  {effectLabels[entry]}
+                </button>
+              ))}
               <button
-                key={entry}
                 type="button"
-                className={effect === entry ? "active" : ""}
-                onClick={() => setEffect(entry)}
+                className={debugOverlay ? "active" : ""}
+                onClick={() => setDebugOverlay((value) => !value)}
               >
-                {effectLabels[entry]}
+                {t("debugOverlay")}
               </button>
-            ))}
-            <button
-              type="button"
-              className={debugOverlay ? "active" : ""}
-              onClick={() => setDebugOverlay((value) => !value)}
-            >
-              {t("debugOverlay")}
-            </button>
-            {isStreamLive ? (
               <button
                 type="button"
                 className={objectDetectorEnabled ? "active" : ""}
                 onClick={() => setObjectDetectorEnabled((value) => !value)}
+                disabled={sessionTerminated || !isStreamLive}
               >
                 {t("objectDetectorOverlay")}
               </button>
-            ) : null}
-          </section>
+            </section>
+          ) : null}
 
           <div className="streamMediaRow">
             <div className="videoCard">
@@ -353,35 +837,87 @@ export function DemoPage() {
               </div>
 
               <div className="browserArStreamWrap">
-                <BrowserArStream
-                  ref={browserArRef}
-                  isLive={isStreamLive}
-                  effect={effect}
-                  debugOverlay={debugOverlay}
-                  hostLabel={`@${HOST_USERNAME}`}
-                />
-                <ObjectDetectorOverlay
-                  enabled={objectDetectorEnabled}
-                  snapshot={objectDetector.snapshot}
-                />
+                {isHost ? (
+                  <>
+                    <BrowserArStream
+                      ref={browserArRef}
+                      isLive={isStreamLive}
+                      videoSource={videoSource}
+                      effect={effect}
+                      debugOverlay={debugOverlay}
+                      hostLabel={`@${HOST_USERNAME}`}
+                      idlePlaceholder={mediaIdlePlaceholder}
+                      onScreenShareEnded={handleScreenShareEnded}
+                      onStreamStartFailed={handleStreamStartFailed}
+                    />
+                    <ObjectDetectorOverlay
+                      enabled={objectDetector.isActive}
+                      snapshot={objectDetector.snapshot}
+                      getSourceCanvas={getCanvasElement}
+                    />
+                    <WeaponDetectorOverlay
+                      enabled={
+                        weaponGate.uiEnabled &&
+                        isStreamLive &&
+                        !sessionTerminated &&
+                        weaponGate.lastDetections.some((d) =>
+                          ["gun", "pistol", "rifle", "firearm"].includes(d.label),
+                        )
+                      }
+                      detections={weaponGate.lastDetections.filter((d) =>
+                        ["gun", "pistol", "rifle", "firearm"].includes(d.label),
+                      )}
+                      getSourceCanvas={getCanvasElement}
+                    />
+                  </>
+                ) : viewerLive.remoteStream ? (
+                  <RemoteLiveVideo stream={viewerLive.remoteStream} />
+                ) : (
+                  <div className="streamPlaceholder">{viewerPlaceholder}</div>
+                )}
               </div>
-              {objectDetectorEnabled && objectDetector.isLoading ? (
+              {isHost && objectDetectorEnabled && objectDetector.isLoading ? (
                 <p className="browserArHint">{t("objectDetectorLoading")}</p>
               ) : null}
-              {objectDetector.errorMessage ? (
+              {isHost && objectDetector.errorMessage ? (
                 <p className="error">{objectDetector.errorMessage}</p>
+              ) : null}
+              {isHost ? (
+                <ObjectDetectorDetectionList
+                  enabled={objectDetectorEnabled}
+                  status={objectDetector.status}
+                  snapshot={objectDetector.snapshot}
+                />
+              ) : null}
+              {sessionStartError ? <p className="error">{sessionStartError}</p> : null}
+              {isHost ? (
+                <VisualModerationBanner
+                  enabled={objectDetectorEnabled || sessionTerminated}
+                  result={visualModeration}
+                  enforcement={sharpObjectEnforcement.result}
+                  adultGate={adultGate}
+                  weaponGate={weaponGate}
+                  terminated={sessionTerminated}
+                  violationStrikeCount={violationStrikes.count}
+                  violationStrikeLimit={VISUAL_VIOLATION_STRIKE_LIMIT}
+                />
               ) : null}
             </div>
 
-            <PinnedProductPanel product={pinnedProduct} onUnpin={handleUnpinProduct} />
+            <PinnedProductPanel
+              product={pinnedProduct}
+              onUnpin={isHost ? handleUnpinProduct : undefined}
+            />
           </div>
 
-          <ProductCatalogPanel
-            compact
-            variant="host"
-            pinnedProductId={pinnedProductId ?? undefined}
-            onPinProduct={handlePinProduct}
-          />
+          {isHost ? (
+            <ProductCatalogPanel
+              compact
+              variant="host"
+              pinnedProductId={pinnedProductId ?? undefined}
+              onPinProduct={handlePinProduct}
+            />
+          ) : null}
 
           <ProductCatalogPanel
             variant="store"
@@ -390,50 +926,38 @@ export function DemoPage() {
             }}
           />
 
-          <SalesAssistantPanel
-            events={salesEvents}
-            analytics={salesAnalytics}
-            sessionCommentCount={sessionMessageCount}
-            onCommerceAction={cart.applySuggestedAction}
+          {isHost ? (
+            <SalesAssistantPanel
+              events={salesEvents}
+              analytics={salesAnalytics}
+              sessionCommentCount={sessionMessageCount}
+              onCommerceAction={cart.applySuggestedAction}
+            />
+          ) : null}
+
+          <CartDrawerButton itemCount={cart.itemCount} onClick={openCart} />
+          <CartPanel
+            open={cartOpen}
+            onClose={closeCart}
+            items={cart.items}
+            itemCount={cart.itemCount}
+            subtotal={cart.subtotal}
+            pinnedProductName={pinnedProduct?.name}
+            onAddPinnedProduct={
+              pinnedProduct ? () => cart.addPinnedProduct(pinnedProduct) : undefined
+            }
+            onRemoveItem={cart.removeLine}
+            onUpdateQuantity={cart.updateLineQuantity}
+            onCheckout={() => {
+              closeCart();
+              cart.openCheckout();
+            }}
+            onClearCart={cart.clearCart}
           />
 
-          <section className="commerceRow" ref={cartPanelRef}>
-            <CartPanel
-              items={cart.items}
-              itemCount={cart.itemCount}
-              subtotal={cart.subtotal}
-              pinnedProductName={pinnedProduct?.name}
-              onAddPinnedProduct={
-                pinnedProduct ? () => cart.addPinnedProduct(pinnedProduct) : undefined
-              }
-              onRemoveItem={cart.removeLine}
-              onUpdateQuantity={cart.updateLineQuantity}
-              onCheckout={cart.openCheckout}
-              onClearCart={cart.clearCart}
-            />
+          <section className="commerceRow">
             <OrderSummary order={cart.order} isPaying={cart.isPaying} />
           </section>
-
-          <ProductContextControl
-            pinnedProduct={pinnedProduct}
-            cameraProduct={cameraProduct}
-            lastContextSource={lastContextSource}
-            visionEnabled={cameraRecognition.featureEnabled}
-            visionDetection={cameraRecognition.detection}
-            visionMode={cameraRecognition.detection.mode}
-            activeVisionProduct={activeVisionProduct}
-            onMarkCameraProduct={() => {
-              if (pinnedProductId) {
-                setCameraProductId(pinnedProductId);
-              }
-            }}
-            onClearCameraProduct={() => setCameraProductId(null)}
-            onRecognizeNow={() => {
-              void cameraRecognition.recognizeNow();
-            }}
-            onApplyVisionContext={cameraRecognition.applyDetectionAsContext}
-            onClearVisionContext={cameraRecognition.clearVisionContext}
-          />
 
           <CheckoutModal
             open={cart.checkoutOpen}
@@ -444,6 +968,33 @@ export function DemoPage() {
             onChange={cart.updateCheckoutField}
             onSubmit={cart.submitCheckout}
           />
+
+          {violationModalOpen ? (
+            <div className="liveRoomsModalBackdrop" role="presentation">
+              <div
+                className="liveRoomsModal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="visual-violation-modal-title"
+              >
+                <h2 id="visual-violation-modal-title">{t("visualViolationModalTitle")}</h2>
+                <p>
+                  {t("visualViolationModalBody", {
+                    limit: VISUAL_VIOLATION_STRIKE_LIMIT,
+                  })}
+                </p>
+                <div className="liveRoomsModalActions">
+                  <button
+                    type="button"
+                    className="liveRoomsCreateButton"
+                    onClick={dismissViolationModal}
+                  >
+                    {t("visualViolationModalConfirm")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <aside className="chatColumn">
@@ -465,7 +1016,7 @@ export function DemoPage() {
           <ChatPanel
             ref={chatPanelRef}
             key={liveSessionKey}
-            roomId={DEMO_ROOM_ID}
+            roomId={roomId}
             author={chatAuthor}
             displayNameLocked={Boolean(auth.user)}
             sessionKey={liveSessionKey}
@@ -480,6 +1031,8 @@ export function DemoPage() {
             }}
             onViewerMessageSent={handleViewerMessageSent}
             onCommerceAction={cart.applySuggestedAction}
+            chatDisabled={sessionTerminated}
+            onLiveSessionEnded={handleLiveSessionEnded}
           />
         </aside>
       </section>
@@ -491,6 +1044,17 @@ function formatDuration(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
   const seconds = (totalSeconds % 60).toString().padStart(2, "0");
   return `${minutes}:${seconds}`;
+}
+
+function RoomsListIcon() {
+  return (
+    <svg className="streamControlIcon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z"
+        fill="currentColor"
+      />
+    </svg>
+  );
 }
 
 function StartLiveIcon() {

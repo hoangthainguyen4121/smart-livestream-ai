@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -29,6 +28,17 @@ class SessionService:
             LivestreamSession.status == SessionStatus.ACTIVE,
         )
         return self._session.exec(statement).first()
+
+    def list_active_sessions(self) -> list[LivestreamSession]:
+        statement = (
+            select(LivestreamSession)
+            .where(LivestreamSession.status == SessionStatus.ACTIVE)
+            .order_by(LivestreamSession.started_at.desc())
+        )
+        return list(self._session.exec(statement).all())
+
+    def get_session(self, session_id: UUID) -> Optional[LivestreamSession]:
+        return self._session.get(LivestreamSession, session_id)
 
     def start_session(
         self,
@@ -60,16 +70,47 @@ class SessionService:
         self._session.refresh(livestream_session)
         return livestream_session
 
-    def end_session(self, session_id: UUID) -> LivestreamSession:
+    def update_metadata(
+        self,
+        session_id: UUID,
+        metadata: Dict[str, Any],
+    ) -> LivestreamSession:
+        livestream_session = self._session.get(LivestreamSession, session_id)
+        if livestream_session is None:
+            raise SessionNotFoundError(str(session_id))
+        livestream_session.metadata_json = dict(metadata)
+        self._session.add(livestream_session)
+        self._session.commit()
+        self._session.refresh(livestream_session)
+        return livestream_session
+
+    def end_session(
+        self,
+        session_id: UUID,
+        *,
+        ended_reason: Optional[str] = None,
+        moderation_event: Optional[Dict[str, Any]] = None,
+        idempotent: bool = False,
+    ) -> LivestreamSession:
         livestream_session = self._session.get(LivestreamSession, session_id)
         if livestream_session is None:
             raise SessionNotFoundError(str(session_id))
 
         if livestream_session.status == SessionStatus.ENDED:
+            if idempotent:
+                return livestream_session
             raise SessionAlreadyEndedError(str(session_id))
 
         livestream_session.status = SessionStatus.ENDED
         livestream_session.ended_at = datetime.now(timezone.utc)
+        metadata = dict(livestream_session.metadata_json or {})
+        if ended_reason:
+            metadata["ended_reason"] = ended_reason
+        if moderation_event is not None:
+            events = list(metadata.get("moderation_events") or [])
+            events.append(moderation_event)
+            metadata["moderation_events"] = events
+        livestream_session.metadata_json = metadata
         self._session.add(livestream_session)
         self._session.commit()
         self._session.refresh(livestream_session)

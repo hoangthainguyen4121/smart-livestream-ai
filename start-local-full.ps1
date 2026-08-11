@@ -1,32 +1,14 @@
 ﻿<#
 .SYNOPSIS
-  Start all V1 local services in separate PowerShell windows for end-to-end verification.
+  DEPRECATED — use .\scripts\Start-LocalDemo.ps1 instead.
 
 .DESCRIPTION
-  Launches (by default):
-    1. Frontend - npm run dev on http://127.0.0.1:5173
-    2. Backend - uvicorn on http://127.0.0.1:8000 (proxies NLP to port 8010)
-    3. NLP ML - smart-livestream-ml serve_intent_api.py on http://127.0.0.1:8010
+  Legacy launcher kept for compatibility. Prefer Start-LocalDemo.ps1 which
+  ensures Postgres, starts PhoBERT before backend, waits on health endpoints,
+  skips duplicates, and pairs with Stop-LocalDemo.ps1 PID tracking.
 
-  Prerequisites:
-    - Node.js/npm on PATH
-    - Python 3.11+ (or backend/.venv and smart-livestream-ml/.venv)
-    - Sibling repo: ../smart-livestream-ml with a trained model under artifacts/
-
-.EXAMPLE
-  powershell -ExecutionPolicy Bypass -File .\start-local-full.ps1
-
-.EXAMPLE
-  powershell -ExecutionPolicy Bypass -File .\start-local-full.ps1 -SkipNlp
-
-.PARAMETER SkipFrontend
-  Do not start the Vite dev server.
-
-.PARAMETER SkipBackend
-  Do not start the FastAPI backend.
-
-.PARAMETER SkipNlp
-  Do not start the PhoBERT intent API (backend falls back to rules).
+  This script still launches FE/BE/NLP windows but does not health-wait and
+  may create duplicate processes.
 #>
 
 [CmdletBinding()]
@@ -117,11 +99,27 @@ if (-not $SkipBackend) {
     $backendPython = Resolve-PythonExe -ProjectDir $BackendDir
     Write-Host ("Starting backend (port 8000) using " + $backendPython + "...") -ForegroundColor Green
 
+    # Intent-correction feedback DB stays optional; chat can remain memory.
+    # Prefer values already exported; otherwise load common keys from backend/.env.
     $backendCommand = @"
 Set-Location -LiteralPath '$BackendDir'
-`$env:ML_INTENT_API_URL = 'http://127.0.0.1:8010'
-`$env:ML_INTENT_TIMEOUT_SECONDS = '2'
+`$env:ML_INTENT_API_URL = if (`$env:ML_INTENT_API_URL) { `$env:ML_INTENT_API_URL } else { 'http://127.0.0.1:8010' }
+`$env:ML_INTENT_TIMEOUT_SECONDS = if (`$env:ML_INTENT_TIMEOUT_SECONDS) { `$env:ML_INTENT_TIMEOUT_SECONDS } else { '2' }
 `$env:CAMERA_PRODUCT_RECOGNITION_ENABLED = 'false'
+`$envFile = Join-Path '$BackendDir' '.env'
+if (Test-Path -LiteralPath `$envFile) {
+  Get-Content -LiteralPath `$envFile | ForEach-Object {
+    `$line = `$_.Trim()
+    if (-not `$line -or `$line.StartsWith('#')) { return }
+    `$parts = `$line -split '=', 2
+    if (`$parts.Count -ne 2) { return }
+    `$key = `$parts[0].Trim()
+    `$value = `$parts[1].Trim().Trim('"').Trim("'")
+    if (`$key -and -not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable(`$key))) { return }
+    Set-Item -Path ("Env:" + `$key) -Value `$value
+  }
+}
+if (-not `$env:CHAT_PERSISTENCE_MODE) { `$env:CHAT_PERSISTENCE_MODE = 'memory' }
 & '$backendPython' -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 "@
     Start-ServiceWindow -Title "Smart Livestream - Backend" -Command $backendCommand

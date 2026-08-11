@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "default_id": "general",
+  "categories": [
+    {
+      "id": "fashion",
+      "sort_order": 10,
+      "label_vi": "Thời trang",
+      "label_en": "Fashion",
+      "icon_key": "fashion"
+    },
+    {
+      "id": "beauty",
+      "sort_order": 20,
+      "label_vi": "Làm đẹp",
+      "label_en": "Beauty",
+      "icon_key": "beauty"
+    },
+    {
+      "id": "electronics",
+      "sort_order": 30,
+      "label_vi": "Điện tử",
+      "label_en": "Electronics",
+      "icon_key": "electronics"
+    },
+    {
+      "id": "food",
+      "sort_order": 40,
+      "label_vi": "Ăn uống",
+      "label_en": "Food & Drink",
+      "icon_key": "food"
+    },
+    {
+      "id": "home_living",
+      "sort_order": 50,
+      "label_vi": "Nhà cửa & Đời sống",
+      "label_en": "Home & Living",
+      "icon_key": "home_living"
+    },
+    {
+      "id": "mom_baby",
+      "sort_order": 60,
+      "label_vi": "Mẹ & Bé",
+      "label_en": "Mom & Baby",
+      "icon_key": "mom_baby"
+    },
+    {
+      "id": "sports",
+      "sort_order": 70,
+      "label_vi": "Thể thao",
+      "label_en": "Sports",
+      "icon_key": "sports"
+    },
+    {
+      "id": "general",
+      "sort_order": 100,
+      "label_vi": "Tổng hợp",
+      "label_en": "General",
+      "icon_key": "general"
+    }
+  ]
+}

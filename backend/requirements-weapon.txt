@@ -1,0 +1,11 @@
+# Optional — open-vocabulary weapon/gun spike (Grounding DINO tiny).
+# Shares torch/transformers with requirements-nsfw.txt when both installed.
+#   pip install -r requirements-nsfw.txt
+#   pip install -r requirements-weapon.txt
+# Cache OUTSIDE the project:
+#   WEAPON_MODEL_CACHE_DIR=%USERPROFILE%\.cache\smart-livestream-weapon
+torch
+transformers>=4.40.0,<5
+safetensors
+pillow
+timm

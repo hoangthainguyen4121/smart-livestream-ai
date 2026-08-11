@@ -291,10 +291,12 @@ export function IntentCorrectionAdminPage() {
         ) : null}
       </section>
 
-      {loading && items.length === 0 ? <p>{t("adminIntentReviewLoading")}</p> : null}
+      {loading && items.length === 0 ? (
+        <p className="adminEmptyState adminEmptyStateLoading">{t("adminIntentReviewLoading")}</p>
+      ) : null}
       {loadError ? <div className="error">{loadError}</div> : null}
       {!loading && !loadError && items.length === 0 ? (
-        <p>{t("adminIntentReviewEmpty")}</p>
+        <p className="adminEmptyState">{t("adminIntentReviewEmpty")}</p>
       ) : null}
 
       <ul className="adminIntentReviewList">
@@ -302,9 +304,12 @@ export function IntentCorrectionAdminPage() {
           const state = reviewById[item.id];
           return (
             <li key={item.id} className="adminIntentReviewCard">
-              <p className="adminIntentReviewComment">
-                <strong>{item.source_author_display_name}</strong>: {item.source_comment_text}
-              </p>
+              <div className="adminIntentReviewCardHead">
+                <p className="adminIntentReviewComment">
+                  <strong>{item.source_author_display_name}</strong>: {item.source_comment_text}
+                </p>
+                <span className="adminStatusChip">{t("adminIntentReviewPending")}</span>
+              </div>
               <dl className="adminIntentReviewMeta">
                 <div>
                   <dt>{t("adminIntentReviewPredicted")}</dt>

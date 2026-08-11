@@ -2,6 +2,7 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -15,7 +16,15 @@ import {
   type ChatEvent,
   type ChatMessage,
 } from "../api/chat";
+import {
+  CLIENT_SEND_COOLDOWN_MS,
+  formatChatSpamGuardMessage,
+  isChatSendDisabled,
+  isChatSpamErrorCode,
+  remainingSecondsUntil,
+} from "../api/chatSendUx";
 import type { CommerceSuggestedAction } from "../features/commerce/commerceTypes";
+import { getOrCreateViewerSessionKey } from "../features/intent-correction/viewerSessionKey";
 import { isAssistantChatMessage } from "../features/sales-assistant/assistantChatMessages";
 import { IntentCorrectionPanel } from "../features/intent-correction/IntentCorrectionPanel";
 import { renderAssistantReplyText } from "../features/sales-assistant/renderAssistantReplyText";
@@ -41,6 +50,8 @@ type ChatPanelProps = {
   submittedCorrectionMessageIds?: Record<string, boolean>;
   onCorrectionSubmitted?: (messageId: string) => void;
   onCommerceAction?: (action: CommerceSuggestedAction) => void;
+  chatDisabled?: boolean;
+  onLiveSessionEnded?: (payload: { reason: string; sessionId?: string }) => void;
 };
 
 export type ChatPanelHandle = {
@@ -59,26 +70,37 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     onCorrectionSubmitted,
     onViewerMessageSent,
     onCommerceAction,
+    chatDisabled = false,
+    onLiveSessionEnded,
   },
   ref,
 ) {
   const { t } = useI18n();
   const socketRef = useRef<WebSocket | null>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  const stickToBottomRef = useRef(true);
   const displayNameRef = useRef(author);
   const onViewerMessageSentRef = useRef(onViewerMessageSent);
+  const onLiveSessionEndedRef = useRef(onLiveSessionEnded);
   const skipNextHistoryRef = useRef(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [displayName, setDisplayName] = useState(author);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("disconnected");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [sendCooldownUntilMs, setSendCooldownUntilMs] = useState(0);
+  const [retryUntilMs, setRetryUntilMs] = useState(0);
+  const [spamErrorCode, setSpamErrorCode] = useState<import("../api/chatSendUx").ChatSpamErrorCode | null>(
+    null,
+  );
+  const [sendBlockedTick, setSendBlockedTick] = useState(0);
   const [cartFeedbackByMessageId, setCartFeedbackByMessageId] = useState<Record<string, string>>(
     {},
   );
 
   displayNameRef.current = displayName;
   onViewerMessageSentRef.current = onViewerMessageSent;
+  onLiveSessionEndedRef.current = onLiveSessionEnded;
 
   useImperativeHandle(
     ref,
@@ -102,8 +124,37 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   useEffect(() => {
     setMessages([]);
     setCartFeedbackByMessageId({});
+    setSendCooldownUntilMs(0);
+    setRetryUntilMs(0);
+    setSpamErrorCode(null);
     skipNextHistoryRef.current = true;
+    stickToBottomRef.current = true;
   }, [sessionKey]);
+
+  useEffect(() => {
+    const now = Date.now();
+    if (!isChatSendDisabled(now, sendCooldownUntilMs, retryUntilMs)) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      const tickNow = Date.now();
+      setSendBlockedTick(tickNow);
+      if (spamErrorCode && retryUntilMs > tickNow) {
+        setErrorMessage(
+          formatChatSpamGuardMessage(
+            spamErrorCode,
+            remainingSecondsUntil(retryUntilMs, tickNow),
+            t,
+          ),
+        );
+      }
+    }, 250);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [sendCooldownUntilMs, retryUntilMs, spamErrorCode, t]);
 
   useEffect(() => {
     setDisplayName(author);
@@ -135,11 +186,55 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     };
   }, [roomId, sessionKey, t]);
 
-  useEffect(() => {
-    messagesRef.current?.scrollTo({
-      top: messagesRef.current.scrollHeight,
-    });
+  useLayoutEffect(() => {
+    const container = messagesRef.current;
+    if (!container || !stickToBottomRef.current) {
+      return;
+    }
+
+    container.scrollTop = container.scrollHeight;
   }, [messages, cartFeedbackByMessageId]);
+
+  useEffect(() => {
+    const container = messagesRef.current;
+    if (!container) {
+      return;
+    }
+
+    const onScroll = () => {
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      stickToBottomRef.current = distanceFromBottom < 140;
+    };
+
+    // Ensure wheel scrolls the chat list instead of the page behind sticky column.
+    const onWheel = (event: WheelEvent) => {
+      const canScroll = container.scrollHeight > container.clientHeight + 1;
+      if (!canScroll) {
+        return;
+      }
+
+      const atTop = container.scrollTop <= 0;
+      const atBottom =
+        container.scrollTop + container.clientHeight >= container.scrollHeight - 1;
+      const scrollingUp = event.deltaY < 0;
+      const scrollingDown = event.deltaY > 0;
+
+      if ((scrollingUp && !atTop) || (scrollingDown && !atBottom)) {
+        event.preventDefault();
+        event.stopPropagation();
+        container.scrollTop += event.deltaY;
+        onScroll();
+      }
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    container.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+      container.removeEventListener("wheel", onWheel);
+    };
+  }, []);
 
   function handleChatEvent(event: ChatEvent) {
     if (event.type === "chat_history") {
@@ -162,6 +257,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       setErrorMessage(null);
 
       if (normalized.author === displayNameRef.current.trim()) {
+        setSendCooldownUntilMs(Date.now() + CLIENT_SEND_COOLDOWN_MS);
         onViewerMessageSentRef.current?.({
           messageId: normalized.id,
           author: normalized.author,
@@ -172,25 +268,57 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       return;
     }
 
+    if (event.type === "live_session_ended") {
+      onLiveSessionEndedRef.current?.({
+        reason: event.reason,
+        sessionId: event.session_id,
+      });
+      return;
+    }
+
+    if (event.type !== "error") {
+      return;
+    }
+
+    if (event.code && isChatSpamErrorCode(event.code) && event.retry_after_seconds !== undefined) {
+      const retrySeconds = Math.max(0, event.retry_after_seconds);
+      setSpamErrorCode(event.code);
+      setRetryUntilMs(Date.now() + retrySeconds * 1000);
+      setErrorMessage(formatChatSpamGuardMessage(event.code, retrySeconds, t));
+      return;
+    }
+
+    setSpamErrorCode(null);
     setErrorMessage(event.message);
   }
 
   function clearChatError() {
     setErrorMessage(null);
+    setSpamErrorCode(null);
   }
 
   function handleSendChatMessage() {
     const text = input.trim();
     const sender = displayName.trim();
     const socket = socketRef.current;
+    const now = Date.now();
 
     clearChatError();
 
-    if (!text || !sender || !socket || socket.readyState !== WebSocket.OPEN) {
+    if (
+      chatDisabled ||
+      !text ||
+      !sender ||
+      !socket ||
+      socket.readyState !== WebSocket.OPEN ||
+      isChatSendDisabled(now, sendCooldownUntilMs, retryUntilMs)
+    ) {
       return;
     }
 
-    socket.send(JSON.stringify(createOutgoingChatMessage(sender, text)));
+    socket.send(
+      JSON.stringify(createOutgoingChatMessage(sender, text, getOrCreateViewerSessionKey())),
+    );
     setInput("");
   }
 
@@ -205,6 +333,45 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       [messageId]: t("chatAddedToCart", { product: productName }),
     }));
   }
+
+  const sendBlockedNow =
+    chatDisabled ||
+    isChatSendDisabled(sendBlockedTick || Date.now(), sendCooldownUntilMs, retryUntilMs);
+
+  const knownMessageIdsRef = useRef<Set<string> | null>(null);
+  const [enterMessageIds, setEnterMessageIds] = useState<Record<string, true>>({});
+
+  useEffect(() => {
+    knownMessageIdsRef.current = null;
+    setEnterMessageIds({});
+  }, [sessionKey, roomId]);
+
+  useEffect(() => {
+    if (knownMessageIdsRef.current === null) {
+      knownMessageIdsRef.current = new Set(messages.map((message) => message.id));
+      return;
+    }
+
+    const known = knownMessageIdsRef.current;
+    const incoming: string[] = [];
+    for (const message of messages) {
+      if (!known.has(message.id)) {
+        known.add(message.id);
+        incoming.push(message.id);
+      }
+    }
+    if (incoming.length === 0) {
+      return;
+    }
+
+    setEnterMessageIds((current) => {
+      const next = { ...current };
+      for (const id of incoming) {
+        next[id] = true;
+      }
+      return next;
+    });
+  }, [messages]);
 
   return (
     <aside className="chatPanel">
@@ -226,14 +393,23 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         />
         {displayNameLocked ? <small>{t("displayNameFromLogin")}</small> : null}
       </label>
-      <div className="chatMessages" ref={messagesRef}>
+      <div
+        className="chatMessages"
+        ref={messagesRef}
+        tabIndex={0}
+        role="log"
+        aria-label={t("liveChat")}
+        aria-live="polite"
+      >
         {messages.map((message) => (
           <div
-            className={
-              isAssistantChatMessage(message)
-                ? "chatMessage chatMessageAssistant"
-                : "chatMessage"
-            }
+            className={[
+              "chatMessage",
+              isAssistantChatMessage(message) ? "chatMessageAssistant" : "",
+              enterMessageIds[message.id] ? "chatMessage--enter" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             key={message.id}
           >
             {isAssistantChatMessage(message) ? (
@@ -289,26 +465,28 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           </div>
         ))}
       </div>
-      {errorMessage ? <div className="error">{errorMessage}</div> : null}
-      <div className="chatInputRow">
-        <input
-          value={input}
-          onChange={(event) => {
-            clearChatError();
-            setInput(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              handleSendChatMessage();
-            }
-          }}
-          maxLength={300}
-          placeholder={t("chatPlaceholder")}
-        />
-        <button type="button" onClick={handleSendChatMessage}>
-          {t("send")}
-        </button>
+      <div className="chatPanelFooter">
+        {errorMessage ? <div className="error">{errorMessage}</div> : null}
+        <div className="chatInputRow">
+          <input
+            value={input}
+            onChange={(event) => {
+              clearChatError();
+              setInput(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                handleSendChatMessage();
+              }
+            }}
+            maxLength={300}
+            placeholder={t("chatPlaceholder")}
+          />
+          <button type="button" onClick={handleSendChatMessage} disabled={sendBlockedNow}>
+            {t("send")}
+          </button>
+        </div>
       </div>
     </aside>
   );

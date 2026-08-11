@@ -6,6 +6,7 @@ import logging
 from app.db.engine import get_session_factory
 from app.repositories.comment_repository import CommentRepository
 from app.services.chat_manager import ChatManager, ChatMessage
+from app.services.comment_spam_guard import get_comment_spam_guard
 from app.services.session_service import SessionService
 from app.settings import ChatPersistenceMode, get_settings
 
@@ -24,7 +25,19 @@ class ChatPersistenceService:
     def __init__(self, chat_manager: ChatManager) -> None:
         self._chat_manager = chat_manager
 
-    async def handle_chat_message(self, room_id: str, payload: dict) -> ChatMessage:
+    async def handle_chat_message(
+        self,
+        room_id: str,
+        payload: dict,
+        *,
+        websocket_id: int | None = None,
+    ) -> ChatMessage:
+        get_comment_spam_guard().check_viewer_message(
+            room_id=room_id,
+            payload=payload,
+            websocket_id=websocket_id,
+        )
+
         settings = get_settings()
         if settings.chat_persistence_mode == ChatPersistenceMode.MEMORY:
             return await self._chat_manager.broadcast_message(room_id, payload)
