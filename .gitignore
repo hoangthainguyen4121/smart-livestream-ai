@@ -16,6 +16,7 @@ logs/
 
 # Generated export / audit payloads (never commit)
 backend/dataset_exports/
+backend/data/product-images/
 docs/_dataset_audit_stats.json
 docs/_perf_baseline_raw.json
 
@@ -40,9 +41,14 @@ thesis_review_package/
 thesis_review_package.zip
 literature_review_export/
 literature_review_export.zip
+docs/thesis/
+docs/thesis-*/
 docs/thesis-screenshots/
 docs/thesis-figures/
 docs/literature_review_export/
+docs/docx_qa/
+docs/phase2_compare/
+docs/thesis_*/
 
 *.docx
 *.pdf
@@ -53,8 +59,10 @@ docs/literature_review_export/
 # Build / cache artifacts
 dist/
 build/
+test-results/
+frontend/artifacts/
 
-# Thesis planning/local artifacts
+# Thesis planning / local artifacts (not part of the app)
 docs/THESIS_*.md
 docs/LITERATURE_*.md
 docs/PRESENTATION*.md
@@ -70,25 +78,40 @@ docs/thesis-final-audit.md
 docs/thesis-reference-audit.md
 docs/.thesis_*.json
 docs/FINAL_FREEZE_REPORT.md
-frontend/artifacts/
+docs/performance-baseline-*.md
+docs/project-hygiene-audit-*.md
 
-# Thesis / presentation build scripts (local tooling)
-scripts/build_thesis*.py
-scripts/build_tieuluan*.py
-scripts/generate_*docx*.py
-scripts/generate_*pptx*.py
-scripts/generate_presentation*.py
+# Thesis / presentation tooling (Word/PPTX generators — local only)
 scripts/thesis_*.py
-scripts/verify_thesis*.py
+scripts/*thesis*
+scripts/*tieuluan*
+scripts/*presentation*
+scripts/build_thesis*
+scripts/build_tieuluan*
+scripts/build_*presentation*
+scripts/generate_*docx*
+scripts/generate_*pptx*
+scripts/generate_presentation*
+scripts/generate_thesis*
+scripts/export_presentation*
+scripts/finalize_tieuluan*
+scripts/normalize_tieuluan*
+scripts/apply_thesis*
+scripts/audit_thesis*
+scripts/verify_thesis*
 scripts/verify_ch*_condensation.py
 scripts/verify_content_correction.py
-scripts/audit_thesis*.py
-scripts/normalize_tieuluan*.py
-scripts/finalize_tieuluan*.py
-scripts/apply_thesis*.py
-scripts/build_smartlivestream_presentation*.py
-scripts/export_presentation*.py
-scripts/presentation1_*.py
 scripts/extract_document_text.py
+scripts/presentation1_*.py
+scripts/_analyze_*.py
+scripts/_cell_*.py
+scripts/_check_t*.py
+scripts/_cmp_*.py
+scripts/_dump_*.py
+scripts/_extract_holdout*.py
+scripts/_inspect_table*.py
+scripts/_postfix_*.py
+scripts/_table_*.py
+scripts/_unique_table*.py
 scripts/_scan.py
 scripts/archive/
