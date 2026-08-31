@@ -51,12 +51,13 @@ describe("visualViolationStrikes", () => {
     expect(state.count).toBe(3);
   });
 
-  it("adds dwell ticks every 3s while warning stays active", () => {
+  it("does not add dwell ticks while stale warning state stays visible", () => {
     let state = createVisualViolationStrikeState();
     state = applyVisualViolationChannels(
       state,
       { adult: true, gun: false, sharp: false },
       0,
+      { evidenceCounts: { adult: 1, gun: 0, sharp: 0 } },
     );
     expect(state.count).toBe(1);
 
@@ -64,15 +65,44 @@ describe("visualViolationStrikes", () => {
       state,
       { adult: true, gun: false, sharp: false },
       VISUAL_VIOLATION_DWELL_MS,
+      { evidenceCounts: { adult: 1, gun: 0, sharp: 0 } },
     );
-    expect(state.count).toBe(2);
+    expect(state.count).toBe(1);
 
     state = applyVisualViolationChannels(
       state,
       { adult: true, gun: false, sharp: false },
       VISUAL_VIOLATION_DWELL_MS * 3,
+      { evidenceCounts: { adult: 1, gun: 0, sharp: 0 } },
     );
-    expect(state.count).toBe(4);
+    expect(state.count).toBe(1);
+  });
+
+  it("counts each new evidence hit while violation persists", () => {
+    let state = createVisualViolationStrikeState();
+    state = applyVisualViolationChannels(
+      state,
+      { adult: false, gun: true, sharp: false },
+      0,
+      { evidenceCounts: { adult: 0, gun: 1, sharp: 0 } },
+    );
+    expect(state.count).toBe(1);
+
+    state = applyVisualViolationChannels(
+      state,
+      { adult: false, gun: true, sharp: false },
+      VISUAL_VIOLATION_DWELL_MS,
+      { evidenceCounts: { adult: 0, gun: 2, sharp: 0 } },
+    );
+    expect(state.count).toBe(2);
+
+    state = applyVisualViolationChannels(
+      state,
+      { adult: false, gun: true, sharp: false },
+      VISUAL_VIOLATION_DWELL_MS * 2,
+      { evidenceCounts: { adult: 0, gun: 2, sharp: 0 } },
+    );
+    expect(state.count).toBe(2);
   });
 
   it("marks limit reached at threshold", () => {
@@ -89,6 +119,7 @@ describe("visualViolationStrikes", () => {
         state,
         { adult: true, gun: false, sharp: false },
         now,
+        { evidenceCounts: { adult: i + 1, gun: 0, sharp: 0 } },
       );
       now += VISUAL_VIOLATION_DWELL_MS + 10;
     }

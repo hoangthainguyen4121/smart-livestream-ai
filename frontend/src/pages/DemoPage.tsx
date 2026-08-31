@@ -508,7 +508,13 @@ export function DemoPage({ roomId }: DemoPageProps) {
     const tick = () => {
       const nextChannels = readChannels();
       setViolationStrikes((previous) =>
-        applyVisualViolationChannels(previous, nextChannels, Date.now()),
+        applyVisualViolationChannels(previous, nextChannels, Date.now(), {
+          evidenceCounts: {
+            adult: adultGate.result.evidenceCount,
+            gun: weaponGate.result.evidenceCount,
+            sharp: sharpObjectEnforcement.result.evidenceCount,
+          },
+        }),
       );
     };
 
@@ -519,8 +525,11 @@ export function DemoPage({ roomId }: DemoPageProps) {
     objectDetectorEnabled,
     sessionTerminated,
     adultGate.result.state,
+    adultGate.result.evidenceCount,
     weaponGate.result.state,
+    weaponGate.result.evidenceCount,
     sharpObjectEnforcement.result.action,
+    sharpObjectEnforcement.result.evidenceCount,
   ]);
 
   const cameraRecognition = useProductVisionRecognition({
