@@ -5,10 +5,15 @@ import type { WeaponFrameGateView } from "../weapon-frame-gate/useWeaponFrameGat
 import type { SharpObjectEnforcementResult } from "./sharpObjectEnforcementPolicy";
 import type { VisualModerationResult } from "./visualModerationPolicy";
 import {
+  isViolatingSafetyKey,
   resolveAdultSafetyKey,
   resolveGunSafetyKey,
   resolveSharpSafetyKey,
 } from "./visualSafetyStatus";
+
+function rowClassName(violating: boolean): string {
+  return violating ? "visualSafetyRow visualSafetyRowViolation" : "visualSafetyRow";
+}
 
 type VisualModerationBannerProps = {
   enabled: boolean;
@@ -22,6 +27,8 @@ type VisualModerationBannerProps = {
   /** Rising-edge warning strikes toward auto end-stream. */
   violationStrikeCount?: number;
   violationStrikeLimit?: number;
+  /** Mirrors VITE_SHARP_OBJECT_MODERATION_ENABLED so the row matches the running config. */
+  sharpModerationEnabled?: boolean;
 };
 
 export function VisualModerationBanner({
@@ -34,6 +41,7 @@ export function VisualModerationBanner({
   terminated,
   violationStrikeCount = 0,
   violationStrikeLimit = 5,
+  sharpModerationEnabled = true,
 }: VisualModerationBannerProps) {
   const { t } = useI18n();
   const adult = adultGate ?? nsfwGate;
@@ -56,7 +64,7 @@ export function VisualModerationBanner({
     result.status === "warning";
 
   const adultKey = resolveAdultSafetyKey(adult);
-  const sharpKey = resolveSharpSafetyKey(enforcement, terminated);
+  const sharpKey = resolveSharpSafetyKey(enforcement, terminated, sharpModerationEnabled);
   const selectionMode =
     weaponGate && "selection" in weaponGate ? weaponGate.selection.mode : null;
   const gunKey =
@@ -91,17 +99,17 @@ export function VisualModerationBanner({
       ) : null}
 
       <ul className="visualSafetyList">
-        <li>
+        <li className={rowClassName(isViolatingSafetyKey(adultKey))}>
           <span className="visualSafetyLabel">{t("visualSafetyAdultLabel")}</span>{" "}
           {adult?.errorMessage
             ? t("visualModerationAdultError", { detail: adult.errorMessage })
             : t(adultKey)}
         </li>
-        <li>
+        <li className={rowClassName(isViolatingSafetyKey(sharpKey))}>
           <span className="visualSafetyLabel">{t("visualSafetySharpLabel")}</span>{" "}
           {t(sharpKey)}
         </li>
-        <li>
+        <li className={rowClassName(isViolatingSafetyKey(gunKey))}>
           <span className="visualSafetyLabel">{t("visualSafetyGunLabel")}</span>{" "}
           {weaponGate?.errorMessage
             ? t("visualModerationWeaponError", { detail: weaponGate.errorMessage })
@@ -128,7 +136,13 @@ export function VisualModerationBanner({
         </ul>
       ) : null}
 
-      <p className="visualModerationDisclaimer">{t("visualModerationDisclaimer")}</p>
+      <p className="visualModerationDisclaimer">
+        {t(
+          sharpModerationEnabled
+            ? "visualModerationDisclaimer"
+            : "visualModerationDisclaimerSharpOff",
+        )}
+      </p>
     </div>
   );
 }

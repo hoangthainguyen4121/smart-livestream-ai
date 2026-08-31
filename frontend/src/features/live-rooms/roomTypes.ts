@@ -6,6 +6,7 @@ export type LiveRoomCategory = {
   label_vi: string;
   label_en: string;
   icon_key?: string;
+  commerce_required: boolean;
 };
 
 export const DEFAULT_ROOM_TYPE = taxonomy.default_id;
@@ -23,6 +24,10 @@ export type LiveRoomTypeFilter = "all" | LiveRoomType;
 
 export function isLiveRoomType(value: string): value is LiveRoomType {
   return LIVE_ROOM_TYPES.includes(value);
+}
+
+export function roomTypeRequiresCommerce(roomType: string): boolean {
+  return LIVE_ROOM_CATEGORIES.find((category) => category.id === roomType)?.commerce_required ?? false;
 }
 
 /** UI label from canonical taxonomy; unknown/legacy ids fall back to general. */

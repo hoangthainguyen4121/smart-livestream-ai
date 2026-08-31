@@ -100,8 +100,8 @@ function PinnedProductDetails({
         </div>
       ) : null}
 
-      <a className="pinnedProductLinkButton" href={product.productUrl}>
-        {t("viewProduct")} · {product.productUrl}
+      <a className="pinnedProductLinkButton" href={product.productUrl} title={product.productUrl}>
+        {t("viewProduct")}
       </a>
     </div>
   );

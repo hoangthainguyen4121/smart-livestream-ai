@@ -12,10 +12,12 @@ export function OrderSummary({ order, isPaying = false }: OrderSummaryProps) {
     return (
       <section className="videoCard orderSummary" aria-label="Order summary">
         <div className="cardHeader">
-          <h2>Đơn hàng demo</h2>
+          <h2>Kết quả đặt hàng</h2>
           <span className="status">Chưa có đơn</span>
         </div>
-        <p className="emptyState">Checkout thành công sẽ hiển thị mã đơn và trạng thái thanh toán giả lập.</p>
+        <p className="emptyState">
+          Sau khi xác nhận checkout, trạng thái đơn và thanh toán sẽ hiển thị tại đây.
+        </p>
       </section>
     );
   }
@@ -23,16 +25,16 @@ export function OrderSummary({ order, isPaying = false }: OrderSummaryProps) {
   return (
     <section className="videoCard orderSummary" aria-label="Order summary">
       <div className="cardHeader">
-        <h2>Đơn hàng demo</h2>
+        <h2>{order.status === "failed" ? "Thanh toán chưa thành công" : "Đặt hàng thành công"}</h2>
         <span className={`orderStatusBadge orderStatusBadge--${order.status}`}>
-          {isPaying ? "Đang xử lý mock QR..." : ORDER_STATUS_LABELS[order.status]}
+          {isPaying ? "Đang xử lý thanh toán…" : ORDER_STATUS_LABELS[order.status]}
         </span>
       </div>
 
       <dl className="orderSummaryDetails">
         <div>
           <dt>Mã đơn</dt>
-          <dd>{order.orderId}</dd>
+          <dd title={order.orderId}>…{order.orderId.slice(-8)}</dd>
         </div>
         <div>
           <dt>Khách hàng</dt>

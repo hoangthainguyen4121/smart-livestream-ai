@@ -43,13 +43,22 @@ def _violation_payload(**overrides):
     return payload
 
 
+def _create_hosted_session(client: TestClient, name: str = "Moderation Room") -> tuple[dict, dict]:
+    created = client.post(
+        "/api/live-sessions",
+        json={"name": f"{name} {uuid4().hex[:6]}", "room_type": "general"},
+    ).json()
+    return created, {"X-Host-Token": created["host_resume_token"]}
+
+
 def test_active_session_ends_with_visual_moderation_reason(client: TestClient) -> None:
-    started = client.post("/api/live-sessions/start", json={"room_id": f"room-{uuid4()}"}).json()
+    started, headers = _create_hosted_session(client)
     assert started["status"] == "active"
 
     ended = client.post(
         f"/api/live-sessions/{started['id']}/moderation-violations",
         json=_violation_payload(),
+        headers=headers,
     )
     assert ended.status_code == 200
     body = ended.json()
@@ -60,14 +69,16 @@ def test_active_session_ends_with_visual_moderation_reason(client: TestClient) -
 
 
 def test_moderation_violation_is_idempotent(client: TestClient) -> None:
-    started = client.post("/api/live-sessions/start", json={"room_id": f"room-{uuid4()}"}).json()
+    started, headers = _create_hosted_session(client)
     first = client.post(
         f"/api/live-sessions/{started['id']}/moderation-violations",
         json=_violation_payload(),
+        headers=headers,
     ).json()
     second = client.post(
         f"/api/live-sessions/{started['id']}/moderation-violations",
         json=_violation_payload(label="scissors"),
+        headers=headers,
     ).json()
 
     assert first["status"] == "ended"
@@ -77,38 +88,41 @@ def test_moderation_violation_is_idempotent(client: TestClient) -> None:
 
 
 def test_invalid_violation_code_is_rejected(client: TestClient) -> None:
-    started = client.post("/api/live-sessions/start", json={"room_id": f"room-{uuid4()}"}).json()
+    started, headers = _create_hosted_session(client)
     response = client.post(
         f"/api/live-sessions/{started['id']}/moderation-violations",
         json=_violation_payload(code="violence_detected"),
+        headers=headers,
     )
     assert response.status_code == 422
 
 
 def test_other_room_session_not_affected(client: TestClient) -> None:
-    first = client.post("/api/live-sessions/start", json={"room_id": "room-a"}).json()
-    second = client.post("/api/live-sessions/start", json={"room_id": "room-b"}).json()
+    first, first_headers = _create_hosted_session(client, "Room A")
+    second, _ = _create_hosted_session(client, "Room B")
 
     client.post(
         f"/api/live-sessions/{first['id']}/moderation-violations",
         json=_violation_payload(),
+        headers=first_headers,
     )
 
-    current_b = client.get("/api/live-sessions/by-room/room-b/current")
+    current_b = client.get(f"/api/live-sessions/by-room/{second['room_id']}/current")
     assert current_b.status_code == 200
     assert current_b.json()["id"] == second["id"]
     assert current_b.json()["status"] == "active"
 
 
 def test_broadcasts_live_session_ended(client: TestClient) -> None:
-    room_id = f"room-{uuid4()}"
-    started = client.post("/api/live-sessions/start", json={"room_id": room_id}).json()
+    started, headers = _create_hosted_session(client)
+    room_id = started["room_id"]
 
     with client.websocket_connect(f"/ws/chat/{room_id}") as websocket:
         websocket.receive_json()  # history
         client.post(
             f"/api/live-sessions/{started['id']}/moderation-violations",
             json=_violation_payload(),
+            headers=headers,
         )
         event = websocket.receive_json()
 
@@ -123,3 +137,12 @@ def test_unknown_session_returns_404(client: TestClient) -> None:
         json=_violation_payload(),
     )
     assert response.status_code == 404
+
+
+def test_anonymous_uuid_cannot_report_moderation_violation(client: TestClient) -> None:
+    started, _ = _create_hosted_session(client)
+    response = client.post(
+        f"/api/live-sessions/{started['id']}/moderation-violations",
+        json=_violation_payload(),
+    )
+    assert response.status_code == 401

@@ -19,6 +19,7 @@ class RoomCategory(TypedDict):
     label_vi: str
     label_en: str
     icon_key: str
+    commerce_required: bool
 
 
 class RoomTaxonomy(TypedDict):
@@ -63,6 +64,15 @@ def validate_room_type(room_type: str) -> str:
             f"Invalid room_type '{room_type}'. Allowed: {', '.join(sorted(allowed))}."
         )
     return normalized
+
+
+def room_type_requires_commerce(room_type: str) -> bool:
+    normalized = validate_room_type(room_type)
+    return next(
+        bool(category.get("commerce_required", False))
+        for category in get_room_categories()
+        if category["id"] == normalized
+    )
 
 
 def resolve_room_type_label(room_type: str, *, locale: str = "vi") -> str:

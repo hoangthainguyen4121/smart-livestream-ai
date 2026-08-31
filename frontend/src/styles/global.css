@@ -720,6 +720,28 @@ h2 {
   gap: 6px;
 }
 
+.visualSafetyRow {
+  padding: 2px 6px;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+}
+
+.visualSafetyRowViolation {
+  border-left-color: var(--color-danger);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-weight: 750;
+}
+
+.visualSafetyRowViolation .visualSafetyLabel {
+  font-weight: 800;
+}
+
+.visualSafetyRowViolation .visualSafetyDetectorHint {
+  color: inherit;
+  font-weight: 600;
+}
+
 .visualSafetyDetectorHint {
   color: var(--color-text-secondary);
   font-weight: 500;
@@ -919,12 +941,18 @@ h2 {
 
 .pinnedProductLinkButton {
   display: inline-flex;
+  align-self: start;
   justify-content: center;
-  padding: 10px 14px;
-  border-radius: 12px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border-radius: 999px;
   background: #172033;
   color: #ffffff;
+  font-size: 0.82rem;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-decoration: none;
 }
 
@@ -1440,6 +1468,143 @@ h2 {
   overflow: auto;
 }
 
+.productCatalogHeaderActions,
+.productCreateActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.productCreateToggle,
+.productCreateActions button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.productCreateForm {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  box-shadow: var(--shadow-xs);
+}
+
+.productCreateForm h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.productCreateGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.productCreateGrid label {
+  display: grid;
+  gap: 5px;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.productCreateGrid input,
+.productCreateGrid select,
+.productCreateGrid textarea {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font: inherit;
+}
+
+.productCreateWide {
+  grid-column: 1 / -1;
+}
+
+.productImageUpload {
+  padding: 12px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.productImageUpload input[type="file"] {
+  padding: 8px;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+.productImageUpload input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.productImageUpload small {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.productImageUploadPreview {
+  width: min(180px, 100%);
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  object-fit: cover;
+  box-shadow: var(--shadow-xs);
+}
+
+.productCreateActions {
+  justify-content: flex-end;
+}
+
+.productCreateActions button.secondary {
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.productCreateActions button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.productCreateError,
+.productCreateHint {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.productCreateError {
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+.productCreateHint {
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
 .productCatalogFilters {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 180px;
@@ -1486,22 +1651,34 @@ h2 {
   color: #1d4ed8;
   font-size: 1.4rem;
   font-weight: 800;
+  overflow: hidden;
+}
+
+.productCardImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .productCardBody {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .productCardTop {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
+  min-width: 0;
 }
 
 .productCardTop h3 {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 0.98rem;
 }
 
@@ -1517,6 +1694,7 @@ h2 {
 
 .productCardPrice {
   margin: 0;
+  overflow-wrap: anywhere;
   color: #2f6fed;
   font-weight: 800;
 }
@@ -1549,6 +1727,50 @@ h2 {
 
 .productCardBody button.active {
   background: #2f6fed;
+}
+
+.productCardActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  min-width: 0;
+}
+
+.productCardActions button {
+  flex: 0 1 auto;
+  max-width: 100%;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #2f6fed;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.productCardActions button.secondary {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.productCardActions button:disabled {
+  background: #eef2f7;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.productCardActions button.active {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .salesLabPage {
@@ -1767,7 +1989,7 @@ h2 {
 .chatInputRow button,
 .authButton {
   padding: 10px 14px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: var(--color-text);
   color: var(--color-text-inverse);
@@ -1826,6 +2048,39 @@ h2 {
   gap: var(--space-3);
 }
 
+.authPasswordForm {
+  display: grid;
+  gap: 8px;
+}
+
+.authPasswordForm input,
+.shopSetupPanel input {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.shopSetupPanel {
+  margin: 16px 0;
+}
+
+.shopSetupRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.shopSetupRow input {
+  flex: 1 1 220px;
+}
+
+.shopSetupRow .shopSetupSubmit {
+  flex: 0 0 auto;
+  width: auto;
+  white-space: nowrap;
+}
+
 .authStatusSignedIn {
   display: grid;
   gap: 4px;
@@ -1842,7 +2097,8 @@ h2 {
 
 .authButtonRow {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: var(--space-2);
 }
 
@@ -2212,23 +2468,66 @@ h2 {
 
 .adminExportPanel {
   margin-bottom: var(--space-5);
-  padding: var(--space-4);
+  padding: var(--space-4) var(--space-5);
   border: 1px solid #dbeafe;
   border-radius: var(--radius-lg);
-  background: var(--color-info-soft);
+  background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
   box-shadow: var(--shadow-xs);
+}
+
+.adminExportPanelMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.adminExportReadyBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.adminExportReadyLabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.adminExportReadyCount {
+  font-size: 1.65rem;
+  font-weight: 750;
+  line-height: 1.1;
+  color: var(--color-accent-ink);
+  letter-spacing: -0.02em;
 }
 
 .adminExportResult {
   margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid #dbeafe;
   font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.adminExportResult p {
+  margin: 0 0 6px;
+  word-break: break-all;
 }
 
 .adminIntentReviewPage {
-  max-width: 960px;
+  max-width: 920px;
   margin: 0 auto;
-  padding: var(--space-6) var(--space-4) 48px;
+  padding: var(--space-6) var(--space-4) 56px;
   animation: uiFadeUp var(--duration-slow) var(--ease-out);
+}
+
+.adminIntentReviewPage > h1 {
+  margin: 0 0 var(--space-3);
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
 }
 
 .adminIntentReviewHeader {
@@ -2237,6 +2536,26 @@ h2 {
   align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.adminIntentReviewHeader h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+}
+
+.adminIntentReviewHeader a {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.adminIntentReviewHeader a:hover {
+  text-decoration: underline;
 }
 
 .adminIntentReviewList {
@@ -2244,15 +2563,15 @@ h2 {
   padding: 0;
   margin: 0;
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .adminIntentReviewCard {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  padding: var(--space-5);
   background: var(--color-surface);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-sm);
   transition:
     box-shadow var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-out),
@@ -2261,7 +2580,7 @@ h2 {
 
 .adminIntentReviewCard:hover {
   border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -2270,41 +2589,106 @@ h2 {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 
 .adminIntentReviewCardHead .adminIntentReviewComment {
   margin: 0;
   flex: 1;
   min-width: 0;
+  font-size: 1.02rem;
+  line-height: 1.45;
+}
+
+.adminIntentReviewComment strong {
+  color: var(--color-text);
+  font-weight: 700;
 }
 
 .adminIntentReviewComment {
   margin: 0 0 var(--space-2);
+  color: var(--color-text);
 }
 
 .adminIntentReviewMeta {
   display: grid;
-  gap: 6px;
-  margin: 0 0 var(--space-3);
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
   font-size: 13px;
+}
+
+.adminIntentReviewMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.adminIntentReviewMetaItemWide {
+  grid-column: 1 / -1;
 }
 
 .adminIntentReviewMeta dt {
   font-weight: 650;
-  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
 }
 
 .adminIntentReviewMeta dd {
   margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--color-text);
+}
+
+.adminIntentValue {
+  font-weight: 700;
+}
+
+.adminIntentValueProposed {
+  color: var(--color-accent-ink);
+}
+
+.adminConfidenceChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
+  border: 1px solid #c7d2fe;
+}
+
+.adminModelId {
+  font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  word-break: break-all;
+  line-height: 1.4;
 }
 
 .adminIntentReviewField {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
   font-size: 13px;
+}
+
+.adminIntentReviewField > span {
+  font-weight: 650;
+  color: var(--color-text-secondary);
 }
 
 .adminIntentReviewField input,
@@ -2312,13 +2696,22 @@ h2 {
 .adminIntentReviewField textarea {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 9px 11px;
+  padding: 10px 12px;
   font: inherit;
   background: var(--color-surface);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.adminIntentReviewField input:focus,
+.adminIntentReviewField select:focus,
+.adminIntentReviewField textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(47, 91, 234, 0.12);
 }
 
 .adminEmptyState {
-  margin: 0;
+  margin: 0 0 var(--space-4);
   padding: var(--space-6) var(--space-4);
   border: 1px dashed var(--color-border-strong);
   border-radius: var(--radius-lg);
@@ -2336,12 +2729,13 @@ h2 {
 .adminStatusChip {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
+  flex-shrink: 0;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
   font-size: 0.72rem;
   font-weight: 700;
-  background: #fffbeb;
-  color: #92400e;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
   border: 1px solid #fde68a;
 }
 
@@ -2349,19 +2743,90 @@ h2 {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+  margin-top: var(--space-2);
 }
 
-.adminIntentReviewActions button {
-  padding: 8px 12px;
+.adminBtn {
+  padding: 9px 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
+  font: inherit;
   font-weight: 650;
+  font-size: 0.9rem;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
 }
 
-.adminIntentReviewActions button:hover {
+.adminBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.adminBtnPrimary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
+.adminBtnPrimary:hover:not(:disabled) {
+  background: #2449c9;
+  border-color: #2449c9;
+}
+
+.adminBtnSecondary {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+.adminBtnSecondary:hover:not(:disabled) {
   background: var(--color-bg-soft);
+}
+
+.adminBtnApprove {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-text-inverse);
+}
+
+.adminBtnApprove:hover:not(:disabled) {
+  background: #166534;
+  border-color: #166534;
+}
+
+.adminBtnReject {
+  background: var(--color-surface);
+  border-color: #fecaca;
+  color: var(--color-danger);
+}
+
+.adminBtnReject:hover:not(:disabled) {
+  background: var(--color-danger-soft);
+}
+
+.adminLoadMoreBtn {
+  margin-top: var(--space-4);
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .adminIntentReviewMeta {
+    grid-template-columns: 1fr;
+  }
+
+  .adminExportPanelMain {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .adminBtnPrimary {
+    width: 100%;
+  }
 }
 
 .chatInputRow {
@@ -2969,6 +3434,14 @@ h2 {
   .productCatalogFilters {
     grid-template-columns: 1fr;
   }
+
+  .productCreateGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .productCreateWide {
+    grid-column: auto;
+  }
 }
 
 @media (max-width: 640px) {
@@ -3042,7 +3515,18 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+  margin-top: var(--space-5);
   margin-bottom: var(--space-5);
+}
+
+.liveRoomsBlockedNotice {
+  margin: 0 0 var(--space-4);
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-weight: 600;
 }
 
 .liveRoomsSearch,
@@ -3095,8 +3579,9 @@ h2 {
   background: var(--color-surface-muted);
 }
 
-.liveRoomsCancelButton:disabled {
-  opacity: 0.6;
+.liveRoomsCancelButton:disabled,
+.liveRoomsCreateButton:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -3271,6 +3756,7 @@ h2 {
 
 .liveRoomsModal h2 {
   margin: 0;
+  color: var(--color-text);
 }
 
 .liveRoomsModalField {
@@ -3278,6 +3764,17 @@ h2 {
   gap: 6px;
   font-weight: 650;
   color: var(--color-text-secondary);
+}
+
+.liveRoomsModalField input:focus,
+.liveRoomsModalField select:focus,
+.roomProductSelector > input:focus,
+.productCreateGrid input:focus,
+.productCreateGrid select:focus,
+.productCreateGrid textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .liveRoomsModalActions {
@@ -3290,6 +3787,219 @@ h2 {
 .liveRoomsModalActions .liveRoomsCancelButton,
 .liveRoomsModalActions .liveRoomsCreateButton {
   min-height: 40px;
+}
+
+.sellerIdentityCard {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-4);
+  align-items: center;
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-soft);
+}
+
+.sellerIdentityCard > div:not(.sellerFlowHint) {
+  display: grid;
+  gap: 3px;
+}
+
+.sellerIdentityCard small,
+.sellerIdentityLabel {
+  color: var(--color-text-secondary);
+}
+
+.sellerIdentityLabel {
+  font-size: 0.76rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sellerFlowHint {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sellerFlowHint span {
+  padding: 6px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.sellerWorkspace {
+  margin: var(--space-5) 0;
+}
+
+.sellerWorkspaceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.sellerWorkspaceHeader h2,
+.sellerWorkspaceHeader p {
+  margin-top: 0;
+}
+
+.liveRoomsCreateModal {
+  width: min(640px, 100%);
+  max-height: min(90vh, 760px);
+  overflow: auto;
+  border-top: 4px solid var(--color-accent);
+  background:
+    linear-gradient(180deg, var(--color-accent-soft) 0, var(--color-surface) 110px),
+    var(--color-surface);
+}
+
+.createRoomOwnership {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.createRoomOwnership.isCommerceRoom {
+  border-color: var(--color-border-strong);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.createRoomOwnership.isSocialRoom {
+  border-color: var(--color-border-strong);
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.liveRoomsCommerceFootnote {
+  margin: -3px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-danger);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-danger-soft);
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.liveRoomsCommerceFootnote .commerceFootnoteMark {
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+.liveRoomsCommerceFootnote strong {
+  font-weight: 600;
+  color: inherit;
+}
+
+.roomProductSelector {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.roomProductSelector legend {
+  padding: 0 6px;
+  font-weight: 750;
+}
+
+.roomProductSelector > input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.roomProductSelectorList {
+  display: grid;
+  gap: 6px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.roomProductSelectorList label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: var(--color-bg-soft);
+}
+
+.roomProductSelectorList label:has(input:checked) {
+  border-color: var(--color-border-strong);
+  background: var(--color-accent-soft);
+}
+
+.roomProductSelectorList span {
+  display: grid;
+  gap: 2px;
+}
+
+.roomProductSelectorList small {
+  color: var(--color-text-secondary);
+}
+
+.hostProductGuide {
+  display: flex;
+  gap: 8px 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+}
+
+.hostProductGuide span {
+  color: var(--color-text-secondary);
+}
+
+.viewerCommerceNotice {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 650;
+}
+
+.productPagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.productPagination button {
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+@media (max-width: 760px) {
+  .sellerIdentityCard {
+    grid-template-columns: 1fr;
+  }
+
+  .sellerWorkspaceHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 /* ---- CV Test Video harness (DEV #/dev/cv-test) ---- */

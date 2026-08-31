@@ -109,5 +109,6 @@ export function getDefaultCheckoutForm(): CheckoutForm {
     address: "",
     shippingMethod: "standard" satisfies ShippingMethod,
     paymentMethod: "cod" satisfies PaymentMethod,
+    sandboxResult: "success",
   };
 }

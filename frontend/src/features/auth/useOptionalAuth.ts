@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
+  getAuthToken,
+  getCurrentUser,
   getSupabaseClient,
   isAuthConfigured,
+  loginWithPassword,
   mapSupabaseUser,
+  registerWithPassword,
   signInWithGoogle,
   signUpWithGoogle,
   signOut,
@@ -12,9 +16,12 @@ import {
 
 type OptionalAuthState = {
   configured: boolean;
+  googleConfigured: boolean;
   loading: boolean;
   user: AuthUser | null;
   error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, displayName?: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   registerWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
@@ -32,16 +39,38 @@ function isAuthNetworkError(message: string): boolean {
 }
 
 export function useOptionalAuth(): OptionalAuthState {
-  const initiallyConfigured = useMemo(() => isAuthConfigured(), []);
-  const [configured, setConfigured] = useState(initiallyConfigured);
-  const [loading, setLoading] = useState(initiallyConfigured);
+  const configured = true;
+  const googleConfigured = isAuthConfigured();
+  const [loading, setLoading] = useState(Boolean(getAuthToken()));
   const [user, setUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (getAuthToken()) {
+      let mounted = true;
+      void getCurrentUser()
+        .then((current) => {
+          if (mounted) setUser(current);
+        })
+        .catch((currentError) => {
+          if (mounted) {
+            setError(
+              currentError instanceof Error
+                ? currentError.message
+                : "Không tải được tài khoản hiện tại.",
+            );
+          }
+        })
+        .finally(() => {
+          if (mounted) setLoading(false);
+        });
+      return () => {
+        mounted = false;
+      };
+    }
+
     const supabase = getSupabaseClient();
     if (!supabase) {
-      setConfigured(false);
       setLoading(false);
       return;
     }
@@ -56,7 +85,6 @@ export function useOptionalAuth(): OptionalAuthState {
         }
         if (sessionError) {
           if (isAuthNetworkError(sessionError.message)) {
-            setConfigured(false);
             setError("authUnreachable");
             return;
           }
@@ -72,7 +100,6 @@ export function useOptionalAuth(): OptionalAuthState {
         const message =
           sessionError instanceof Error ? sessionError.message : "Cannot reach Supabase auth.";
         if (isAuthNetworkError(message)) {
-          setConfigured(false);
           setError("authUnreachable");
           return;
         }
@@ -97,12 +124,38 @@ export function useOptionalAuth(): OptionalAuthState {
     };
   }, []);
 
+  async function login(email: string, password: string) {
+    setLoading(true);
+    setError(null);
+    try {
+      setUser(await loginWithPassword(email, password));
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "Không thể đăng nhập.");
+      throw loginError;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function register(email: string, password: string, displayName?: string) {
+    setLoading(true);
+    setError(null);
+    try {
+      setUser(await registerWithPassword(email, password, displayName));
+    } catch (registerError) {
+      setError(registerError instanceof Error ? registerError.message : "Không thể đăng ký tài khoản.");
+      throw registerError;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function loginWithGoogle() {
     setError(null);
     try {
       await signInWithGoogle();
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "Cannot sign in with Google.");
+      setError(loginError instanceof Error ? loginError.message : "Không thể đăng nhập bằng Google.");
     }
   }
 
@@ -112,7 +165,7 @@ export function useOptionalAuth(): OptionalAuthState {
       await signUpWithGoogle();
     } catch (registerError) {
       setError(
-        registerError instanceof Error ? registerError.message : "Cannot sign up with Google.",
+        registerError instanceof Error ? registerError.message : "Không thể đăng ký bằng Google.",
       );
     }
   }
@@ -123,15 +176,18 @@ export function useOptionalAuth(): OptionalAuthState {
       await signOut();
       setUser(null);
     } catch (logoutError) {
-      setError(logoutError instanceof Error ? logoutError.message : "Cannot sign out.");
+      setError(logoutError instanceof Error ? logoutError.message : "Không thể đăng xuất.");
     }
   }
 
   return {
     configured,
+    googleConfigured,
     loading,
     user,
     error,
+    login,
+    register,
     loginWithGoogle,
     registerWithGoogle,
     logout,

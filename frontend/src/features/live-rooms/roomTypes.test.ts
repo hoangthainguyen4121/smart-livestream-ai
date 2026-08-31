@@ -6,6 +6,7 @@ import {
   getRoomTypeLabel,
   isLiveRoomType,
   LIVE_ROOM_TYPES,
+  roomTypeRequiresCommerce,
 } from "./roomTypes";
 
 describe("roomTypes taxonomy", () => {
@@ -26,6 +27,15 @@ describe("roomTypes taxonomy", () => {
     expect(isLiveRoomType("home_living")).toBe(true);
     expect(isLiveRoomType("mom_baby")).toBe(true);
     expect(isLiveRoomType("sports")).toBe(true);
+    expect(isLiveRoomType("chat")).toBe(true);
+    expect(isLiveRoomType("karaoke")).toBe(true);
+  });
+
+  it("separates commerce categories from social rooms", () => {
+    expect(roomTypeRequiresCommerce("fashion")).toBe(true);
+    expect(roomTypeRequiresCommerce("chat")).toBe(false);
+    expect(roomTypeRequiresCommerce("karaoke")).toBe(false);
+    expect(roomTypeRequiresCommerce("general")).toBe(false);
   });
 
   it("falls back safely for unknown legacy values", () => {

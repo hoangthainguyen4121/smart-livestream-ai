@@ -16,6 +16,8 @@ VISUAL_MODERATION_ENDED_REASON = "visual_moderation_violation"
 class MemoryLiveSession:
     id: UUID
     room_id: str
+    seller_user_id: Optional[UUID] = None
+    shop_id: Optional[UUID] = None
     status: SessionStatus = SessionStatus.ACTIVE
     started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     ended_at: Optional[datetime] = None
@@ -60,6 +62,8 @@ class MemoryLiveSessionStore:
         room_id: str,
         *,
         metadata: Optional[Dict[str, Any]] = None,
+        seller_user_id: Optional[UUID] = None,
+        shop_id: Optional[UUID] = None,
     ) -> MemoryLiveSession:
         with self._lock:
             existing_id = self._active_by_room.get(room_id)
@@ -71,6 +75,8 @@ class MemoryLiveSessionStore:
             session = MemoryLiveSession(
                 id=uuid4(),
                 room_id=room_id,
+                seller_user_id=seller_user_id,
+                shop_id=shop_id,
                 metadata_json=dict(metadata or {}),
             )
             self._sessions[session.id] = session

@@ -9,6 +9,8 @@ from typing import Any
 import cv2
 import numpy as np
 
+from app.services.product_image_service import product_image_directory
+
 
 MIN_CAMERA_VISION_CONFIDENCE = 0.55
 
@@ -82,7 +84,12 @@ def _compare_signatures(
 def _load_catalog_image(image_url: str, root: str) -> np.ndarray | None:
     if not image_url.startswith("/"):
         return None
-    path = os.path.join(root, "frontend", "public", image_url.lstrip("/"))
+    upload_prefix = "/media/product-images/"
+    if image_url.startswith(upload_prefix):
+        filename = os.path.basename(image_url.removeprefix(upload_prefix))
+        path = str(product_image_directory() / filename)
+    else:
+        path = os.path.join(root, "frontend", "public", image_url.lstrip("/"))
     if not os.path.exists(path):
         return None
     svg_bytes = open(path, "rb").read()

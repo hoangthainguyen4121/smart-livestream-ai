@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { isHandHeldVisionEnabled } from "../../config/featureFlags";
+import { getHostResumeToken } from "../live-rooms/hostResumeToken";
 import type { CatalogProduct } from "../product-catalog/productCatalogTypes";
 import type { CameraProductDetectionState, CameraProductMatch } from "../camera-product-recognition/types";
 import {
@@ -29,6 +30,7 @@ import {
 import { estimateObjectInHandCrop } from "./handRoiObjectHeuristic";
 
 type UseHandHeldProductRecognitionOptions = {
+  roomId: string;
   enabled?: boolean;
   isLive: boolean;
   catalog: CatalogProduct[];
@@ -104,7 +106,7 @@ export function useHandHeldProductRecognition(
     }));
 
     void (async () => {
-      const status = await fetchProductVisionStatus();
+      const status = await fetchProductVisionStatus(options.roomId);
       if (cancelled) {
         return;
       }
@@ -130,7 +132,11 @@ export function useHandHeldProductRecognition(
         return;
       }
 
-      const synced = await syncCatalogEmbeddings(rasterItems);
+      const synced = await syncCatalogEmbeddings(
+        options.roomId,
+        rasterItems,
+        getHostResumeToken(options.roomId),
+      );
       if (cancelled) {
         return;
       }
@@ -177,7 +183,7 @@ export function useHandHeldProductRecognition(
       catalogReadyRef.current = false;
       handReadyRef.current = false;
     };
-  }, [featureEnabled, options.catalog]);
+  }, [featureEnabled, options.catalog, options.roomId]);
 
   const recognizeNow = useCallback(async (): Promise<CameraProductMatch | null> => {
     if (!featureEnabled) {
@@ -279,7 +285,7 @@ export function useHandHeldProductRecognition(
     }
 
     try {
-      const apiMatch = await matchHandCropEmbedding(cropBase64);
+      const apiMatch = await matchHandCropEmbedding(options.roomId, cropBase64);
       const match: CameraProductMatch | null = apiMatch
         ? {
             productId: apiMatch.productId,
@@ -351,7 +357,7 @@ export function useHandHeldProductRecognition(
       }));
       return null;
     }
-  }, [featureEnabled, options.captureFrame]);
+  }, [featureEnabled, options.captureFrame, options.roomId]);
 
   useEffect(() => {
     if (!featureEnabled || !options.isLive || detection.initPhase !== "ready") {

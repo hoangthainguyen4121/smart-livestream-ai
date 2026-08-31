@@ -3,6 +3,7 @@ httpx
 numpy
 opencv-python
 pillow
+python-multipart
 pytest
 uvicorn[standard]
 # Python 3.9.0 + pydantic>=2.11 breaks OpenAPI (/docs): '_SpecialForm' has no attribute 'replace'.
@@ -12,3 +13,5 @@ sqlmodel>=0.0.22,<0.0.34
 alembic>=1.13
 psycopg[binary]>=3.1
 sqlalchemy>=2.0
+argon2-cffi>=23.1
+email-validator>=2.1

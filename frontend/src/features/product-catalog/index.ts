@@ -10,4 +10,5 @@ export {
   getProductById,
   getDefaultPinnedProduct,
   searchAndFilterProducts,
+  setActiveCatalog,
 } from "./productCatalogService";

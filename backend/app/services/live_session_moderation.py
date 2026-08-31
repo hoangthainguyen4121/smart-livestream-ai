@@ -51,15 +51,37 @@ class HostLeaseError(Exception):
         super().__init__(message)
 
 
-def start_live_session(room_id: str, *, metadata: Optional[Dict[str, Any]] = None) -> Any:
+def start_live_session(
+    room_id: str,
+    *,
+    metadata: Optional[Dict[str, Any]] = None,
+    seller_user_id: Optional[UUID] = None,
+    shop_id: Optional[UUID] = None,
+) -> Any:
     normalized = room_id.strip()
     if is_persistence_enabled():
         with get_session_factory() as db_session:
-            return SessionService(db_session).start_session(normalized, metadata=metadata)
-    return get_memory_live_session_store().start_session(normalized, metadata=metadata)
+            return SessionService(db_session).start_session(
+                normalized,
+                metadata=metadata,
+                seller_user_id=seller_user_id,
+                shop_id=shop_id,
+            )
+    return get_memory_live_session_store().start_session(
+        normalized,
+        metadata=metadata,
+        seller_user_id=seller_user_id,
+        shop_id=shop_id,
+    )
 
 
-def create_live_room(name: str, room_type: str) -> Tuple[Any, str]:
+def create_live_room(
+    name: str,
+    room_type: str,
+    *,
+    seller_user_id: Optional[UUID] = None,
+    shop_id: Optional[UUID] = None,
+) -> Tuple[Any, str]:
     cleaned_name = normalize_room_name(name)
     if not cleaned_name:
         raise LiveRoomValidationError("empty_name", "Room name is required.")
@@ -77,7 +99,12 @@ def create_live_room(name: str, room_type: str) -> Tuple[Any, str]:
         },
         host_token,
     )
-    session = start_live_session(room_id, metadata=metadata)
+    session = start_live_session(
+        room_id,
+        metadata=metadata,
+        seller_user_id=seller_user_id,
+        shop_id=shop_id,
+    )
     return session, host_token
 
 
@@ -146,6 +173,12 @@ def get_live_session(session_id: UUID) -> Optional[Any]:
     return get_memory_live_session_store().get_session(session_id)
 
 
+def _clear_visual_catalog(room_id: str) -> None:
+    from app.services.visual_embedding_service import visual_embedding_service
+
+    visual_embedding_service.clear_room(room_id)
+
+
 def end_live_session(
     session_id: UUID,
     *,
@@ -162,6 +195,7 @@ def end_live_session(
                     f"Session '{session_id}' was not found.",
                 )
             if existing.status == SessionStatus.ENDED:
+                _clear_visual_catalog(existing.room_id)
                 return existing, True
             try:
                 ended = service.end_session(
@@ -176,7 +210,10 @@ def end_live_session(
                 ) from error
             except SessionAlreadyEndedError:
                 ended = service.get_session(session_id)
+                if ended is not None:
+                    _clear_visual_catalog(ended.room_id)
                 return ended, True
+            _clear_visual_catalog(ended.room_id)
             return ended, False
 
     store = get_memory_live_session_store()
@@ -187,8 +224,10 @@ def end_live_session(
             f"Session '{session_id}' was not found.",
         )
     if existing.status == SessionStatus.ENDED:
+        _clear_visual_catalog(existing.room_id)
         return existing, True
     ended = store.end_session(session_id, ended_reason=ended_reason)
+    _clear_visual_catalog(ended.room_id)
     return ended, False
 
 

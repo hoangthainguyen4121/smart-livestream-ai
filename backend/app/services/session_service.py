@@ -45,6 +45,8 @@ class SessionService:
         room_id: str,
         *,
         host_user_id: Optional[UUID] = None,
+        seller_user_id: Optional[UUID] = None,
+        shop_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
     ) -> LivestreamSession:
         existing = self.get_active_session(room_id)
@@ -54,6 +56,8 @@ class SessionService:
         livestream_session = LivestreamSession(
             room_id=room_id,
             host_user_id=host_user_id,
+            seller_user_id=seller_user_id,
+            shop_id=shop_id,
             status=SessionStatus.ACTIVE,
             metadata_json=metadata or {},
         )

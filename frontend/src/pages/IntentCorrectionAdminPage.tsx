@@ -243,6 +243,7 @@ export function IntentCorrectionAdminPage() {
         </label>
         <button
           type="button"
+          className="adminBtn adminBtnPrimary"
           onClick={() => {
             saveAdminApiKey(apiKeyInput);
             saveAdminReviewerLabel(reviewerInput);
@@ -264,14 +265,20 @@ export function IntentCorrectionAdminPage() {
       </header>
 
       <section className="adminExportPanel">
-        <p>
-          {t("adminExportReadyCount", {
-            count: readyExportCount ?? 0,
-          })}
-        </p>
-        <button type="button" onClick={() => void handleCreateExportBatch()} disabled={exportLoading}>
-          {exportLoading ? t("adminExportCreating") : t("adminExportCreateBatch")}
-        </button>
+        <div className="adminExportPanelMain">
+          <div className="adminExportReadyBlock">
+            <span className="adminExportReadyLabel">{t("adminExportReadyLabel")}</span>
+            <strong className="adminExportReadyCount">{readyExportCount ?? 0}</strong>
+          </div>
+          <button
+            type="button"
+            className="adminBtn adminBtnPrimary"
+            onClick={() => void handleCreateExportBatch()}
+            disabled={exportLoading || (readyExportCount ?? 0) === 0}
+          >
+            {exportLoading ? t("adminExportCreating") : t("adminExportCreateBatch")}
+          </button>
+        </div>
         {exportError ? <div className="error">{exportError}</div> : null}
         {exportBatch ? (
           <div className="adminExportResult">
@@ -280,10 +287,18 @@ export function IntentCorrectionAdminPage() {
             <p>{t("adminExportArtifactSha", { sha: exportBatch.artifact_sha256 ?? "-" })}</p>
             <p>{t("adminExportManifestSha", { sha: exportBatch.manifest_sha256 ?? "-" })}</p>
             <div className="adminIntentReviewActions">
-              <button type="button" onClick={() => void handleDownload("jsonl")}>
+              <button
+                type="button"
+                className="adminBtn adminBtnSecondary"
+                onClick={() => void handleDownload("jsonl")}
+              >
                 {t("adminExportDownloadJsonl")}
               </button>
-              <button type="button" onClick={() => void handleDownload("manifest")}>
+              <button
+                type="button"
+                className="adminBtn adminBtnSecondary"
+                onClick={() => void handleDownload("manifest")}
+              >
                 {t("adminExportDownloadManifest")}
               </button>
             </div>
@@ -311,25 +326,33 @@ export function IntentCorrectionAdminPage() {
                 <span className="adminStatusChip">{t("adminIntentReviewPending")}</span>
               </div>
               <dl className="adminIntentReviewMeta">
-                <div>
+                <div className="adminIntentReviewMetaItem">
                   <dt>{t("adminIntentReviewPredicted")}</dt>
                   <dd>
-                    {formatIntentLabel(item.predicted_intent, t)} (
-                    {Math.round(item.prediction_confidence * 100)}%)
+                    <span className="adminIntentValue">
+                      {formatIntentLabel(item.predicted_intent, t)}
+                    </span>
+                    <span className="adminConfidenceChip">
+                      {Math.round(item.prediction_confidence * 100)}%
+                    </span>
                   </dd>
                 </div>
-                <div>
-                  <dt>{t("adminIntentReviewModel")}</dt>
+                <div className="adminIntentReviewMetaItem">
+                  <dt>{t("adminIntentReviewProposed")}</dt>
                   <dd>
+                    <span className="adminIntentValue adminIntentValueProposed">
+                      {formatIntentLabel(item.proposed_intent, t)}
+                    </span>
+                  </dd>
+                </div>
+                <div className="adminIntentReviewMetaItem adminIntentReviewMetaItemWide">
+                  <dt>{t("adminIntentReviewModel")}</dt>
+                  <dd className="adminModelId">
                     {item.model_id} @ {item.model_version}
                   </dd>
                 </div>
-                <div>
-                  <dt>{t("adminIntentReviewProposed")}</dt>
-                  <dd>{formatIntentLabel(item.proposed_intent, t)}</dd>
-                </div>
                 {item.user_note ? (
-                  <div>
+                  <div className="adminIntentReviewMetaItem adminIntentReviewMetaItemWide">
                     <dt>{t("adminIntentReviewUserNote")}</dt>
                     <dd>{item.user_note}</dd>
                   </div>
@@ -394,6 +417,7 @@ export function IntentCorrectionAdminPage() {
               <div className="adminIntentReviewActions">
                 <button
                   type="button"
+                  className="adminBtn adminBtnApprove"
                   onClick={() => {
                     void handleApprove(item);
                   }}
@@ -405,6 +429,7 @@ export function IntentCorrectionAdminPage() {
                 </button>
                 <button
                   type="button"
+                  className="adminBtn adminBtnReject"
                   onClick={() => {
                     void handleReject(item);
                   }}
@@ -423,6 +448,7 @@ export function IntentCorrectionAdminPage() {
       {nextCursor ? (
         <button
           type="button"
+          className="adminBtn adminBtnSecondary adminLoadMoreBtn"
           onClick={() => {
             void loadPage(nextCursor, true);
           }}

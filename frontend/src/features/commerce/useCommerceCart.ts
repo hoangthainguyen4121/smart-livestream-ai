@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
-import { getProductById } from "../product-catalog";
 import type { CatalogProduct } from "../product-catalog/productCatalogTypes";
+import { checkoutOrder } from "../../api/commerce";
 import {
   addToCart,
   getCartItemCount,
@@ -10,9 +10,7 @@ import {
   updateCartQuantity,
 } from "./cartLogic";
 import {
-  createMockOrder,
   getDefaultCheckoutForm,
-  markMockOrderPaid,
 } from "./checkoutService";
 import type {
   AddToCartInput,
@@ -26,15 +24,18 @@ import { SHIPPING_FEES } from "./commerceTypes";
 
 type UseCommerceCartOptions = {
   onOpenCart?: () => void;
+  products?: CatalogProduct[];
+  roomId?: string | null;
 };
 
 export function useCommerceCart(options: UseCommerceCartOptions = {}) {
-  const { onOpenCart } = options;
+  const { onOpenCart, products = [], roomId = null } = options;
   const [items, setItems] = useState<CartLineItem[]>([]);
   const [order, setOrder] = useState<MockOrder | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutForm, setCheckoutForm] = useState<CheckoutForm>(getDefaultCheckoutForm);
   const [isPaying, setIsPaying] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const subtotal = useMemo(() => getCartSubtotal(items), [items]);
   const itemCount = useMemo(() => getCartItemCount(items), [items]);
@@ -54,7 +55,7 @@ export function useCommerceCart(options: UseCommerceCartOptions = {}) {
         size?: string | null;
       },
     ) => {
-      const product = getProductById(productId);
+      const product = products.find((entry) => entry.id === productId);
       if (!product) {
         return false;
       }
@@ -67,7 +68,7 @@ export function useCommerceCart(options: UseCommerceCartOptions = {}) {
       });
       return true;
     },
-    [addProductToCart],
+    [addProductToCart, products],
   );
 
   const removeLine = useCallback((lineId: string) => {
@@ -98,27 +99,26 @@ export function useCommerceCart(options: UseCommerceCartOptions = {}) {
     [],
   );
 
-  const submitCheckout = useCallback(() => {
+  const submitCheckout = useCallback(async () => {
     if (items.length === 0) {
       return null;
     }
-
-    const nextOrder = createMockOrder(items, checkoutForm);
-    setOrder(nextOrder);
-    setCheckoutOpen(false);
-    clearCart();
-    setCheckoutForm(getDefaultCheckoutForm());
-
-    if (checkoutForm.paymentMethod === "mock_qr") {
-      setIsPaying(true);
-      window.setTimeout(() => {
-        setOrder((current) => (current ? markMockOrderPaid(current) : current));
-        setIsPaying(false);
-      }, 1500);
+    setIsPaying(true);
+    setCheckoutError(null);
+    try {
+      const nextOrder = await checkoutOrder(items, checkoutForm, { roomId });
+      setOrder(nextOrder);
+      setCheckoutOpen(false);
+      clearCart();
+      setCheckoutForm(getDefaultCheckoutForm());
+      return nextOrder;
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : "Checkout failed.");
+      return null;
+    } finally {
+      setIsPaying(false);
     }
-
-    return nextOrder;
-  }, [checkoutForm, clearCart, items]);
+  }, [checkoutForm, clearCart, items, roomId]);
 
   const handleCommerceAction = useCallback(
     (
@@ -167,6 +167,7 @@ export function useCommerceCart(options: UseCommerceCartOptions = {}) {
     checkoutOpen,
     checkoutForm,
     isPaying,
+    checkoutError,
     subtotal,
     itemCount,
     shippingFee,

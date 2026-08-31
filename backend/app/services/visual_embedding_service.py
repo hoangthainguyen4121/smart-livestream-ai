@@ -4,6 +4,7 @@ import base64
 import io
 import os
 from dataclasses import dataclass
+from threading import RLock
 from typing import Any, Literal, Optional
 
 import cv2
@@ -80,7 +81,8 @@ def _fingerprint_embedding(image_rgb: np.ndarray, size: int = 64) -> np.ndarray:
 
 class VisualEmbeddingService:
     def __init__(self) -> None:
-        self._catalog: list[CatalogEmbeddingEntry] = []
+        self._catalogs: dict[str, tuple[CatalogEmbeddingEntry, ...]] = {}
+        self._catalog_lock = RLock()
         self._clip_model: Optional[Any] = None
         self._clip_preprocess: Optional[Any] = None
         self._embedder: EmbedderKind = "fingerprint"
@@ -91,9 +93,21 @@ class VisualEmbeddingService:
         self._ensure_clip()
         return self._embedder
 
-    @property
-    def catalog_size(self) -> int:
-        return len(self._catalog)
+    def catalog_size(self, room_id: str) -> int:
+        normalized = room_id.strip()
+        with self._catalog_lock:
+            return len(self._catalogs.get(normalized, ()))
+
+    def clear_room(self, room_id: str) -> None:
+        normalized = room_id.strip()
+        if not normalized:
+            return
+        with self._catalog_lock:
+            self._catalogs.pop(normalized, None)
+
+    def clear_all(self) -> None:
+        with self._catalog_lock:
+            self._catalogs.clear()
 
     def _ensure_clip(self) -> None:
         if self._clip_init_attempted:
@@ -138,7 +152,10 @@ class VisualEmbeddingService:
             features = features / features.norm(dim=-1, keepdim=True)
         return features.squeeze(0).cpu().numpy().astype(np.float32)
 
-    def sync_catalog(self, items: list[dict[str, str]]) -> dict[str, Any]:
+    def sync_catalog(self, room_id: str, items: list[dict[str, str]]) -> dict[str, Any]:
+        normalized_room_id = room_id.strip()
+        if not normalized_room_id:
+            raise ValueError("room_id_required")
         entries: list[CatalogEmbeddingEntry] = []
         skipped: list[str] = []
 
@@ -163,7 +180,8 @@ class VisualEmbeddingService:
             except Exception:
                 skipped.append(product_id)
 
-        self._catalog = entries
+        with self._catalog_lock:
+            self._catalogs[normalized_room_id] = tuple(entries)
         return {
             "indexed": len(entries),
             "skipped": skipped,
@@ -172,10 +190,14 @@ class VisualEmbeddingService:
 
     def match_crop(
         self,
+        room_id: str,
         crop_image_base64: str,
         minimum_score: float = MIN_VISUAL_MATCH_SCORE,
     ) -> Optional[VisualProductMatch]:
-        if not self._catalog:
+        normalized_room_id = room_id.strip()
+        with self._catalog_lock:
+            catalog = self._catalogs.get(normalized_room_id, ())
+        if not catalog:
             return None
 
         crop_rgb = decode_image_base64(crop_image_base64)
@@ -185,7 +207,7 @@ class VisualEmbeddingService:
         best_score = -1.0
         second_score = -1.0
 
-        for entry in self._catalog:
+        for entry in catalog:
             score = float(np.dot(query, entry.embedding))
             if score > best_score:
                 second_score = best_score

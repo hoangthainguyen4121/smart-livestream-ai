@@ -156,7 +156,11 @@ def feedback_env(postgres_database_url: str, apply_migrations, monkeypatch: pyte
     monkeypatch.setenv("CHAT_PERSISTENCE_MODE", "memory")
     monkeypatch.setenv("DATABASE_URL", postgres_database_url)
     _reset_runtime_caches()
+    from app.services.memory_live_sessions import get_memory_live_session_store
+
+    get_memory_live_session_store().clear()
     yield postgres_database_url
+    get_memory_live_session_store().clear()
     _reset_runtime_caches()
 
 
@@ -171,6 +175,7 @@ def db_session_feedback(feedback_env: str):
             "TRUNCATE TABLE ml_retrain_candidate_runs, dataset_export_processing_runs, "
             "dataset_export_batch_items, dataset_export_batches, "
             "intent_correction_samples, comments, "
+            "payments, order_items, orders, room_products, products, shops, auth_tokens, users, "
             "livestream_sessions, profiles RESTART IDENTITY CASCADE",
         )
         yield session
@@ -185,7 +190,9 @@ def db_session(persistence_env: str):
         _truncate_after_guard(
             session,
             "TRUNCATE TABLE dataset_export_batch_items, dataset_export_batches, "
-            "intent_correction_samples, comments, livestream_sessions, profiles "
+            "intent_correction_samples, comments, "
+            "payments, order_items, orders, room_products, products, shops, auth_tokens, users, "
+            "livestream_sessions, profiles "
             "RESTART IDENTITY CASCADE",
         )
         yield session

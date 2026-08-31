@@ -20,6 +20,7 @@ from app.services.live_room_types import (  # noqa: E402
     get_allowed_room_types,
     load_room_taxonomy,
     resolve_room_type_label,
+    room_type_requires_commerce,
     validate_room_type,
 )
 from app.services.memory_live_sessions import get_memory_live_session_store  # noqa: E402
@@ -44,13 +45,20 @@ def test_legacy_ids_remain_valid() -> None:
         assert validate_room_type(room_type) == room_type
 
 
-def test_new_category_ids_create_room(client: TestClient) -> None:
+def test_commerce_requirement_comes_from_shared_taxonomy() -> None:
+    assert room_type_requires_commerce("fashion") is True
+    assert room_type_requires_commerce("chat") is False
+    assert room_type_requires_commerce("karaoke") is False
+    assert room_type_requires_commerce("general") is False
+
+
+def test_new_social_category_creates_room_without_commerce(client: TestClient) -> None:
     response = client.post(
         "/api/live-sessions",
-        json={"name": "Home Living Live", "room_type": "home_living"},
+        json={"name": "Karaoke Live", "room_type": "karaoke"},
     )
     assert response.status_code == 201
-    assert response.json()["room_type"] == "home_living"
+    assert response.json()["room_type"] == "karaoke"
 
 
 def test_invalid_category_rejected(client: TestClient) -> None:

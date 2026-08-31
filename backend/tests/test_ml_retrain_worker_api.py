@@ -266,7 +266,8 @@ def test_accumulated_two_batches_in_one_candidate(worker_client: TestClient, adm
     claim = worker_client.post("/api/internal/ml-retrain/claim-candidate", headers=WORKER_HEADERS)
     payload = claim.json()
     assert payload["available"] is True
-    assert payload["batch_ids"] == [first["id"], second["id"]]
+    # claim_candidate_batches stores batch ids sorted by UUID string, not creation order.
+    assert sorted(payload["batch_ids"]) == sorted([first["id"], second["id"]])
 
 
 def test_deferred_releases_consumption_state(

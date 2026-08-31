@@ -12,6 +12,7 @@ export type ArEffectType = "glasses" | "lipstick" | "crown" | "none";
 
 export type CatalogProduct = {
   id: string;
+  shopId?: string;
   name: string;
   category: ProductCategory;
   description: string;

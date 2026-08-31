@@ -27,6 +27,7 @@ export function addToCart(
     {
       lineId,
       productId: input.product.id,
+      shopId: input.product.shopId,
       productName: input.product.name,
       unitPrice: input.product.price,
       quantity,

@@ -18,6 +18,8 @@ class SessionResponse(BaseModel):
     started_at: datetime
     ended_at: Optional[datetime] = None
     host_user_id: Optional[UUID] = None
+    seller_user_id: Optional[UUID] = None
+    shop_id: Optional[UUID] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
@@ -31,5 +33,7 @@ class SessionResponse(BaseModel):
             started_at=livestream_session.started_at,
             ended_at=livestream_session.ended_at,
             host_user_id=livestream_session.host_user_id,
+            seller_user_id=getattr(livestream_session, "seller_user_id", None),
+            shop_id=getattr(livestream_session, "shop_id", None),
             metadata=livestream_session.metadata_json or {},
         )

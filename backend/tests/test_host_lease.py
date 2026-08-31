@@ -37,7 +37,7 @@ def client(memory_mode_env: None, monkeypatch: pytest.MonkeyPatch) -> TestClient
 def test_create_returns_host_token_once(client: TestClient) -> None:
     created = client.post(
         "/api/live-sessions",
-        json={"name": "Lease Room", "room_type": "fashion"},
+        json={"name": "Lease Room", "room_type": "chat"},
     ).json()
     assert "host_resume_token" in created
     assert created["host_present"] is True
@@ -64,7 +64,7 @@ def test_heartbeat_updates_media_live(client: TestClient) -> None:
 def test_reclaim_within_grace(client: TestClient) -> None:
     created = client.post(
         "/api/live-sessions",
-        json={"name": "Reclaim Room", "room_type": "beauty"},
+        json={"name": "Reclaim Room", "room_type": "karaoke"},
     ).json()
     token = created["host_resume_token"]
     store = get_memory_live_session_store()
@@ -90,7 +90,7 @@ def test_lease_expired_reaped_from_directory(client: TestClient, monkeypatch: py
     clear_settings_cache()
     created = client.post(
         "/api/live-sessions",
-        json={"name": "Expire Room", "room_type": "food"},
+        json={"name": "Expire Room", "room_type": "chat"},
     ).json()
     store = get_memory_live_session_store()
     session = store.get_session(UUID(created["id"]))
@@ -111,13 +111,27 @@ def test_lease_expired_reaped_from_directory(client: TestClient, monkeypatch: py
 def test_invalid_token_rejected(client: TestClient) -> None:
     created = client.post(
         "/api/live-sessions",
-        json={"name": "Bad Token", "room_type": "electronics"},
+        json={"name": "Bad Token", "room_type": "karaoke"},
     ).json()
     response = client.post(
         f"/api/live-sessions/{created['id']}/host-heartbeat",
         json={"host_token": "definitely-not-the-real-token-value"},
     )
     assert response.status_code == 403
+
+
+def test_host_resume_token_can_end_session_but_uuid_alone_cannot(client: TestClient) -> None:
+    created = client.post(
+        "/api/live-sessions",
+        json={"name": "Token End Room", "room_type": "general"},
+    ).json()
+    assert client.post(f"/api/live-sessions/{created['id']}/end").status_code == 401
+    ended = client.post(
+        f"/api/live-sessions/{created['id']}/end",
+        headers={"X-Host-Token": created["host_resume_token"]},
+    )
+    assert ended.status_code == 200
+    assert ended.json()["status"] == "ended"
 
 
 def test_reclaim_after_expiry_rejected(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:

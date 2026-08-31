@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "./config";
+import { authHeaders } from "./auth";
 
 export type LiveSessionStatus = "active" | "ended";
 
@@ -19,6 +20,8 @@ export type LiveSession = {
   media_live?: boolean;
   is_host?: boolean;
   grace_remaining_seconds?: number | null;
+  seller_user_id?: string | null;
+  shop_id?: string | null;
 };
 
 export type LiveRoom = {
@@ -35,6 +38,8 @@ export type LiveRoom = {
   host_lease_expires_at?: string | null;
   media_live?: boolean;
   host_resume_token?: string;
+  seller_user_id?: string | null;
+  shop_id?: string | null;
 };
 
 export type HostHeartbeatPayload = {
@@ -45,6 +50,7 @@ export type HostHeartbeatPayload = {
 export type CreateLiveRoomPayload = {
   name: string;
   room_type: string;
+  product_ids?: string[];
 };
 
 export type ModerationViolationPayload = {
@@ -67,7 +73,7 @@ export async function listActiveLiveRooms(): Promise<LiveRoom[]> {
 export async function createLiveRoom(payload: CreateLiveRoomPayload): Promise<LiveRoom> {
   const response = await fetch(`${getApiBaseUrl()}/api/live-sessions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -128,7 +134,7 @@ export async function reclaimHost(roomId: string, hostToken: string): Promise<Li
 export async function startLiveSession(roomId: string): Promise<LiveSession> {
   const response = await fetch(`${getApiBaseUrl()}/api/live-sessions/start`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ room_id: roomId }),
   });
   if (!response.ok) {
@@ -137,10 +143,19 @@ export async function startLiveSession(roomId: string): Promise<LiveSession> {
   return (await response.json()) as LiveSession;
 }
 
-export async function endLiveSession(sessionId: string): Promise<LiveSession> {
+export async function endLiveSession(
+  sessionId: string,
+  hostToken?: string | null,
+): Promise<LiveSession> {
   const response = await fetch(
     `${getApiBaseUrl()}/api/live-sessions/${encodeURIComponent(sessionId)}/end`,
-    { method: "POST" },
+    {
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        ...(hostToken ? { "X-Host-Token": hostToken } : {}),
+      },
+    },
   );
   if (!response.ok) {
     throw new Error(`Failed to end live session (${response.status}).`);
@@ -151,12 +166,17 @@ export async function endLiveSession(sessionId: string): Promise<LiveSession> {
 export async function reportModerationViolation(
   sessionId: string,
   payload: ModerationViolationPayload,
+  hostToken?: string | null,
 ): Promise<LiveSession> {
   const response = await fetch(
     `${getApiBaseUrl()}/api/live-sessions/${encodeURIComponent(sessionId)}/moderation-violations`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+        ...(hostToken ? { "X-Host-Token": hostToken } : {}),
+      },
       body: JSON.stringify(payload),
     },
   );

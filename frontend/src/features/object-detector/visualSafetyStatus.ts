@@ -10,7 +10,10 @@ export type VisualSafetyAdultKey =
   | "visualSafetyAdultSuggestiveWarning"
   | "visualSafetyAdultExplicitWarning";
 
-export type VisualSafetySharpKey = "visualSafetySharpSafe" | "visualSafetySharpWarning";
+export type VisualSafetySharpKey =
+  | "visualSafetySharpSafe"
+  | "visualSafetySharpWarning"
+  | "visualSafetySharpDisabled";
 
 export type VisualSafetyGunKey =
   | "visualSafetyGunUnavailable"
@@ -36,11 +39,30 @@ export function resolveAdultSafetyKey(
 export function resolveSharpSafetyKey(
   enforcement: SharpObjectEnforcementResult,
   terminated: boolean,
+  moderationEnabled = true,
 ): VisualSafetySharpKey {
   if (terminated || enforcement.action === "terminate" || enforcement.action === "warning") {
     return "visualSafetySharpWarning";
   }
+  if (!moderationEnabled) {
+    return "visualSafetySharpDisabled";
+  }
   return "visualSafetySharpSafe";
+}
+
+const VIOLATING_SAFETY_KEYS: ReadonlySet<string> = new Set([
+  "visualSafetyAdultSuggestiveWarning",
+  "visualSafetyAdultExplicitWarning",
+  "visualSafetySharpWarning",
+  "visualSafetyGunWarning",
+  "visualSafetyGunConfirmed",
+]);
+
+/** Rows whose status key already encodes an active violation get the highlighted style. */
+export function isViolatingSafetyKey(
+  key: VisualSafetyAdultKey | VisualSafetySharpKey | VisualSafetyGunKey,
+): boolean {
+  return VIOLATING_SAFETY_KEYS.has(key);
 }
 
 export function resolveGunSafetyKey(weaponGate: WeaponFrameGateView | null): VisualSafetyGunKey {

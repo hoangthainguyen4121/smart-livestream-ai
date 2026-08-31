@@ -148,6 +148,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             t,
           ),
         );
+      } else if (spamErrorCode && retryUntilMs <= tickNow) {
+        setRetryUntilMs(0);
+        setSpamErrorCode(null);
+        setErrorMessage(null);
       }
     }, 250);
 
@@ -334,9 +338,12 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     }));
   }
 
+  // sendBlockedTick only forces periodic renders; Date.now() is the actual clock.
+  // Reusing the last tick here can leave the send button locked after the timer expires.
+  void sendBlockedTick;
   const sendBlockedNow =
     chatDisabled ||
-    isChatSendDisabled(sendBlockedTick || Date.now(), sendCooldownUntilMs, retryUntilMs);
+    isChatSendDisabled(Date.now(), sendCooldownUntilMs, retryUntilMs);
 
   const knownMessageIdsRef = useRef<Set<string> | null>(null);
   const [enterMessageIds, setEnterMessageIds] = useState<Record<string, true>>({});

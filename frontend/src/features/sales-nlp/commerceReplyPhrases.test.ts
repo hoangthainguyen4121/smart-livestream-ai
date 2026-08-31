@@ -10,7 +10,7 @@ describe("commerceReplyPhrases", () => {
     const reply = buildPurchaseClarificationReply("Son Ruby Đỏ");
 
     expect(reply).toBe(
-      "Bạn muốn chốt SON RUBY ĐỎ phải không ạ? Bạn có thể thêm vào giỏ hàng bên dưới hoặc nhắn chốt đơn để thanh toán.",
+      "Bạn muốn chốt SON RUBY ĐỎ phải không ạ? Bạn có thể thêm vào giỏ hàng bên dưới.",
     );
     expect(reply).not.toContain("checkout");
     expect(reply).not.toContain("demo");

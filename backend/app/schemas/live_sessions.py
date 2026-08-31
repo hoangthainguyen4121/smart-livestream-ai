@@ -25,6 +25,7 @@ class StartLiveSessionRequest(BaseModel):
 class CreateLiveRoomRequest(BaseModel):
     name: str = Field(min_length=1, max_length=MAX_ROOM_NAME_LENGTH)
     room_type: str = Field(default=DEFAULT_ROOM_TYPE, min_length=1, max_length=32)
+    product_ids: list[UUID] = Field(default_factory=list, max_length=100)
 
     @field_validator("name")
     @classmethod
@@ -83,6 +84,8 @@ class LiveSessionResponse(BaseModel):
     media_live: bool = False
     is_host: bool = False
     grace_remaining_seconds: Optional[int] = None
+    seller_user_id: Optional[UUID] = None
+    shop_id: Optional[UUID] = None
 
     @classmethod
     def from_session(
@@ -128,6 +131,8 @@ class LiveSessionResponse(BaseModel):
             media_live=bool(host_fields["media_live"]),
             is_host=is_host,
             grace_remaining_seconds=grace_remaining,
+            seller_user_id=getattr(livestream_session, "seller_user_id", None),
+            shop_id=getattr(livestream_session, "shop_id", None),
         )
 
 
@@ -144,6 +149,7 @@ class LiveRoomResponse(BaseModel):
     host_recoverable: bool = False
     host_lease_expires_at: Optional[str] = None
     media_live: bool = False
+    shop_id: Optional[UUID] = None
 
     @classmethod
     def from_session(cls, livestream_session: Any) -> "LiveRoomResponse":
@@ -164,6 +170,7 @@ class LiveRoomResponse(BaseModel):
             host_recoverable=bool(host_fields["host_recoverable"]),
             host_lease_expires_at=host_fields["host_lease_expires_at"],
             media_live=bool(host_fields["media_live"]),
+            shop_id=getattr(livestream_session, "shop_id", None),
         )
 
 

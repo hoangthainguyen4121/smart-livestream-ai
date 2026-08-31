@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import {
   COMMERCE_CTA_SUFFIX,
   PURCHASE_ADD_TO_CART_PHRASE,
-  PURCHASE_CHECKOUT_ORDER_PHRASE,
   PURCHASE_CLARIFICATION_REPLY_REGEX,
 } from "../sales-nlp/commerceReplyPhrases";
 
@@ -12,9 +11,7 @@ function renderCommerceCtaSuffix(): ReactNode {
     <>
       Bạn có thể{" "}
       <span className="chatReplyHighlight chatReplyHighlightAction">{PURCHASE_ADD_TO_CART_PHRASE}</span>
-      {" bên dưới hoặc nhắn "}
-      <span className="chatReplyHighlight chatReplyHighlightAction">{PURCHASE_CHECKOUT_ORDER_PHRASE}</span>
-      {" để thanh toán."}
+      {" bên dưới."}
     </>
   );
 }

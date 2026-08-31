@@ -1,10 +1,10 @@
 export const PURCHASE_ADD_TO_CART_PHRASE = "thêm vào giỏ hàng";
 export const PURCHASE_CHECKOUT_ORDER_PHRASE = "chốt đơn";
 
-export const COMMERCE_CTA_SUFFIX = `Bạn có thể ${PURCHASE_ADD_TO_CART_PHRASE} bên dưới hoặc nhắn ${PURCHASE_CHECKOUT_ORDER_PHRASE} để thanh toán.`;
+export const COMMERCE_CTA_SUFFIX = `Bạn có thể ${PURCHASE_ADD_TO_CART_PHRASE} bên dưới.`;
 
 export const PURCHASE_CLARIFICATION_REPLY_REGEX =
-  /^Bạn muốn chốt (.+) phải không ạ\? Bạn có thể thêm vào giỏ hàng bên dưới hoặc nhắn chốt đơn để thanh toán\.$/;
+  /^Bạn muốn chốt (.+) phải không ạ\? Bạn có thể thêm vào giỏ hàng bên dưới\.$/;
 
 export function formatHighlightedProductName(productName: string): string {
   return productName.toLocaleUpperCase("vi-VN");

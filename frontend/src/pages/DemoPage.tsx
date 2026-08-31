@@ -8,6 +8,18 @@ import {
   reportModerationViolation,
   startLiveSession,
 } from "../api/liveSessions";
+import {
+  attachRoomProduct,
+  createProduct,
+  deleteProduct,
+  getMyShop,
+  getShop,
+  listProducts,
+  listRoomProducts,
+  pinRoomProduct,
+  updateProduct,
+  type ProductInput,
+} from "../api/commerce";
 import { navigateHash, roomsPath } from "../routing/hashRoute";
 import { AuthStatusPanel } from "../features/auth/AuthStatusPanel";
 import { useOptionalAuth } from "../features/auth/useOptionalAuth";
@@ -17,6 +29,11 @@ import {
   type VideoCaptureSource,
 } from "../features/browser-ar/runtime/videoCaptureSource";
 import { isLocalHostForRoom, markRoomAsHosted } from "../features/live-rooms/hostedRooms";
+import {
+  DEFAULT_ROOM_TYPE,
+  getRoomTypeLabel,
+  roomTypeRequiresCommerce,
+} from "../features/live-rooms/roomTypes";
 import {
   clearHostResumeToken,
   getHostResumeToken,
@@ -55,10 +72,9 @@ import {
   useCommerceCart,
 } from "../features/commerce";
 import {
-  DEFAULT_PINNED_PRODUCT_ID,
-  getAllProducts,
-  getProductById,
   mapArEffectTypeToBrowserAr,
+  setActiveCatalog,
+  type CatalogProduct,
 } from "../features/product-catalog";
 import { ProductCatalogPanel } from "../features/product-catalog/components/ProductCatalogPanel";
 import { PinnedProductPanel } from "../features/sales-assistant/PinnedProductPanel";
@@ -81,6 +97,9 @@ import { useViewerWebRtcPlayer } from "../features/webrtc/useViewerWebRtcPlayer"
 
 const HOST_USERNAME = "hoang";
 const GUEST_DISPLAY_NAME = "guest";
+// Temporarily OFF by default. Set true only when sharp-object moderation is ready for demo.
+const SHARP_OBJECT_MODERATION_ENABLED =
+  import.meta.env.VITE_SHARP_OBJECT_MODERATION_ENABLED === "true";
 
 const AR_EFFECTS: BrowserArEffect[] = ["none", "glasses", "makeup_lite", "full_filter"];
 
@@ -104,7 +123,16 @@ export function DemoPage({ roomId }: DemoPageProps) {
   const [sessionStartError, setSessionStartError] = useState<string | null>(null);
   const [sessionViewerCount, setSessionViewerCount] = useState(0);
   const [sessionMessageCount, setSessionMessageCount] = useState(0);
-  const [pinnedProductId, setPinnedProductId] = useState<string | null>(DEFAULT_PINNED_PRODUCT_ID);
+  const [pinnedProductId, setPinnedProductId] = useState<string | null>(null);
+  const [catalogRevision, setCatalogRevision] = useState(0);
+  const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
+  const [shopId, setShopId] = useState<string | null>(null);
+  const [shopName, setShopName] = useState<string | null>(null);
+  const [roomShopId, setRoomShopId] = useState<string | null>(null);
+  const [roomType, setRoomType] = useState(DEFAULT_ROOM_TYPE);
+  const [attachedProductIds, setAttachedProductIds] = useState<Set<string>>(new Set());
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [effect, setEffect] = useState<BrowserArEffect>("none");
   const [debugOverlay, setDebugOverlay] = useState(false);
   const [objectDetectorEnabled, setObjectDetectorEnabled] = useState(false);
@@ -130,6 +158,7 @@ export function DemoPage({ roomId }: DemoPageProps) {
   const [isHost, setIsHost] = useState(
     () => isLocalHostForRoom(roomId) || Boolean(getHostResumeToken(roomId)),
   );
+  const isCommerceRoom = roomTypeRequiresCommerce(roomType);
   const salesAnalyticsRef = useRef(salesAnalytics);
   const isStreamLiveRef = useRef(isStreamLive);
   const sessionTerminatedRef = useRef(sessionTerminated);
@@ -198,7 +227,7 @@ export function DemoPage({ roomId }: DemoPageProps) {
     setCartOpen(false);
   }, []);
 
-  const cart = useCommerceCart({ onOpenCart: openCart });
+  const cart = useCommerceCart({ onOpenCart: openCart, products: catalog, roomId });
 
   useEffect(() => {
     let cancelled = false;
@@ -217,6 +246,8 @@ export function DemoPage({ roomId }: DemoPageProps) {
             markRoomAsHosted(roomId);
             setIsHost(true);
             setLiveSessionId(reclaimed.id);
+            setRoomShopId(reclaimed.shop_id ?? null);
+            setRoomType(reclaimed.room_type ?? DEFAULT_ROOM_TYPE);
             setRoomName(reclaimed.name?.trim() || roomId);
             setSessionTerminated(false);
             setRoomLoadState("ready");
@@ -240,6 +271,8 @@ export function DemoPage({ roomId }: DemoPageProps) {
           return;
         }
         setLiveSessionId(session.id);
+        setRoomShopId(session.shop_id ?? null);
+        setRoomType(session.room_type ?? DEFAULT_ROOM_TYPE);
         setRoomName(session.name?.trim() || roomId);
         setSessionTerminated(false);
         setRoomLoadState("ready");
@@ -260,9 +293,109 @@ export function DemoPage({ roomId }: DemoPageProps) {
   }, [roomId, t]);
 
   const pinnedProduct = useMemo(
-    () => (pinnedProductId ? getProductById(pinnedProductId) ?? null : null),
-    [pinnedProductId],
+    () => (pinnedProductId ? catalog.find((product) => product.id === pinnedProductId) ?? null : null),
+    [catalog, pinnedProductId],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    setCatalogLoading(true);
+    setCatalogError(null);
+    if (!isCommerceRoom) {
+      setCatalog([]);
+      setShopId(null);
+      setShopName(null);
+      setAttachedProductIds(new Set());
+      setPinnedProductId(null);
+      setCatalogLoading(false);
+      return undefined;
+    }
+    void (async () => {
+      try {
+        if (isHost && auth.user) {
+          const shop = await getMyShop();
+          if (!shop) {
+            if (!cancelled) {
+              setShopId(null);
+              setCatalog([]);
+              setShopName(null);
+            }
+            return;
+          }
+          const [products, roomProducts] = await Promise.all([
+            listProducts({ shopId: shop.id }),
+            listRoomProducts(roomId),
+          ]);
+          if (!cancelled) {
+            setShopId(shop.id);
+            setShopName(shop.name);
+            setCatalog(products);
+            setAttachedProductIds(new Set(roomProducts.map((product) => product.id)));
+            setPinnedProductId(
+              roomProducts.find((product) => product.isPinned)?.id ?? null,
+            );
+          }
+        } else {
+          const [products, roomShop] = await Promise.all([
+            listRoomProducts(roomId),
+            roomShopId ? getShop(roomShopId) : Promise.resolve(null),
+          ]);
+          if (!cancelled) {
+            setCatalog(products);
+            setShopName(roomShop?.name ?? null);
+            setAttachedProductIds(new Set(products.map((product) => product.id)));
+            const pinned = products.find((product) => product.isPinned)?.id ?? products[0]?.id ?? null;
+            setPinnedProductId(pinned);
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCatalog([]);
+          setPinnedProductId(null);
+          setCatalogError(
+            error instanceof Error
+              ? error.message
+              : "Không thể tải sản phẩm của phòng. Hãy thử tải lại.",
+          );
+        }
+      } finally {
+        if (!cancelled) setCatalogLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.user, catalogRevision, isCommerceRoom, isHost, roomId, roomShopId]);
+
+  useEffect(() => {
+    setActiveCatalog(catalog);
+    return () => setActiveCatalog(null);
+  }, [catalog]);
+
+  async function handleCreateProduct(input: ProductInput) {
+    if (!shopId) throw new Error("Hãy thiết lập cửa hàng trước khi tạo sản phẩm.");
+    const product = await createProduct(shopId, input);
+    setCatalog((current) => [product, ...current]);
+    return product;
+  }
+
+  async function handleUpdateProduct(product: (typeof catalog)[number], input: ProductInput) {
+    const updated = await updateProduct(product.id, input);
+    setCatalog((current) => current.map((entry) => entry.id === updated.id ? updated : entry));
+    return updated;
+  }
+
+  async function handleDeleteProduct(product: (typeof catalog)[number]) {
+    if (!window.confirm(`Ngừng bán “${product.name}”?`)) return;
+    await deleteProduct(product.id);
+    setCatalog((current) => current.filter((entry) => entry.id !== product.id));
+    if (pinnedProductId === product.id) setPinnedProductId(null);
+  }
+
+  async function handleAttachProduct(productId: string) {
+    await attachRoomProduct(roomId, productId);
+    setAttachedProductIds((current) => new Set(current).add(productId));
+  }
 
   const captureFrame = useCallback(() => browserArRef.current?.captureFrame() ?? null, []);
   const getVideoElement = useCallback(() => browserArRef.current?.getVideoElement() ?? null, []);
@@ -279,6 +412,7 @@ export function DemoPage({ roomId }: DemoPageProps) {
     enabled: objectDetectorEnabled && !sessionTerminated,
     isActive: objectDetector.isActive && !sessionTerminated,
     detections: objectDetector.snapshot.allDetections,
+    sharpLabels: SHARP_OBJECT_MODERATION_ENABLED ? undefined : [],
   });
 
   const applyBackendSessionEnded = useCallback((reason: string) => {
@@ -305,14 +439,18 @@ export function DemoPage({ roomId }: DemoPageProps) {
         return;
       }
       try {
-        const ended = await reportModerationViolation(liveSessionId, {
-          code: "sharp_object_detected",
-          label: payload.label,
-          confidence: payload.confidence,
-          evidence_count: payload.evidenceCount,
-          window_ms: payload.windowMs,
-          detected_at: new Date().toISOString(),
-        });
+        const ended = await reportModerationViolation(
+          liveSessionId,
+          {
+            code: "sharp_object_detected",
+            label: payload.label,
+            confidence: payload.confidence,
+            evidence_count: payload.evidenceCount,
+            window_ms: payload.windowMs,
+            detected_at: new Date().toISOString(),
+          },
+          getHostResumeToken(roomId),
+        );
         applyBackendSessionEnded(ended.ended_reason ?? "visual_moderation_violation");
       } catch (error) {
         setSessionStartError(
@@ -320,11 +458,14 @@ export function DemoPage({ roomId }: DemoPageProps) {
         );
       }
     },
-    [applyBackendSessionEnded, liveSessionId, t],
+    [applyBackendSessionEnded, liveSessionId, roomId, t],
   );
 
   const sharpObjectEnforcement = useSharpObjectEnforcement({
-    enabled: objectDetectorEnabled && !sessionTerminated,
+    enabled:
+      SHARP_OBJECT_MODERATION_ENABLED &&
+      objectDetectorEnabled &&
+      !sessionTerminated,
     isActive: objectDetector.isActive && !sessionTerminated,
     detections: objectDetector.snapshot.allDetections,
     snapshotUpdatedAt: objectDetector.snapshot.updatedAt,
@@ -359,7 +500,9 @@ export function DemoPage({ roomId }: DemoPageProps) {
     const readChannels = () => ({
       adult: isAdultViolationActive(adultGate.result.state),
       gun: isGunViolationActive(weaponGate.result.state),
-      sharp: isSharpViolationActive(sharpObjectEnforcement.result.action),
+      sharp:
+        SHARP_OBJECT_MODERATION_ENABLED &&
+        isSharpViolationActive(sharpObjectEnforcement.result.action),
     });
 
     const tick = () => {
@@ -381,8 +524,10 @@ export function DemoPage({ roomId }: DemoPageProps) {
   ]);
 
   const cameraRecognition = useProductVisionRecognition({
+    roomId,
+    enabled: isHost && isCommerceRoom,
     isLive: isStreamLive && videoSource === "camera",
-    catalog: getAllProducts(),
+    catalog,
     captureFrame,
     getVideoElement,
   });
@@ -413,12 +558,15 @@ export function DemoPage({ roomId }: DemoPageProps) {
     return () => window.clearInterval(timer);
   }, [isStreamLive]);
 
-  function handlePinProduct(productId: string) {
-    const product = getProductById(productId);
+  async function handlePinProduct(productId: string) {
+    const product = catalog.find((entry) => entry.id === productId);
     if (!product) {
       return;
     }
     setPinnedProductId(productId);
+    await attachRoomProduct(roomId, productId);
+    setAttachedProductIds((current) => new Set(current).add(productId));
+    await pinRoomProduct(roomId, productId);
     if (!isStreamLive) {
       setEffect(mapArEffectTypeToBrowserAr(product.arEffectType));
     }
@@ -426,6 +574,7 @@ export function DemoPage({ roomId }: DemoPageProps) {
 
   function handleUnpinProduct() {
     setPinnedProductId(null);
+    void pinRoomProduct(roomId, null);
   }
 
   async function ensureLiveSessionStarted() {
@@ -521,7 +670,7 @@ export function DemoPage({ roomId }: DemoPageProps) {
         }
         return;
       }
-      void endLiveSession(sessionId)
+      void endLiveSession(sessionId, getHostResumeToken(roomId))
         .then(() => {
           clearHostResumeToken(roomId);
           setLiveSessionId(null);
@@ -613,7 +762,7 @@ export function DemoPage({ roomId }: DemoPageProps) {
           comment: text,
           viewerAuthor: author,
           pinnedProduct,
-          catalog: getAllProducts(),
+          catalog,
           selectedCameraProductId: null,
           detectedCameraProductId: cameraRecognition.activeVisionProductId,
           detectedCameraConfidence: cameraRecognition.detection.match?.confidence ?? null,
@@ -664,7 +813,7 @@ export function DemoPage({ roomId }: DemoPageProps) {
         chatPanelRef.current?.sendAssistantMessage(assistantMessage);
       }
     },
-    [cameraRecognition.activeVisionProductId, cameraRecognition.detection.match, pinnedProduct, roomId],
+    [cameraRecognition.activeVisionProductId, cameraRecognition.detection.match, catalog, pinnedProduct, roomId],
   );
 
   if (roomLoadState === "loading") {
@@ -726,7 +875,14 @@ export function DemoPage({ roomId }: DemoPageProps) {
               <p className="eyebrow">{t("appEyebrow")}</p>
               <h1>{roomName}</h1>
               <p className="streamMeta">
-                {t("appMeta", { host: HOST_USERNAME })} · {roomId}
+                {isCommerceRoom
+                  ? shopName
+                    ? `Shop ${shopName}`
+                    : "Đang tải thông tin shop…"
+                  : getRoomTypeLabel(roomType, locale)} ·{" "}
+                {isHost
+                  ? `Host ${auth.user?.displayName ?? HOST_USERNAME}`
+                  : "Bạn đang xem với vai trò khách"}
               </p>
               <div className="streamHeaderActions">
                 <button type="button" className="streamControlButton" onClick={handleBackToRooms}>
@@ -900,33 +1056,75 @@ export function DemoPage({ roomId }: DemoPageProps) {
                   terminated={sessionTerminated}
                   violationStrikeCount={violationStrikes.count}
                   violationStrikeLimit={VISUAL_VIOLATION_STRIKE_LIMIT}
+                  sharpModerationEnabled={SHARP_OBJECT_MODERATION_ENABLED}
                 />
               ) : null}
             </div>
 
-            <PinnedProductPanel
-              product={pinnedProduct}
-              onUnpin={isHost ? handleUnpinProduct : undefined}
-            />
+            {isCommerceRoom ? (
+              <PinnedProductPanel
+                product={pinnedProduct}
+                onUnpin={isHost ? handleUnpinProduct : undefined}
+              />
+            ) : null}
           </div>
 
-          {isHost ? (
-            <ProductCatalogPanel
-              compact
-              variant="host"
-              pinnedProductId={pinnedProductId ?? undefined}
-              onPinProduct={handlePinProduct}
-            />
+          {isHost && isCommerceRoom ? (
+            <>
+              <div className="hostProductGuide" role="status">
+                <strong>Sản phẩm trong livestream</strong>
+                <span>
+                  Gắn sản phẩm vào phòng trước, sau đó chọn một sản phẩm để ghim nổi bật cho người xem.
+                </span>
+              </div>
+              {catalogLoading ? <p className="emptyState">Đang tải sản phẩm của shop…</p> : null}
+              {catalogError ? <p className="error">{catalogError}</p> : null}
+              {!catalogLoading ? (
+                <ProductCatalogPanel
+                  compact
+                  variant="host"
+                  titleOverride={`Sản phẩm của ${shopName ?? "shop"}`}
+                  products={catalog}
+                  onCreateProduct={handleCreateProduct}
+                  onUpdateProduct={handleUpdateProduct}
+                  onDeleteProduct={(product) => void handleDeleteProduct(product)}
+                  catalogRevision={catalogRevision}
+                  attachedProductIds={attachedProductIds}
+                  onAttachProduct={(productId) => void handleAttachProduct(productId)}
+                  pinnedProductId={pinnedProductId ?? undefined}
+                  onPinProduct={(productId) => void handlePinProduct(productId)}
+                  onProductCreated={() => setCatalogRevision((revision) => revision + 1)}
+                  emptyMessage="Shop chưa có sản phẩm. Hãy thêm sản phẩm trước khi livestream."
+                />
+              ) : null}
+            </>
           ) : null}
 
-          <ProductCatalogPanel
-            variant="store"
-            onAddToCart={(productId) => {
-              cart.addProductById(productId);
-            }}
-          />
+          {!isHost && isCommerceRoom ? (
+            <>
+              {!auth.user ? (
+                <p className="viewerCommerceNotice">
+                  Bạn có thể xem sản phẩm ngay. Hãy đăng nhập ở khung bên phải trước khi checkout.
+                </p>
+              ) : null}
+              {catalogLoading ? <p className="emptyState">Đang tải sản phẩm trong phòng…</p> : null}
+              {catalogError ? <p className="error">{catalogError}</p> : null}
+              {!catalogLoading ? (
+                <ProductCatalogPanel
+                  variant="store"
+                  titleOverride={shopName ? `Sản phẩm từ ${shopName}` : "Sản phẩm trong phòng"}
+                  products={catalog}
+                  catalogRevision={catalogRevision}
+                  emptyMessage="Host chưa gắn sản phẩm nào vào phòng này."
+                  onAddToCart={(productId) => {
+                    cart.addProductById(productId);
+                  }}
+                />
+              ) : null}
+            </>
+          ) : null}
 
-          {isHost ? (
+          {isHost && isCommerceRoom ? (
             <SalesAssistantPanel
               events={salesEvents}
               analytics={salesAnalytics}
@@ -935,39 +1133,47 @@ export function DemoPage({ roomId }: DemoPageProps) {
             />
           ) : null}
 
-          <CartDrawerButton itemCount={cart.itemCount} onClick={openCart} />
-          <CartPanel
-            open={cartOpen}
-            onClose={closeCart}
-            items={cart.items}
-            itemCount={cart.itemCount}
-            subtotal={cart.subtotal}
-            pinnedProductName={pinnedProduct?.name}
-            onAddPinnedProduct={
-              pinnedProduct ? () => cart.addPinnedProduct(pinnedProduct) : undefined
-            }
-            onRemoveItem={cart.removeLine}
-            onUpdateQuantity={cart.updateLineQuantity}
-            onCheckout={() => {
-              closeCart();
-              cart.openCheckout();
-            }}
-            onClearCart={cart.clearCart}
-          />
+          {!isHost && isCommerceRoom ? (
+            <CartDrawerButton itemCount={cart.itemCount} onClick={openCart} />
+          ) : null}
+          {!isHost && isCommerceRoom ? (
+            <>
+              <CartPanel
+                open={cartOpen}
+                onClose={closeCart}
+                items={cart.items}
+                itemCount={cart.itemCount}
+                subtotal={cart.subtotal}
+                pinnedProductName={pinnedProduct?.name}
+                onAddPinnedProduct={
+                  pinnedProduct ? () => cart.addPinnedProduct(pinnedProduct) : undefined
+                }
+                onRemoveItem={cart.removeLine}
+                onUpdateQuantity={cart.updateLineQuantity}
+                onCheckout={() => {
+                  closeCart();
+                  cart.openCheckout();
+                }}
+                onClearCart={cart.clearCart}
+              />
 
-          <section className="commerceRow">
-            <OrderSummary order={cart.order} isPaying={cart.isPaying} />
-          </section>
+              <section className="commerceRow">
+                <OrderSummary order={cart.order} isPaying={cart.isPaying} />
+              </section>
 
-          <CheckoutModal
-            open={cart.checkoutOpen}
-            items={cart.items}
-            subtotal={cart.subtotal}
-            form={cart.checkoutForm}
-            onClose={cart.closeCheckout}
-            onChange={cart.updateCheckoutField}
-            onSubmit={cart.submitCheckout}
-          />
+              <CheckoutModal
+                open={cart.checkoutOpen}
+                items={cart.items}
+                subtotal={cart.subtotal}
+                form={cart.checkoutForm}
+                onClose={cart.closeCheckout}
+                onChange={cart.updateCheckoutField}
+                submitting={cart.isPaying}
+                error={cart.checkoutError}
+                onSubmit={() => void cart.submitCheckout()}
+              />
+            </>
+          ) : null}
 
           {violationModalOpen ? (
             <div className="liveRoomsModalBackdrop" role="presentation">
@@ -1003,12 +1209,9 @@ export function DemoPage({ roomId }: DemoPageProps) {
             loading={auth.loading}
             user={auth.user}
             error={auth.error}
-            onLogin={() => {
-              void auth.loginWithGoogle();
-            }}
-            onRegister={() => {
-              void auth.registerWithGoogle();
-            }}
+            onLogin={auth.login}
+            onRegister={auth.register}
+            onGoogleLogin={auth.googleConfigured ? auth.loginWithGoogle : undefined}
             onLogout={() => {
               void auth.logout();
             }}

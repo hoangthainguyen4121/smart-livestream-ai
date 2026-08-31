@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.db.engine import get_session_factory, is_persistence_enabled
+from app.db.models import User
+from app.repositories.commerce_repository import CommerceRepository
+from app.services.auth_service import get_optional_user
 from app.schemas.sessions import SessionResponse, StartSessionRequest
 from app.services.session_service import (
     SessionAlreadyEndedError,
@@ -42,11 +46,24 @@ def _require_short_retention() -> None:
 
 
 @router.post("/start", response_model=SessionResponse)
-def start_session(request: StartSessionRequest) -> SessionResponse:
+def start_session(
+    request: StartSessionRequest,
+    user: Optional[User] = Depends(get_optional_user),
+) -> SessionResponse:
     _require_short_retention()
     with get_session_factory() as db_session:
         service = SessionService(db_session)
-        livestream_session = service.start_session(request.room_id.strip())
+        shop_id = None
+        if user is not None:
+            shop = CommerceRepository(db_session).shop_for_owner(user.id)
+            if shop is None:
+                raise HTTPException(409, detail="Create a shop before starting a seller room.")
+            shop_id = shop.id
+        livestream_session = service.start_session(
+            request.room_id.strip(),
+            seller_user_id=user.id if user else None,
+            shop_id=shop_id,
+        )
         return SessionResponse.from_model(livestream_session)
 
 

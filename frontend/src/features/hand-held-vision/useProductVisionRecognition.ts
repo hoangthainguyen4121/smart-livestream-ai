@@ -7,6 +7,8 @@ import type { HandVisionDebugSnapshot } from "./handVisionDebugTypes";
 import { EMPTY_HAND_VISION_DEBUG_SNAPSHOT } from "./handVisionDebugTypes";
 
 type UseProductVisionRecognitionOptions = {
+  roomId: string;
+  enabled?: boolean;
   isLive: boolean;
   catalog: CatalogProduct[];
   captureFrame: () => ImageData | null;
@@ -33,10 +35,12 @@ type UseProductVisionRecognitionResult = {
 export function useProductVisionRecognition(
   options: UseProductVisionRecognitionOptions,
 ): UseProductVisionRecognitionResult {
-  const handHeldEnabled = isHandHeldVisionEnabled();
-  const legacyEnabled = isCameraProductRecognitionEnabled() && !handHeldEnabled;
+  const allowed = options.enabled ?? true;
+  const handHeldEnabled = allowed && isHandHeldVisionEnabled();
+  const legacyEnabled = allowed && isCameraProductRecognitionEnabled() && !handHeldEnabled;
 
   const handHeld = useHandHeldProductRecognition({
+    roomId: options.roomId,
     enabled: handHeldEnabled,
     isLive: options.isLive,
     catalog: options.catalog,

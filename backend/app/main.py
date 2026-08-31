@@ -3,12 +3,15 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api import (
     admin_dataset_export_batches,
     admin_intent_corrections,
     adult_moderation,
+    auth,
     chat,
+    commerce,
     comments,
     firearm_onnx,
     firearm_yolox,
@@ -23,6 +26,7 @@ from app.api import (
     sessions,
 )
 from app.settings import ChatPersistenceMode, get_settings
+from app.services.product_image_service import product_image_directory
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +89,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+product_image_directory().mkdir(parents=True, exist_ok=True)
+app.mount(
+    "/media/product-images",
+    StaticFiles(directory=product_image_directory()),
+    name="product-images",
+)
+
 app.include_router(health.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
+app.include_router(commerce.router, prefix="/api")
 app.include_router(nlp.router, prefix="/api")
 app.include_router(product_vision.router, prefix="/api")
 app.include_router(nsfw.router, prefix="/api")

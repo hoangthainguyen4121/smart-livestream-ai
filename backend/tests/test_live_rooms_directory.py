@@ -39,14 +39,14 @@ def test_list_active_sessions_empty(client: TestClient) -> None:
 def test_create_session_valid(client: TestClient) -> None:
     response = client.post(
         "/api/live-sessions",
-        json={"name": "Fashion Live", "room_type": "fashion"},
+        json={"name": "Chat Live", "room_type": "chat"},
     )
     assert response.status_code == 201
     body = response.json()
-    assert body["name"] == "Fashion Live"
-    assert body["room_type"] == "fashion"
+    assert body["name"] == "Chat Live"
+    assert body["room_type"] == "chat"
     assert body["status"] == "active"
-    assert body["room_id"].startswith("fashion-live-")
+    assert body["room_id"].startswith("chat-live-")
 
     listed = client.get("/api/live-sessions?status=active").json()
     assert len(listed) == 1
@@ -56,10 +56,13 @@ def test_create_session_valid(client: TestClient) -> None:
 def test_ended_session_not_in_active_list(client: TestClient) -> None:
     created = client.post(
         "/api/live-sessions",
-        json={"name": "Beauty Live", "room_type": "beauty"},
+        json={"name": "Karaoke Live", "room_type": "karaoke"},
     ).json()
 
-    ended = client.post(f"/api/live-sessions/{created['id']}/end")
+    ended = client.post(
+        f"/api/live-sessions/{created['id']}/end",
+        headers={"X-Host-Token": created["host_resume_token"]},
+    )
     assert ended.status_code == 200
     assert ended.json()["status"] == "ended"
 
@@ -91,6 +94,7 @@ def test_moderation_end_removes_from_active_list(client: TestClient) -> None:
 
     ended = client.post(
         f"/api/live-sessions/{created['id']}/moderation-violations",
+        headers={"X-Host-Token": created["host_resume_token"]},
         json={
             "code": "sharp_object_detected",
             "label": "knife",
@@ -108,9 +112,9 @@ def test_moderation_end_removes_from_active_list(client: TestClient) -> None:
 def test_create_then_get_current_by_room(client: TestClient) -> None:
     created = client.post(
         "/api/live-sessions",
-        json={"name": "Food Live", "room_type": "food"},
+        json={"name": "Social Live", "room_type": "chat"},
     ).json()
     current = client.get(f"/api/live-sessions/by-room/{created['room_id']}/current")
     assert current.status_code == 200
     assert current.json()["id"] == created["id"]
-    assert current.json()["name"] == "Food Live"
+    assert current.json()["name"] == "Social Live"

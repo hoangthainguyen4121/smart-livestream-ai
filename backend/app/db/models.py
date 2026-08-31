@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, Index, String, text
+from sqlalchemy import Column, Index, Numeric, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
@@ -19,6 +20,23 @@ class ProfileRole(str, Enum):
 class SessionStatus(str, Enum):
     ACTIVE = "active"
     ENDED = "ended"
+
+
+class OrderStatus(str, Enum):
+    PENDING_PAYMENT = "pending_payment"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+
+
+class PaymentMethod(str, Enum):
+    COD = "cod"
+    SANDBOX = "sandbox"
+
+
+class PaymentStatus(str, Enum):
+    PENDING = "pending"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
 
 
 class IntentCorrectionStatus(str, Enum):
@@ -97,6 +115,8 @@ class LivestreamSession(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     room_id: str = Field(max_length=64, nullable=False, index=True)
     host_user_id: Optional[UUID] = Field(default=None, foreign_key="profiles.id")
+    seller_user_id: Optional[UUID] = Field(default=None, foreign_key="users.id")
+    shop_id: Optional[UUID] = Field(default=None, foreign_key="shops.id")
     status: SessionStatus = Field(
         default=SessionStatus.ACTIVE,
         sa_column=Column(String(16), nullable=False),
@@ -110,6 +130,140 @@ class LivestreamSession(SQLModel, table=True):
         default_factory=dict,
         sa_column=Column("metadata", JSONB, nullable=False, server_default=text("'{}'::jsonb")),
     )
+
+
+class User(SQLModel, table=True):
+    __tablename__ = "users"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    email: str = Field(max_length=320, nullable=False, unique=True, index=True)
+    password_hash: str = Field(max_length=255, nullable=False)
+    display_name: Optional[str] = Field(default=None, max_length=120)
+    role: str = Field(
+        default="seller",
+        sa_column=Column(String(32), nullable=False, server_default=text("'seller'")),
+    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class AuthToken(SQLModel, table=True):
+    __tablename__ = "auth_tokens"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", nullable=False, index=True)
+    token_hash: str = Field(max_length=64, nullable=False, unique=True, index=True)
+    expires_at: datetime = Field(nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class Shop(SQLModel, table=True):
+    __tablename__ = "shops"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", nullable=False, unique=True, index=True)
+    name: str = Field(max_length=120, nullable=False)
+    slug: str = Field(max_length=160, nullable=False, unique=True, index=True)
+    description: Optional[str] = Field(default=None, max_length=1000)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class Product(SQLModel, table=True):
+    __tablename__ = "products"
+    __table_args__ = (UniqueConstraint("shop_id", "sku", name="uq_products_shop_sku"),)
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    shop_id: UUID = Field(foreign_key="shops.id", nullable=False, index=True)
+    sku: str = Field(max_length=64, nullable=False)
+    name: str = Field(max_length=160, nullable=False)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    category: str = Field(
+        default="fashion",
+        sa_column=Column(String(64), nullable=False, server_default=text("'fashion'")),
+    )
+    price: Decimal = Field(sa_column=Column(Numeric(14, 2), nullable=False))
+    stock: int = Field(default=0, nullable=False)
+    image_url: Optional[str] = Field(default=None, max_length=1000)
+    colors: List[str] = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default=text("'[]'::jsonb")),
+    )
+    sizes: List[str] = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default=text("'[]'::jsonb")),
+    )
+    tags: List[str] = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default=text("'[]'::jsonb")),
+    )
+    selling_points: List[str] = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default=text("'[]'::jsonb")),
+    )
+    ar_effect_type: str = Field(
+        default="none",
+        sa_column=Column(String(64), nullable=False, server_default=text("'none'")),
+    )
+    source_url: Optional[str] = Field(default=None, max_length=1000)
+    is_active: bool = Field(default=True, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class RoomProduct(SQLModel, table=True):
+    __tablename__ = "room_products"
+    __table_args__ = (Index("ix_room_products_room_position", "room_id", "position"),)
+
+    room_id: str = Field(primary_key=True, max_length=64)
+    product_id: UUID = Field(foreign_key="products.id", primary_key=True)
+    position: int = Field(default=0, nullable=False)
+    is_pinned: bool = Field(default=False, nullable=False)
+    attached_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class Order(SQLModel, table=True):
+    __tablename__ = "orders"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    buyer_user_id: UUID = Field(foreign_key="users.id", nullable=False, index=True)
+    shop_id: UUID = Field(foreign_key="shops.id", nullable=False, index=True)
+    room_id: Optional[str] = Field(default=None, max_length=64, index=True)
+    status: OrderStatus = Field(
+        default=OrderStatus.PENDING_PAYMENT,
+        sa_column=Column(String(32), nullable=False),
+    )
+    total_amount: Decimal = Field(sa_column=Column(Numeric(14, 2), nullable=False))
+    shipping_name: str = Field(max_length=120, nullable=False)
+    shipping_address: str = Field(max_length=500, nullable=False)
+    phone: Optional[str] = Field(default=None, max_length=32)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class OrderItem(SQLModel, table=True):
+    __tablename__ = "order_items"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    order_id: UUID = Field(foreign_key="orders.id", nullable=False, index=True)
+    product_id: UUID = Field(foreign_key="products.id", nullable=False)
+    product_name: str = Field(max_length=160, nullable=False)
+    quantity: int = Field(nullable=False)
+    unit_price: Decimal = Field(sa_column=Column(Numeric(14, 2), nullable=False))
+    line_total: Decimal = Field(sa_column=Column(Numeric(14, 2), nullable=False))
+
+
+class Payment(SQLModel, table=True):
+    __tablename__ = "payments"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    order_id: UUID = Field(foreign_key="orders.id", nullable=False, unique=True, index=True)
+    method: PaymentMethod = Field(sa_column=Column(String(16), nullable=False))
+    status: PaymentStatus = Field(sa_column=Column(String(16), nullable=False))
+    amount: Decimal = Field(sa_column=Column(Numeric(14, 2), nullable=False))
+    transaction_ref: Optional[str] = Field(default=None, max_length=160)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
 
 class Comment(SQLModel, table=True):

@@ -3,6 +3,7 @@ import type { CatalogProduct } from "../product-catalog/productCatalogTypes";
 export type CartLineItem = {
   lineId: string;
   productId: string;
+  shopId?: string;
   productName: string;
   unitPrice: number;
   quantity: number;
@@ -14,7 +15,8 @@ export type ShippingMethod = "standard" | "express";
 
 export type PaymentMethod = "cod" | "mock_qr";
 
-export type OrderStatus = "pending" | "paid" | "cod_confirmed";
+export type OrderStatus = "pending" | "paid" | "cod_confirmed" | "failed";
+export type SandboxResult = "success" | "failure";
 
 export type CheckoutForm = {
   customerName: string;
@@ -22,6 +24,7 @@ export type CheckoutForm = {
   address: string;
   shippingMethod: ShippingMethod;
   paymentMethod: PaymentMethod;
+  sandboxResult: SandboxResult;
 };
 
 export type MockOrder = {
@@ -66,11 +69,12 @@ export const SHIPPING_METHOD_LABELS: Record<ShippingMethod, string> = {
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   cod: "COD — thanh toán khi nhận hàng",
-  mock_qr: "Mock QR — quét mã demo",
+  mock_qr: "Thanh toán online — mô phỏng",
 };
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Đang chờ thanh toán",
-  paid: "Đã thanh toán (mock QR)",
+  paid: "Thanh toán thành công",
   cod_confirmed: "COD — đã xác nhận",
+  failed: "Thanh toán thất bại — tồn kho đã được hoàn lại",
 };

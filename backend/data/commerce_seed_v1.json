@@ -1,0 +1,2163 @@
+{
+  "version": "commerce-seed-v1",
+  "shops": [
+    {
+      "seed_key": "shop-fashion-01",
+      "slug": "aurora-fashion",
+      "name": "Aurora Fashion",
+      "description": "Everyday fashion for livestream demos",
+      "owner_email": "seller1@example.com",
+      "owner_password": "password123"
+    },
+    {
+      "seed_key": "shop-beauty-02",
+      "slug": "coral-beauty",
+      "name": "Coral Beauty",
+      "description": "Makeup and skincare sample catalog",
+      "owner_email": "seller2@example.com",
+      "owner_password": "password123"
+    },
+    {
+      "seed_key": "shop-gadget-03",
+      "slug": "neon-gadgets",
+      "name": "Neon Gadgets",
+      "description": "Accessories and small electronics",
+      "owner_email": "seller3@example.com",
+      "owner_password": "password123"
+    },
+    {
+      "seed_key": "shop-home-04",
+      "slug": "harbor-home",
+      "name": "Harbor Home",
+      "description": "Home and lifestyle products",
+      "owner_email": "seller4@example.com",
+      "owner_password": "password123"
+    },
+    {
+      "seed_key": "shop-sport-05",
+      "slug": "pulse-sport",
+      "name": "Pulse Sport",
+      "description": "Fitness and outdoor gear",
+      "owner_email": "seller5@example.com",
+      "owner_password": "password123"
+    },
+    {
+      "seed_key": "shop-kids-06",
+      "slug": "little-orbit",
+      "name": "Little Orbit",
+      "description": "Kids and family essentials",
+      "owner_email": "seller6@example.com",
+      "owner_password": "password123"
+    },
+    {
+      "seed_key": "shop-pet-07",
+      "slug": "paw-lane",
+      "name": "Paw Lane",
+      "description": "Pet care basics",
+      "owner_email": "seller7@example.com",
+      "owner_password": "password123"
+    }
+  ],
+  "products": [
+    {
+      "seed_key": "product-001",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-001",
+      "name": "Tee 001",
+      "description": "Normalized demo shirt item #1 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 132500,
+      "stock": 11,
+      "image_url": "/seed/shirt/001.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "shirt"
+      ],
+      "selling_points": [
+        "Demo shirt"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-002",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-002",
+      "name": "Hat 002",
+      "description": "Normalized demo hat item #2 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 170000,
+      "stock": 12,
+      "image_url": "/seed/hat/002.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hat"
+      ],
+      "selling_points": [
+        "Demo hat"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-003",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-003",
+      "name": "Lipstick 003",
+      "description": "Normalized demo makeup item #3 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 207500,
+      "stock": 13,
+      "image_url": "/seed/makeup/003.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "makeup"
+      ],
+      "selling_points": [
+        "Demo makeup"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-004",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-004",
+      "name": "Serum 004",
+      "description": "Normalized demo skincare item #4 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 245000,
+      "stock": 14,
+      "image_url": "/seed/skincare/004.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "skincare"
+      ],
+      "selling_points": [
+        "Demo skincare"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-005",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-005",
+      "name": "Headset 005",
+      "description": "Normalized demo audio item #5 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 282500,
+      "stock": 15,
+      "image_url": "/seed/audio/005.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "audio"
+      ],
+      "selling_points": [
+        "Demo audio"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-006",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-006",
+      "name": "Case 006",
+      "description": "Normalized demo accessory item #6 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 320000,
+      "stock": 16,
+      "image_url": "/seed/accessory/006.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "accessory"
+      ],
+      "selling_points": [
+        "Demo accessory"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-007",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-007",
+      "name": "Mug 007",
+      "description": "Normalized demo kitchen item #7 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 322500,
+      "stock": 17,
+      "image_url": "/seed/kitchen/007.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "kitchen"
+      ],
+      "selling_points": [
+        "Demo kitchen"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-008",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-008",
+      "name": "Candle 008",
+      "description": "Normalized demo decor item #8 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 360000,
+      "stock": 18,
+      "image_url": "/seed/decor/008.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "decor"
+      ],
+      "selling_points": [
+        "Demo decor"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-009",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-009",
+      "name": "Band 009",
+      "description": "Normalized demo fitness item #9 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 397500,
+      "stock": 19,
+      "image_url": "/seed/fitness/009.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "fitness"
+      ],
+      "selling_points": [
+        "Demo fitness"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-010",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-010",
+      "name": "Bottle 010",
+      "description": "Normalized demo hydrate item #10 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 435000,
+      "stock": 20,
+      "image_url": "/seed/hydrate/010.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hydrate"
+      ],
+      "selling_points": [
+        "Demo hydrate"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-011",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-011",
+      "name": "Toy 011",
+      "description": "Normalized demo play item #11 for multi-seller commerce PoC.",
+      "category": "kids",
+      "price": 472500,
+      "stock": 21,
+      "image_url": "/seed/play/011.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "play"
+      ],
+      "selling_points": [
+        "Demo play"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-012",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-012",
+      "name": "Treat 012",
+      "description": "Normalized demo care item #12 for multi-seller commerce PoC.",
+      "category": "pet",
+      "price": 510000,
+      "stock": 22,
+      "image_url": "/seed/care/012.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "care"
+      ],
+      "selling_points": [
+        "Demo care"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-013",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-013",
+      "name": "Tee 013",
+      "description": "Normalized demo shirt item #13 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 547500,
+      "stock": 23,
+      "image_url": "/seed/shirt/013.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "shirt"
+      ],
+      "selling_points": [
+        "Demo shirt"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-014",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-014",
+      "name": "Hat 014",
+      "description": "Normalized demo hat item #14 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 550000,
+      "stock": 24,
+      "image_url": "/seed/hat/014.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hat"
+      ],
+      "selling_points": [
+        "Demo hat"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-015",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-015",
+      "name": "Lipstick 015",
+      "description": "Normalized demo makeup item #15 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 587500,
+      "stock": 25,
+      "image_url": "/seed/makeup/015.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "makeup"
+      ],
+      "selling_points": [
+        "Demo makeup"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-016",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-016",
+      "name": "Serum 016",
+      "description": "Normalized demo skincare item #16 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 625000,
+      "stock": 26,
+      "image_url": "/seed/skincare/016.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "skincare"
+      ],
+      "selling_points": [
+        "Demo skincare"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-017",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-017",
+      "name": "Headset 017",
+      "description": "Normalized demo audio item #17 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 662500,
+      "stock": 27,
+      "image_url": "/seed/audio/017.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "audio"
+      ],
+      "selling_points": [
+        "Demo audio"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-018",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-018",
+      "name": "Case 018",
+      "description": "Normalized demo accessory item #18 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 700000,
+      "stock": 28,
+      "image_url": "/seed/accessory/018.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "accessory"
+      ],
+      "selling_points": [
+        "Demo accessory"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-019",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-019",
+      "name": "Mug 019",
+      "description": "Normalized demo kitchen item #19 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 737500,
+      "stock": 29,
+      "image_url": "/seed/kitchen/019.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "kitchen"
+      ],
+      "selling_points": [
+        "Demo kitchen"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-020",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-020",
+      "name": "Candle 020",
+      "description": "Normalized demo decor item #20 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 125000,
+      "stock": 30,
+      "image_url": "/seed/decor/020.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "decor"
+      ],
+      "selling_points": [
+        "Demo decor"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-021",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-021",
+      "name": "Band 021",
+      "description": "Normalized demo fitness item #21 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 127500,
+      "stock": 31,
+      "image_url": "/seed/fitness/021.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "fitness"
+      ],
+      "selling_points": [
+        "Demo fitness"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-022",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-022",
+      "name": "Bottle 022",
+      "description": "Normalized demo hydrate item #22 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 165000,
+      "stock": 32,
+      "image_url": "/seed/hydrate/022.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hydrate"
+      ],
+      "selling_points": [
+        "Demo hydrate"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-023",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-023",
+      "name": "Toy 023",
+      "description": "Normalized demo play item #23 for multi-seller commerce PoC.",
+      "category": "kids",
+      "price": 202500,
+      "stock": 33,
+      "image_url": "/seed/play/023.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "play"
+      ],
+      "selling_points": [
+        "Demo play"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-024",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-024",
+      "name": "Treat 024",
+      "description": "Normalized demo care item #24 for multi-seller commerce PoC.",
+      "category": "pet",
+      "price": 240000,
+      "stock": 34,
+      "image_url": "/seed/care/024.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "care"
+      ],
+      "selling_points": [
+        "Demo care"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-025",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-025",
+      "name": "Tee 025",
+      "description": "Normalized demo shirt item #25 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 277500,
+      "stock": 35,
+      "image_url": "/seed/shirt/025.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "shirt"
+      ],
+      "selling_points": [
+        "Demo shirt"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-026",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-026",
+      "name": "Hat 026",
+      "description": "Normalized demo hat item #26 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 315000,
+      "stock": 36,
+      "image_url": "/seed/hat/026.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hat"
+      ],
+      "selling_points": [
+        "Demo hat"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-027",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-027",
+      "name": "Lipstick 027",
+      "description": "Normalized demo makeup item #27 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 352500,
+      "stock": 37,
+      "image_url": "/seed/makeup/027.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "makeup"
+      ],
+      "selling_points": [
+        "Demo makeup"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-028",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-028",
+      "name": "Serum 028",
+      "description": "Normalized demo skincare item #28 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 355000,
+      "stock": 38,
+      "image_url": "/seed/skincare/028.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "skincare"
+      ],
+      "selling_points": [
+        "Demo skincare"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-029",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-029",
+      "name": "Headset 029",
+      "description": "Normalized demo audio item #29 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 392500,
+      "stock": 39,
+      "image_url": "/seed/audio/029.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "audio"
+      ],
+      "selling_points": [
+        "Demo audio"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-030",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-030",
+      "name": "Case 030",
+      "description": "Normalized demo accessory item #30 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 430000,
+      "stock": 40,
+      "image_url": "/seed/accessory/030.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "accessory"
+      ],
+      "selling_points": [
+        "Demo accessory"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-031",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-031",
+      "name": "Mug 031",
+      "description": "Normalized demo kitchen item #31 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 467500,
+      "stock": 41,
+      "image_url": "/seed/kitchen/031.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "kitchen"
+      ],
+      "selling_points": [
+        "Demo kitchen"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-032",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-032",
+      "name": "Candle 032",
+      "description": "Normalized demo decor item #32 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 505000,
+      "stock": 42,
+      "image_url": "/seed/decor/032.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "decor"
+      ],
+      "selling_points": [
+        "Demo decor"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-033",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-033",
+      "name": "Band 033",
+      "description": "Normalized demo fitness item #33 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 542500,
+      "stock": 43,
+      "image_url": "/seed/fitness/033.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "fitness"
+      ],
+      "selling_points": [
+        "Demo fitness"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-034",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-034",
+      "name": "Bottle 034",
+      "description": "Normalized demo hydrate item #34 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 580000,
+      "stock": 44,
+      "image_url": "/seed/hydrate/034.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hydrate"
+      ],
+      "selling_points": [
+        "Demo hydrate"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-035",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-035",
+      "name": "Toy 035",
+      "description": "Normalized demo play item #35 for multi-seller commerce PoC.",
+      "category": "kids",
+      "price": 582500,
+      "stock": 45,
+      "image_url": "/seed/play/035.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "play"
+      ],
+      "selling_points": [
+        "Demo play"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-036",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-036",
+      "name": "Treat 036",
+      "description": "Normalized demo care item #36 for multi-seller commerce PoC.",
+      "category": "pet",
+      "price": 620000,
+      "stock": 46,
+      "image_url": "/seed/care/036.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "care"
+      ],
+      "selling_points": [
+        "Demo care"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-037",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-037",
+      "name": "Tee 037",
+      "description": "Normalized demo shirt item #37 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 657500,
+      "stock": 47,
+      "image_url": "/seed/shirt/037.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "shirt"
+      ],
+      "selling_points": [
+        "Demo shirt"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-038",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-038",
+      "name": "Hat 038",
+      "description": "Normalized demo hat item #38 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 695000,
+      "stock": 48,
+      "image_url": "/seed/hat/038.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hat"
+      ],
+      "selling_points": [
+        "Demo hat"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-039",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-039",
+      "name": "Lipstick 039",
+      "description": "Normalized demo makeup item #39 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 732500,
+      "stock": 49,
+      "image_url": "/seed/makeup/039.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "makeup"
+      ],
+      "selling_points": [
+        "Demo makeup"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-040",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-040",
+      "name": "Serum 040",
+      "description": "Normalized demo skincare item #40 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 120000,
+      "stock": 10,
+      "image_url": "/seed/skincare/040.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "skincare"
+      ],
+      "selling_points": [
+        "Demo skincare"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-041",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-041",
+      "name": "Headset 041",
+      "description": "Normalized demo audio item #41 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 157500,
+      "stock": 11,
+      "image_url": "/seed/audio/041.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "audio"
+      ],
+      "selling_points": [
+        "Demo audio"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-042",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-042",
+      "name": "Case 042",
+      "description": "Normalized demo accessory item #42 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 160000,
+      "stock": 12,
+      "image_url": "/seed/accessory/042.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "accessory"
+      ],
+      "selling_points": [
+        "Demo accessory"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-043",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-043",
+      "name": "Mug 043",
+      "description": "Normalized demo kitchen item #43 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 197500,
+      "stock": 13,
+      "image_url": "/seed/kitchen/043.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "kitchen"
+      ],
+      "selling_points": [
+        "Demo kitchen"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-044",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-044",
+      "name": "Candle 044",
+      "description": "Normalized demo decor item #44 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 235000,
+      "stock": 14,
+      "image_url": "/seed/decor/044.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "decor"
+      ],
+      "selling_points": [
+        "Demo decor"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-045",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-045",
+      "name": "Band 045",
+      "description": "Normalized demo fitness item #45 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 272500,
+      "stock": 15,
+      "image_url": "/seed/fitness/045.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "fitness"
+      ],
+      "selling_points": [
+        "Demo fitness"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-046",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-046",
+      "name": "Bottle 046",
+      "description": "Normalized demo hydrate item #46 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 310000,
+      "stock": 16,
+      "image_url": "/seed/hydrate/046.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hydrate"
+      ],
+      "selling_points": [
+        "Demo hydrate"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-047",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-047",
+      "name": "Toy 047",
+      "description": "Normalized demo play item #47 for multi-seller commerce PoC.",
+      "category": "kids",
+      "price": 347500,
+      "stock": 17,
+      "image_url": "/seed/play/047.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "play"
+      ],
+      "selling_points": [
+        "Demo play"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-048",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-048",
+      "name": "Treat 048",
+      "description": "Normalized demo care item #48 for multi-seller commerce PoC.",
+      "category": "pet",
+      "price": 385000,
+      "stock": 18,
+      "image_url": "/seed/care/048.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "care"
+      ],
+      "selling_points": [
+        "Demo care"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-049",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-049",
+      "name": "Tee 049",
+      "description": "Normalized demo shirt item #49 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 387500,
+      "stock": 19,
+      "image_url": "/seed/shirt/049.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "shirt"
+      ],
+      "selling_points": [
+        "Demo shirt"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-050",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-050",
+      "name": "Hat 050",
+      "description": "Normalized demo hat item #50 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 425000,
+      "stock": 20,
+      "image_url": "/seed/hat/050.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hat"
+      ],
+      "selling_points": [
+        "Demo hat"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-051",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-051",
+      "name": "Lipstick 051",
+      "description": "Normalized demo makeup item #51 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 462500,
+      "stock": 21,
+      "image_url": "/seed/makeup/051.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "makeup"
+      ],
+      "selling_points": [
+        "Demo makeup"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-052",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-052",
+      "name": "Serum 052",
+      "description": "Normalized demo skincare item #52 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 500000,
+      "stock": 22,
+      "image_url": "/seed/skincare/052.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "skincare"
+      ],
+      "selling_points": [
+        "Demo skincare"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-053",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-053",
+      "name": "Headset 053",
+      "description": "Normalized demo audio item #53 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 537500,
+      "stock": 23,
+      "image_url": "/seed/audio/053.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "audio"
+      ],
+      "selling_points": [
+        "Demo audio"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-054",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-054",
+      "name": "Case 054",
+      "description": "Normalized demo accessory item #54 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 575000,
+      "stock": 24,
+      "image_url": "/seed/accessory/054.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "accessory"
+      ],
+      "selling_points": [
+        "Demo accessory"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-055",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-055",
+      "name": "Mug 055",
+      "description": "Normalized demo kitchen item #55 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 612500,
+      "stock": 25,
+      "image_url": "/seed/kitchen/055.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "kitchen"
+      ],
+      "selling_points": [
+        "Demo kitchen"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-056",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-056",
+      "name": "Candle 056",
+      "description": "Normalized demo decor item #56 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 615000,
+      "stock": 26,
+      "image_url": "/seed/decor/056.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "decor"
+      ],
+      "selling_points": [
+        "Demo decor"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-057",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-057",
+      "name": "Band 057",
+      "description": "Normalized demo fitness item #57 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 652500,
+      "stock": 27,
+      "image_url": "/seed/fitness/057.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "fitness"
+      ],
+      "selling_points": [
+        "Demo fitness"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-058",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-058",
+      "name": "Bottle 058",
+      "description": "Normalized demo hydrate item #58 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 690000,
+      "stock": 28,
+      "image_url": "/seed/hydrate/058.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hydrate"
+      ],
+      "selling_points": [
+        "Demo hydrate"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-059",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-059",
+      "name": "Toy 059",
+      "description": "Normalized demo play item #59 for multi-seller commerce PoC.",
+      "category": "kids",
+      "price": 727500,
+      "stock": 29,
+      "image_url": "/seed/play/059.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "play"
+      ],
+      "selling_points": [
+        "Demo play"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-060",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-060",
+      "name": "Treat 060",
+      "description": "Normalized demo care item #60 for multi-seller commerce PoC.",
+      "category": "pet",
+      "price": 115000,
+      "stock": 30,
+      "image_url": "/seed/care/060.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "care"
+      ],
+      "selling_points": [
+        "Demo care"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-061",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-061",
+      "name": "Tee 061",
+      "description": "Normalized demo shirt item #61 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 152500,
+      "stock": 31,
+      "image_url": "/seed/shirt/061.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "shirt"
+      ],
+      "selling_points": [
+        "Demo shirt"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-062",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-062",
+      "name": "Hat 062",
+      "description": "Normalized demo hat item #62 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 190000,
+      "stock": 32,
+      "image_url": "/seed/hat/062.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hat"
+      ],
+      "selling_points": [
+        "Demo hat"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-063",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-063",
+      "name": "Lipstick 063",
+      "description": "Normalized demo makeup item #63 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 192500,
+      "stock": 33,
+      "image_url": "/seed/makeup/063.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "makeup"
+      ],
+      "selling_points": [
+        "Demo makeup"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-064",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-064",
+      "name": "Serum 064",
+      "description": "Normalized demo skincare item #64 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 230000,
+      "stock": 34,
+      "image_url": "/seed/skincare/064.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "skincare"
+      ],
+      "selling_points": [
+        "Demo skincare"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-065",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-065",
+      "name": "Headset 065",
+      "description": "Normalized demo audio item #65 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 267500,
+      "stock": 35,
+      "image_url": "/seed/audio/065.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "audio"
+      ],
+      "selling_points": [
+        "Demo audio"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-066",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-066",
+      "name": "Case 066",
+      "description": "Normalized demo accessory item #66 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 305000,
+      "stock": 36,
+      "image_url": "/seed/accessory/066.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "accessory"
+      ],
+      "selling_points": [
+        "Demo accessory"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-067",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-067",
+      "name": "Mug 067",
+      "description": "Normalized demo kitchen item #67 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 342500,
+      "stock": 37,
+      "image_url": "/seed/kitchen/067.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "kitchen"
+      ],
+      "selling_points": [
+        "Demo kitchen"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-068",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-068",
+      "name": "Candle 068",
+      "description": "Normalized demo decor item #68 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 380000,
+      "stock": 38,
+      "image_url": "/seed/decor/068.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "decor"
+      ],
+      "selling_points": [
+        "Demo decor"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-069",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-069",
+      "name": "Band 069",
+      "description": "Normalized demo fitness item #69 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 417500,
+      "stock": 39,
+      "image_url": "/seed/fitness/069.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "fitness"
+      ],
+      "selling_points": [
+        "Demo fitness"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-070",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-070",
+      "name": "Bottle 070",
+      "description": "Normalized demo hydrate item #70 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 420000,
+      "stock": 40,
+      "image_url": "/seed/hydrate/070.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hydrate"
+      ],
+      "selling_points": [
+        "Demo hydrate"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-071",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-071",
+      "name": "Toy 071",
+      "description": "Normalized demo play item #71 for multi-seller commerce PoC.",
+      "category": "kids",
+      "price": 457500,
+      "stock": 41,
+      "image_url": "/seed/play/071.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "play"
+      ],
+      "selling_points": [
+        "Demo play"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-072",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-072",
+      "name": "Treat 072",
+      "description": "Normalized demo care item #72 for multi-seller commerce PoC.",
+      "category": "pet",
+      "price": 495000,
+      "stock": 42,
+      "image_url": "/seed/care/072.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "care"
+      ],
+      "selling_points": [
+        "Demo care"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-073",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-073",
+      "name": "Tee 073",
+      "description": "Normalized demo shirt item #73 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 532500,
+      "stock": 43,
+      "image_url": "/seed/shirt/073.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "shirt"
+      ],
+      "selling_points": [
+        "Demo shirt"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-074",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-074",
+      "name": "Hat 074",
+      "description": "Normalized demo hat item #74 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 570000,
+      "stock": 44,
+      "image_url": "/seed/hat/074.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hat"
+      ],
+      "selling_points": [
+        "Demo hat"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-075",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-075",
+      "name": "Lipstick 075",
+      "description": "Normalized demo makeup item #75 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 607500,
+      "stock": 45,
+      "image_url": "/seed/makeup/075.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "makeup"
+      ],
+      "selling_points": [
+        "Demo makeup"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-076",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-076",
+      "name": "Serum 076",
+      "description": "Normalized demo skincare item #76 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 645000,
+      "stock": 46,
+      "image_url": "/seed/skincare/076.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "skincare"
+      ],
+      "selling_points": [
+        "Demo skincare"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-077",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-077",
+      "name": "Headset 077",
+      "description": "Normalized demo audio item #77 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 647500,
+      "stock": 47,
+      "image_url": "/seed/audio/077.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "audio"
+      ],
+      "selling_points": [
+        "Demo audio"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-078",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-078",
+      "name": "Case 078",
+      "description": "Normalized demo accessory item #78 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 685000,
+      "stock": 48,
+      "image_url": "/seed/accessory/078.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "accessory"
+      ],
+      "selling_points": [
+        "Demo accessory"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-079",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-079",
+      "name": "Mug 079",
+      "description": "Normalized demo kitchen item #79 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 722500,
+      "stock": 49,
+      "image_url": "/seed/kitchen/079.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "kitchen"
+      ],
+      "selling_points": [
+        "Demo kitchen"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-080",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-080",
+      "name": "Candle 080",
+      "description": "Normalized demo decor item #80 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 110000,
+      "stock": 10,
+      "image_url": "/seed/decor/080.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "decor"
+      ],
+      "selling_points": [
+        "Demo decor"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-081",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-081",
+      "name": "Band 081",
+      "description": "Normalized demo fitness item #81 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 147500,
+      "stock": 11,
+      "image_url": "/seed/fitness/081.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "fitness"
+      ],
+      "selling_points": [
+        "Demo fitness"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-082",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-082",
+      "name": "Bottle 082",
+      "description": "Normalized demo hydrate item #82 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 185000,
+      "stock": 12,
+      "image_url": "/seed/hydrate/082.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hydrate"
+      ],
+      "selling_points": [
+        "Demo hydrate"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-083",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-083",
+      "name": "Toy 083",
+      "description": "Normalized demo play item #83 for multi-seller commerce PoC.",
+      "category": "kids",
+      "price": 222500,
+      "stock": 13,
+      "image_url": "/seed/play/083.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "play"
+      ],
+      "selling_points": [
+        "Demo play"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-084",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-084",
+      "name": "Treat 084",
+      "description": "Normalized demo care item #84 for multi-seller commerce PoC.",
+      "category": "pet",
+      "price": 225000,
+      "stock": 14,
+      "image_url": "/seed/care/084.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "care"
+      ],
+      "selling_points": [
+        "Demo care"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-085",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-085",
+      "name": "Tee 085",
+      "description": "Normalized demo shirt item #85 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 262500,
+      "stock": 15,
+      "image_url": "/seed/shirt/085.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "shirt"
+      ],
+      "selling_points": [
+        "Demo shirt"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-086",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-086",
+      "name": "Hat 086",
+      "description": "Normalized demo hat item #86 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 300000,
+      "stock": 16,
+      "image_url": "/seed/hat/086.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hat"
+      ],
+      "selling_points": [
+        "Demo hat"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-087",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-087",
+      "name": "Lipstick 087",
+      "description": "Normalized demo makeup item #87 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 337500,
+      "stock": 17,
+      "image_url": "/seed/makeup/087.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "makeup"
+      ],
+      "selling_points": [
+        "Demo makeup"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-088",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-088",
+      "name": "Serum 088",
+      "description": "Normalized demo skincare item #88 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 375000,
+      "stock": 18,
+      "image_url": "/seed/skincare/088.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "skincare"
+      ],
+      "selling_points": [
+        "Demo skincare"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-089",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-089",
+      "name": "Headset 089",
+      "description": "Normalized demo audio item #89 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 412500,
+      "stock": 19,
+      "image_url": "/seed/audio/089.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "audio"
+      ],
+      "selling_points": [
+        "Demo audio"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-090",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-090",
+      "name": "Case 090",
+      "description": "Normalized demo accessory item #90 for multi-seller commerce PoC.",
+      "category": "gadget",
+      "price": 450000,
+      "stock": 20,
+      "image_url": "/seed/accessory/090.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "accessory"
+      ],
+      "selling_points": [
+        "Demo accessory"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-091",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-091",
+      "name": "Mug 091",
+      "description": "Normalized demo kitchen item #91 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 452500,
+      "stock": 21,
+      "image_url": "/seed/kitchen/091.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "kitchen"
+      ],
+      "selling_points": [
+        "Demo kitchen"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-092",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-092",
+      "name": "Candle 092",
+      "description": "Normalized demo decor item #92 for multi-seller commerce PoC.",
+      "category": "home",
+      "price": 490000,
+      "stock": 22,
+      "image_url": "/seed/decor/092.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "decor"
+      ],
+      "selling_points": [
+        "Demo decor"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-093",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-093",
+      "name": "Band 093",
+      "description": "Normalized demo fitness item #93 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 527500,
+      "stock": 23,
+      "image_url": "/seed/fitness/093.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "fitness"
+      ],
+      "selling_points": [
+        "Demo fitness"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-094",
+      "shop_seed_key": "shop-gadget-03",
+      "sku": "03-094",
+      "name": "Bottle 094",
+      "description": "Normalized demo hydrate item #94 for multi-seller commerce PoC.",
+      "category": "sport",
+      "price": 565000,
+      "stock": 24,
+      "image_url": "/seed/hydrate/094.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hydrate"
+      ],
+      "selling_points": [
+        "Demo hydrate"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-095",
+      "shop_seed_key": "shop-home-04",
+      "sku": "04-095",
+      "name": "Toy 095",
+      "description": "Normalized demo play item #95 for multi-seller commerce PoC.",
+      "category": "kids",
+      "price": 602500,
+      "stock": 25,
+      "image_url": "/seed/play/095.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "play"
+      ],
+      "selling_points": [
+        "Demo play"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-096",
+      "shop_seed_key": "shop-sport-05",
+      "sku": "05-096",
+      "name": "Treat 096",
+      "description": "Normalized demo care item #96 for multi-seller commerce PoC.",
+      "category": "pet",
+      "price": 640000,
+      "stock": 26,
+      "image_url": "/seed/care/096.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "care"
+      ],
+      "selling_points": [
+        "Demo care"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-097",
+      "shop_seed_key": "shop-kids-06",
+      "sku": "06-097",
+      "name": "Tee 097",
+      "description": "Normalized demo shirt item #97 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 677500,
+      "stock": 27,
+      "image_url": "/seed/shirt/097.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "shirt"
+      ],
+      "selling_points": [
+        "Demo shirt"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-098",
+      "shop_seed_key": "shop-pet-07",
+      "sku": "07-098",
+      "name": "Hat 098",
+      "description": "Normalized demo hat item #98 for multi-seller commerce PoC.",
+      "category": "fashion",
+      "price": 680000,
+      "stock": 28,
+      "image_url": "/seed/hat/098.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "hat"
+      ],
+      "selling_points": [
+        "Demo hat"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-099",
+      "shop_seed_key": "shop-fashion-01",
+      "sku": "01-099",
+      "name": "Lipstick 099",
+      "description": "Normalized demo makeup item #99 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 717500,
+      "stock": 29,
+      "image_url": "/seed/makeup/099.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "makeup"
+      ],
+      "selling_points": [
+        "Demo makeup"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    },
+    {
+      "seed_key": "product-100",
+      "shop_seed_key": "shop-beauty-02",
+      "sku": "02-100",
+      "name": "Serum 100",
+      "description": "Normalized demo skincare item #100 for multi-seller commerce PoC.",
+      "category": "beauty",
+      "price": 105000,
+      "stock": 30,
+      "image_url": "/seed/skincare/100.svg",
+      "colors": [],
+      "sizes": [],
+      "tags": [
+        "skincare"
+      ],
+      "selling_points": [
+        "Demo skincare"
+      ],
+      "ar_effect_type": "none",
+      "is_active": true
+    }
+  ]
+}

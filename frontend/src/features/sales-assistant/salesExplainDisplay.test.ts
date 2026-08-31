@@ -144,8 +144,9 @@ describe("explainable AI validation cases", () => {
     expect(getClarificationQuestion(event!)).toBeNull();
     expect(event!.suggestedReply).toContain("KÍNH THỜI TRANG A");
     expect(event!.suggestedReply).not.toContain("chốt sản phẩm nào");
-    expect(event!.suggestedReply).toContain("thanh toán");
+    expect(event!.suggestedReply).toContain("giỏ hàng");
     expect(event!.suggestedReply).not.toContain("checkout");
+    expect(event!.suggestedReply).not.toContain("nhắn chốt đơn");
 
     const timeline = buildDecisionTimeline(event!, "vi", t);
     expect(timeline[2].detail).toContain("Sản phẩm đang ghim");

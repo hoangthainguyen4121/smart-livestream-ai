@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "../../api/config";
+import { authHeaders } from "../../api/auth";
 import type { CatalogRasterItem } from "./catalogRasterizer";
 
 export type ProductVisionStatus = {
@@ -17,9 +18,10 @@ export type HandHeldVisionMatch = {
   explanation: string;
 };
 
-export async function fetchProductVisionStatus(): Promise<ProductVisionStatus | null> {
+export async function fetchProductVisionStatus(roomId: string): Promise<ProductVisionStatus | null> {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/api/product-vision/status`);
+    const query = new URLSearchParams({ room_id: roomId });
+    const response = await fetch(`${getApiBaseUrl()}/api/product-vision/status?${query}`);
     if (!response.ok) {
       return null;
     }
@@ -29,11 +31,19 @@ export async function fetchProductVisionStatus(): Promise<ProductVisionStatus | 
   }
 }
 
-export async function syncCatalogEmbeddings(items: CatalogRasterItem[]): Promise<ProductVisionStatus | null> {
+export async function syncCatalogEmbeddings(
+  roomId: string,
+  items: CatalogRasterItem[],
+  hostToken?: string | null,
+): Promise<ProductVisionStatus | null> {
   const response = await fetch(`${getApiBaseUrl()}/api/product-vision/sync-catalog`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items }),
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+      ...(hostToken ? { "X-Host-Token": hostToken } : {}),
+    },
+    body: JSON.stringify({ roomId, items }),
   });
 
   if (!response.ok) {
@@ -53,12 +63,13 @@ export async function syncCatalogEmbeddings(items: CatalogRasterItem[]): Promise
 }
 
 export async function matchHandCropEmbedding(
+  roomId: string,
   cropImageBase64: string,
 ): Promise<HandHeldVisionMatch | null> {
   const response = await fetch(`${getApiBaseUrl()}/api/product-vision/match-hand-crop`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cropImageBase64 }),
+    body: JSON.stringify({ roomId, cropImageBase64 }),
   });
 
   if (response.status === 404) {

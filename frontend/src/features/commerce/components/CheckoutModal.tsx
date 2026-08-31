@@ -7,8 +7,6 @@ import {
 import type { CartLineItem, CheckoutForm } from "../commerceTypes";
 import {
   PAYMENT_METHOD_LABELS,
-  SHIPPING_FEES,
-  SHIPPING_METHOD_LABELS,
 } from "../commerceTypes";
 
 type CheckoutModalProps = {
@@ -19,6 +17,8 @@ type CheckoutModalProps = {
   onClose: () => void;
   onChange: <K extends keyof CheckoutForm>(field: K, value: CheckoutForm[K]) => void;
   onSubmit: () => void;
+  submitting?: boolean;
+  error?: string | null;
 };
 
 export function CheckoutModal({
@@ -29,13 +29,14 @@ export function CheckoutModal({
   onClose,
   onChange,
   onSubmit,
+  submitting = false,
+  error,
 }: CheckoutModalProps) {
   if (!open) {
     return null;
   }
 
-  const shippingFee = SHIPPING_FEES[form.shippingMethod];
-  const total = subtotal + shippingFee;
+  const total = subtotal;
   const validationErrors = getCheckoutValidationErrors(form, items.length);
   const isValid = isCheckoutFormValid(form, items.length);
   const blockerMessage = formatCheckoutBlockers(validationErrors);
@@ -46,11 +47,11 @@ export function CheckoutModal({
         className="checkoutModal"
         role="dialog"
         aria-modal="true"
-        aria-label="Checkout demo"
+        aria-label="Xác nhận đơn hàng"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="cardHeader">
-          <h2>Checkout demo</h2>
+          <h2>Xác nhận đơn hàng</h2>
           <button type="button" className="checkoutCloseButton" onClick={onClose}>
             Đóng
           </button>
@@ -100,22 +101,7 @@ export function CheckoutModal({
               ) : null}
             </label>
             <label>
-              Phương thức giao hàng
-              <select
-                value={form.shippingMethod}
-                onChange={(event) =>
-                  onChange("shippingMethod", event.target.value as CheckoutForm["shippingMethod"])
-                }
-              >
-                {Object.entries(SHIPPING_METHOD_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Thanh toán
+              Phương thức thanh toán
               <select
                 value={form.paymentMethod}
                 onChange={(event) =>
@@ -129,6 +115,23 @@ export function CheckoutModal({
                 ))}
               </select>
             </label>
+            {form.paymentMethod === "mock_qr" ? (
+              <label>
+                Kết quả mô phỏng
+                <select
+                  value={form.sandboxResult}
+                  onChange={(event) =>
+                    onChange(
+                      "sandboxResult",
+                      event.target.value as CheckoutForm["sandboxResult"],
+                    )
+                  }
+                >
+                  <option value="success">Thanh toán thành công</option>
+                  <option value="failure">Thanh toán thất bại</option>
+                </select>
+              </label>
+            ) : null}
           </div>
 
           <div className="checkoutSummarySection">
@@ -149,22 +152,22 @@ export function CheckoutModal({
                 <dd>{formatVnd(subtotal)}</dd>
               </div>
               <div>
-                <dt>Phí ship</dt>
-                <dd>{formatVnd(shippingFee)}</dd>
-              </div>
-              <div>
-                <dt>Tổng</dt>
+                <dt>Tổng thanh toán</dt>
                 <dd>{formatVnd(total)}</dd>
               </div>
             </dl>
 
             {form.paymentMethod === "mock_qr" ? (
-              <div className="mockQrPanel" aria-label="Mock QR payment">
-                <div className="mockQrCode">QR DEMO</div>
-                <p>Quét mã giả lập sau khi đặt hàng. Trạng thái sẽ chuyển sang paid sau ~1.5 giây.</p>
+              <div className="mockQrPanel" aria-label="Thanh toán online mô phỏng">
+                <div className="mockQrCode">THANH TOÁN DEMO</div>
+                <p>
+                  Hệ thống sẽ lưu trạng thái thanh toán mô phỏng trên máy chủ theo kết quả bạn chọn.
+                </p>
               </div>
             ) : (
-              <p className="mockCodNote">COD: đơn sẽ được đánh dấu cod_confirmed ngay khi đặt.</p>
+              <p className="mockCodNote">
+                COD: đơn được xác nhận ngay và khách thanh toán khi nhận hàng.
+              </p>
             )}
 
             {!isValid && blockerMessage ? (
@@ -172,16 +175,17 @@ export function CheckoutModal({
                 {blockerMessage}
               </p>
             ) : null}
+            {error ? <p className="checkoutValidationSummary" role="alert">{error}</p> : null}
 
             <button
               type="button"
               className="cartCheckoutButton"
-              disabled={!isValid}
+              disabled={!isValid || submitting}
               aria-disabled={!isValid}
               title={!isValid ? blockerMessage : undefined}
               onClick={onSubmit}
             >
-              Xác nhận đặt hàng demo
+              {submitting ? "Đang tạo đơn..." : "Xác nhận đặt hàng"}
             </button>
           </div>
         </div>

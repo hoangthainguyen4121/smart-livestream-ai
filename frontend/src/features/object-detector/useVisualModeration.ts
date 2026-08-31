@@ -13,6 +13,7 @@ type UseVisualModerationOptions = {
   isActive: boolean;
   detections: ObjectDetectorHit[];
   productAbsenceGraceMs?: number;
+  sharpLabels?: readonly string[];
 };
 
 const EMPTY_RESULT: VisualModerationResult = { status: "safe", findings: [] };
@@ -87,6 +88,7 @@ export function useVisualModeration(options: UseVisualModerationOptions): Visual
       lastProductSeenAtMs,
       cameraActiveSinceMs,
       productAbsenceGraceMs: graceMs,
+      sharpLabels: options.sharpLabels,
     });
   }, [
     options.enabled,
@@ -96,5 +98,6 @@ export function useVisualModeration(options: UseVisualModerationOptions): Visual
     lastProductSeenAtMs,
     cameraActiveSinceMs,
     graceMs,
+    options.sharpLabels,
   ]);
 }

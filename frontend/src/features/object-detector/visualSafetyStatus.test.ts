@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { AdultModerationView } from "../adult-moderation/useAdultModeration";
 import type { WeaponFrameGateView } from "../weapon-frame-gate/useWeaponFrameGate";
 import {
+  isViolatingSafetyKey,
   resolveAdultSafetyKey,
   resolveGunSafetyKey,
   resolveSharpSafetyKey,
@@ -121,9 +122,40 @@ describe("visualSafetyStatus", () => {
     ).toBe("visualSafetySharpWarning");
   });
 
+  it("reports sharp moderation as disabled while warnings still surface", () => {
+    const idle = {
+      action: "none",
+      evidenceCount: 0,
+      requiredHits: 3,
+      label: null,
+      confidence: null,
+      hits: [],
+    } as const;
+
+    expect(resolveSharpSafetyKey(idle, false, false)).toBe("visualSafetySharpDisabled");
+    expect(resolveSharpSafetyKey({ ...idle, action: "warning" }, false, false)).toBe(
+      "visualSafetySharpWarning",
+    );
+    expect(resolveSharpSafetyKey(idle, true, false)).toBe("visualSafetySharpWarning");
+  });
+
   it("maps gun scanning / warning / confirmed_risk UI keys", () => {
     expect(resolveGunSafetyKey(weaponView("safe"))).toBe("visualSafetyGunScanning");
     expect(resolveGunSafetyKey(weaponView("warning"))).toBe("visualSafetyGunWarning");
     expect(resolveGunSafetyKey(weaponView("confirmed_risk"))).toBe("visualSafetyGunConfirmed");
+  });
+
+  it("flags only the rows that are actively violating", () => {
+    expect(isViolatingSafetyKey("visualSafetyAdultSuggestiveWarning")).toBe(true);
+    expect(isViolatingSafetyKey("visualSafetyAdultExplicitWarning")).toBe(true);
+    expect(isViolatingSafetyKey("visualSafetySharpWarning")).toBe(true);
+    expect(isViolatingSafetyKey("visualSafetyGunWarning")).toBe(true);
+    expect(isViolatingSafetyKey("visualSafetyGunConfirmed")).toBe(true);
+
+    expect(isViolatingSafetyKey("visualSafetyAdultSafe")).toBe(false);
+    expect(isViolatingSafetyKey("visualSafetySharpSafe")).toBe(false);
+    expect(isViolatingSafetyKey("visualSafetySharpDisabled")).toBe(false);
+    expect(isViolatingSafetyKey("visualSafetyGunScanning")).toBe(false);
+    expect(isViolatingSafetyKey("visualSafetyGunUnavailable")).toBe(false);
   });
 });

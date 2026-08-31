@@ -23,6 +23,7 @@ def test_sync_catalog_and_match_same_color(monkeypatch):
     blue = _solid_png_base64(20, 20, 220)
 
     sync_result = service.sync_catalog(
+        "room-a",
         [
             {"id": "lipstick-ruby", "name": "Son Ruby", "imageBase64": red},
             {"id": "glasses-a", "name": "Kính A", "imageBase64": blue},
@@ -31,7 +32,7 @@ def test_sync_catalog_and_match_same_color(monkeypatch):
     assert sync_result["indexed"] == 2
     assert sync_result["embedder"] == "fingerprint"
 
-    match = service.match_crop(red)
+    match = service.match_crop("room-a", red)
     assert match is not None
     assert match.product_id == "lipstick-ruby"
     assert match.score >= 0.55
@@ -39,7 +40,7 @@ def test_sync_catalog_and_match_same_color(monkeypatch):
 
 def test_match_returns_none_when_catalog_empty():
     service = VisualEmbeddingService()
-    assert service.match_crop(_solid_png_base64(10, 10, 10)) is None
+    assert service.match_crop("room-empty", _solid_png_base64(10, 10, 10)) is None
 
 
 def test_fingerprint_embedding_is_normalized():
